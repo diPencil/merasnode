@@ -168,9 +168,27 @@ class MultiClientManager extends EventEmitter {
 
                 console.log(`📨 [${accountId}] Message from ${senderName}: ${message.body.substring(0, 50)}...`);
 
+                // Handle Media
+                let mediaData = null;
+                if (message.hasMedia) {
+                    try {
+                        const media = await message.downloadMedia();
+                        if (media) {
+                            mediaData = {
+                                mimetype: media.mimetype,
+                                data: media.data, // Base64
+                                filename: media.filename
+                            };
+                            console.log(`📎 [${accountId}] Media downloaded: ${media.mimetype}`);
+                        }
+                    } catch (err) {
+                        console.error(`❌ Error downloading media for message ${message.id.id}:`, err);
+                    }
+                }
+
                 // Forward to webhook with accountId
                 const payload = {
-                    accountId,  // ← Important: which account received this
+                    accountId,
                     from: message.from,
                     body: message.body,
                     timestamp: message.timestamp,
@@ -178,6 +196,7 @@ class MultiClientManager extends EventEmitter {
                     senderName: senderName,
                     senderId: message.author || message.from,
                     hasMedia: message.hasMedia,
+                    media: mediaData, // Include the actual media data
                     type: message.type
                 };
 

@@ -71,14 +71,46 @@ export async function POST(request: NextRequest) {
         }
 
         // Create message
+        let mediaUrl = null
+        let messageType = 'TEXT'
+
+        if (body.hasMedia && body.media) {
+            try {
+                // Save media to public uploads
+                const fs = require('fs')
+                const path = require('path')
+                const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'whatsapp')
+
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true })
+                }
+
+                const filename = `${Date.now()}-${body.media.filename || 'media'}.${body.media.mimetype.split('/')[1]}`
+                const filepath = path.join(uploadDir, filename)
+
+                fs.writeFileSync(filepath, Buffer.from(body.media.data, 'base64'))
+                mediaUrl = `/uploads/whatsapp/${filename}`
+
+                // Determine message type
+                if (body.type === 'ptt' || body.type === 'audio') messageType = 'AUDIO'
+                else if (body.type === 'image') messageType = 'IMAGE'
+                else if (body.type === 'video') messageType = 'VIDEO'
+                else if (body.type === 'document') messageType = 'DOCUMENT'
+                else messageType = 'OTHER'
+            } catch (err) {
+                console.error('❌ Error saving media file:', err)
+            }
+        }
+
         const message = await prisma.message.create({
             data: {
                 conversationId: conversation.id,
-                content: messageBody,
-                type: 'TEXT',
+                content: messageBody || (messageType !== 'TEXT' ? `Attachment: ${messageType}` : ''),
+                type: messageType as any,
                 direction: 'INCOMING',
                 status: 'DELIVERED',
-                whatsappAccountId: accountId || null  // Track which account received this
+                mediaUrl: mediaUrl,
+                whatsappAccountId: accountId || null
             }
         })
 
