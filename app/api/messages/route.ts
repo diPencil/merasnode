@@ -149,9 +149,9 @@ export async function POST(request: NextRequest) {
                     if (!whatsappData.success) {
                         throw new Error(whatsappData.error || 'WhatsApp Service delivery failed');
                     }
-                } catch (error) {
+                } catch (error: any) {
                     console.error('WhatsApp Send Error:', error);
-                    return NextResponse.json({ success: false, error: error.message }, { status: 502 });
+                    return NextResponse.json({ success: false, error: error.message || 'Unknown WhatsApp Error' }, { status: 502 });
                 }
             }
         }
