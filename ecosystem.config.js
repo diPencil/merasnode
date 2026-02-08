@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'meras-node',
-      script: 'npm',
+      script: 'node_modules/.bin/next',
       args: 'start',
       cwd: '/home/ec2-user/MerasNode',
       env: {
