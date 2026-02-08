@@ -69,6 +69,7 @@ interface Conversation {
     id: string
     name: string
     phone: string
+    externalId?: string
     email?: string // Added email for updates
     tags?: any // Added tags for block logic
     notes?: string

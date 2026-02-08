@@ -217,6 +217,15 @@ export function Sidebar({ conversation, onUpdate }: SidebarProps) {
                     <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-4">{t("contactInformation")}</h4>
                     <div className="space-y-4">
                         <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                                <Building2 className="h-4 w-4" />
+                            </div>
+                            <div className="overflow-hidden">
+                                <p className="text-xs text-muted-foreground">Meta ID</p>
+                                <p className="text-sm font-medium truncate">{conversation.contact.externalId || "-"}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
                                 <Phone className="h-4 w-4" />
                             </div>

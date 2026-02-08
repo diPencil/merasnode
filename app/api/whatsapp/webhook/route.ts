@@ -16,22 +16,40 @@ export async function POST(request: NextRequest) {
         }
 
         // Format phone number (remove @ suffix if exists)
-        let phoneNumber = from.split('@')[0]
+        let identifier = from.split('@')[0]
+        let phoneNumber = identifier
+        let externalId: string | null = null
 
+        // If it's a Meta ID (LID / Facebook ID)
+        if (identifier.length > 15) {
+            externalId = identifier
+        }
 
-        // Find or create contact
-        let contact = await prisma.contact.findUnique({
-            where: { phone: phoneNumber }
+        // 1. Try to find contact by externalId or phone
+        let contact = await prisma.contact.findFirst({
+            where: {
+                OR: [
+                    { externalId: identifier },
+                    { phone: identifier }
+                ]
+            }
         })
 
         if (!contact) {
             // Create new contact
             contact = await prisma.contact.create({
                 data: {
-                    name: senderName || phoneNumber, // Use real name or group name
+                    name: senderName || phoneNumber,
                     phone: phoneNumber,
+                    externalId: externalId,
                     tags: isGroup ? ["whatsapp-group"] : ["whatsapp-contact"]
                 }
+            })
+        } else if (externalId && !contact.externalId) {
+            // Link externalId if we just discovered it for an existing contact
+            contact = await prisma.contact.update({
+                where: { id: contact.id },
+                data: { externalId }
             })
         } else if (senderName && contact.name !== senderName) {
             // Always update name if we have a better one and it's different
