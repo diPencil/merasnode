@@ -1,0 +1,17 @@
+# نسخ هذا الملف إلى: deploy.local.ps1 (مرة واحدة)
+# ثم عدّل القيم تحت. ملف deploy.local.ps1 غير مرفوع على Git.
+#
+# Copy-Path:
+#   Copy-Item .\scripts\deploy.config.ps1.example .\scripts\deploy.local.ps1
+# ثم عدّل القيم:
+
+$env:DEPLOY_EC2 = "ec2-user@ec2-xx-xx-xx-xx.compute-1.amazonaws.com"
+# مسار مفتاح SSH إن كنت تستخدمه (اتصال EC2)
+$env:DEPLOY_SSH_KEY = "C:\path\to\your-key.pem"
+
+# Optional: project path on server (default: ~/MerasNode)
+# $env:DEPLOY_REMOTE_DIR = "~/MerasNode"
+
+# Fast deploy (no file upload): set to 1. You need: Git repo with remote (e.g. GitHub), and server cloned that repo.
+# Then deploy = git push (seconds) + server runs git pull, npm install, build, pm2. No scp/rsync.
+# $env:DEPLOY_USE_GIT = "1"

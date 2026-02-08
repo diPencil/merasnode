@@ -1,0 +1,384 @@
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
+const EventEmitter = require('events');
+
+/**
+ * Multi-Client Manager for WhatsApp (WhatChimp Style)
+ * Supports multiple WhatsApp accounts simultaneously
+ */
+class MultiClientManager extends EventEmitter {
+    constructor(nextAppUrl) {
+        super();
+        this.clients = new Map(); // accountId → client data
+        this.nextAppUrl = nextAppUrl || 'http://localhost:3000';
+    }
+
+    /**
+     * Initialize a new WhatsApp client for an account
+     * @param {string} accountId - Unique account identifier
+     * @param {string} phone - Phone number (for reference)
+     * @param {object} sessionData - Existing session data from database
+     */
+    async initializeClient(accountId, phone = null, sessionData = null) {
+        console.log(`🔄 Initializing client for account: ${accountId}`);
+
+        // Check if already exists
+        if (this.clients.has(accountId)) {
+            const existing = this.clients.get(accountId);
+            if (existing.isReady) {
+                console.log(`✅ Client ${accountId} already ready`);
+                return existing;
+            }
+        }
+
+        // Create auth strategy - prefer existing session if available
+        let authStrategy;
+        if (sessionData) {
+            console.log(`📁 Using existing session data for ${accountId}`);
+            authStrategy = new LocalAuth({
+                clientId: accountId,
+                dataPath: './whatsapp-sessions' // Ensure consistent path
+            });
+        } else {
+            console.log(`🆕 Creating new session for ${accountId}`);
+            authStrategy = new LocalAuth({
+                clientId: accountId,
+                dataPath: './whatsapp-sessions'
+            });
+        }
+
+        // Create new client
+        const client = new Client({
+            authStrategy: authStrategy,
+            puppeteer: {
+                headless: true,
+                executablePath: 'C:\\Users\\mahmo\\.cache\\puppeteer\\chrome\\win64-143.0.7499.169\\chrome-win64\\chrome.exe',
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--disable-gpu'
+                ]
+            },
+            // Force restart if we have session data (to ensure clean state)
+            restartOnAuthFail: true
+        });
+
+        // Store client data
+        const clientData = {
+            client,
+            accountId,
+            phone,
+            isReady: false,
+            qrCode: null,
+            status: 'INITIALIZING',
+            connectedPhone: null
+        };
+
+        this.clients.set(accountId, clientData);
+
+        // Setup event handlers
+        this.setupClientEvents(accountId, client, clientData);
+
+        // Initialize client
+        await client.initialize();
+
+        return clientData;
+    }
+
+    /**
+     * Setup event handlers for a client
+     */
+    setupClientEvents(accountId, client, clientData) {
+        // QR Code event
+        client.on('qr', (qr) => {
+            console.log(`📱 QR Code generated for ${accountId}`);
+            clientData.qrCode = qr;
+            clientData.status = 'QR_GENERATED';
+            
+            this.emit('qr', { accountId, qr });
+            
+            // Update database
+            this.updateDatabaseStatus(accountId, 'WAITING', qr);
+        });
+
+        // Ready event
+        client.on('ready', async () => {
+            console.log(`✅ Client ${accountId} is ready!`);
+            clientData.isReady = true;
+            clientData.status = 'CONNECTED';
+            clientData.qrCode = null;
+
+            // Get phone info
+            const info = client.info;
+            if (info) {
+                clientData.connectedPhone = info.wid.user;
+                console.log(`📞 Connected phone: ${clientData.connectedPhone}`);
+            }
+
+            this.emit('ready', { accountId, phone: clientData.connectedPhone });
+            
+            // Update database
+            await this.updateDatabaseStatus(accountId, 'CONNECTED', null);
+        });
+
+        // Authenticated event
+        client.on('authenticated', () => {
+            console.log(`🔐 Client ${accountId} authenticated`);
+            clientData.status = 'AUTHENTICATED';
+        });
+
+        // Auth failure event
+        client.on('auth_failure', (msg) => {
+            console.error(`❌ Auth failure for ${accountId}:`, msg);
+            clientData.isReady = false;
+            clientData.status = 'AUTH_FAILED';
+            
+            this.emit('auth_failure', { accountId, error: msg });
+            
+            // Update database
+            this.updateDatabaseStatus(accountId, 'DISCONNECTED', null);
+        });
+
+        // Disconnected event
+        client.on('disconnected', async (reason) => {
+            console.log(`⚠️ Client ${accountId} disconnected:`, reason);
+            clientData.isReady = false;
+            clientData.qrCode = null;
+            clientData.status = 'DISCONNECTED';
+            
+            this.emit('disconnected', { accountId, reason });
+            
+            // Update database
+            await this.updateDatabaseStatus(accountId, 'DISCONNECTED', null);
+        });
+
+        // Message event
+        client.on('message', async (message) => {
+            try {
+                const chat = await message.getChat();
+                const contact = await message.getContact();
+
+                let senderName = contact.pushname || contact.name || contact.number;
+                if (chat.isGroup) {
+                    senderName = chat.name;
+                }
+
+                console.log(`📨 [${accountId}] Message from ${senderName}: ${message.body.substring(0, 50)}...`);
+
+                // Forward to webhook with accountId
+                const payload = {
+                    accountId,  // ← Important: which account received this
+                    from: message.from,
+                    body: message.body,
+                    timestamp: message.timestamp,
+                    isGroup: chat.isGroup,
+                    senderName: senderName,
+                    senderId: message.author || message.from,
+                    hasMedia: message.hasMedia,
+                    type: message.type
+                };
+
+                await fetch(`${this.nextAppUrl}/api/whatsapp/webhook`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                this.emit('message', { accountId, message: payload });
+            } catch (error) {
+                console.error(`❌ Error handling message for ${accountId}:`, error);
+            }
+        });
+
+        // Message create event (for sent messages)
+        client.on('message_create', async (message) => {
+            if (message.fromMe) {
+                console.log(`📤 [${accountId}] Outgoing message: ${message.body.substring(0, 50)}...`);
+            }
+        });
+    }
+
+    /**
+     * Send message from specific account
+     */
+    async sendMessage(accountId, phoneNumber, message, mediaUrl = null, chatId = null) {
+        const clientData = this.clients.get(accountId);
+        
+        if (!clientData) {
+            throw new Error(`Account ${accountId} not found`);
+        }
+
+        if (!clientData.isReady) {
+            throw new Error(`Account ${accountId} is not ready. Status: ${clientData.status}`);
+        }
+
+        const { client } = clientData;
+
+        // Determine chat ID
+        let targetChatId;
+        if (chatId) {
+            targetChatId = chatId;
+        } else if (phoneNumber.includes('@g.us') || phoneNumber.includes('@c.us')) {
+            targetChatId = phoneNumber;
+        } else {
+            const formattedNumber = phoneNumber.replace(/[^0-9]/g, '');
+            targetChatId = `${formattedNumber}@c.us`;
+        }
+
+        console.log(`📤 [${accountId}] Sending to ${targetChatId}`);
+
+        // Send message
+        if (mediaUrl) {
+            const media = await MessageMedia.fromUrl(mediaUrl);
+            if (message) {
+                await client.sendMessage(targetChatId, media, { caption: message });
+            } else {
+                await client.sendMessage(targetChatId, media);
+            }
+        } else {
+            await client.sendMessage(targetChatId, message);
+        }
+
+        return { success: true, chatId: targetChatId };
+    }
+
+    /**
+     * Get client status
+     */
+    getClientStatus(accountId) {
+        const clientData = this.clients.get(accountId);
+        if (!clientData) {
+            return { exists: false };
+        }
+
+        return {
+            exists: true,
+            accountId,
+            isReady: clientData.isReady,
+            status: clientData.status,
+            qrCode: clientData.qrCode,
+            phone: clientData.connectedPhone
+        };
+    }
+
+    /**
+     * Get all clients status
+     */
+    getAllClientsStatus() {
+        const statuses = [];
+        for (const [accountId, clientData] of this.clients.entries()) {
+            statuses.push({
+                accountId,
+                isReady: clientData.isReady,
+                status: clientData.status,
+                phone: clientData.connectedPhone,
+                hasQrCode: !!clientData.qrCode
+            });
+        }
+        return statuses;
+    }
+
+    /**
+     * Disconnect a client
+     */
+    async disconnectClient(accountId) {
+        const clientData = this.clients.get(accountId);
+        if (!clientData) {
+            throw new Error(`Account ${accountId} not found`);
+        }
+
+        const { client } = clientData;
+        await client.destroy();
+        this.clients.delete(accountId);
+
+        console.log(`🔌 Client ${accountId} disconnected and removed`);
+    }
+
+    /**
+     * Restart a client (force re-authentication)
+     */
+    async restartClient(accountId) {
+        console.log(`🔄 Restarting client ${accountId}...`);
+        
+        try {
+            await this.disconnectClient(accountId);
+            // Brief wait so the browser process can release the session folder
+            console.log(`⏳ Waiting 2s for browser to close...`);
+            await new Promise(r => setTimeout(r, 2000));
+        } catch (error) {
+            console.log(`Note: Client ${accountId} was not active`);
+        }
+
+        return await this.initializeClient(accountId);
+    }
+
+    /**
+     * Update database status (always by accountId so DB stays in sync when user scans QR)
+     */
+    async updateDatabaseStatus(accountId, status, qrCode = null) {
+        try {
+            const clientData = this.clients.get(accountId);
+            const phone = clientData?.connectedPhone || clientData?.phone;
+
+            const payload = {
+                accountId,
+                status,
+                qrCode,
+                phone: phone || undefined
+            };
+
+            console.log(`📡 Updating database: ${accountId} -> ${status}${phone ? ` (${phone})` : ''}`);
+
+            const response = await fetch(`${this.nextAppUrl}/api/whatsapp/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                console.warn(`⚠️ Database update response:`, result);
+            } else {
+                console.log(`✅ Database updated: ${accountId} -> ${status}`);
+            }
+        } catch (error) {
+            console.error(`❌ Failed to update database for ${accountId}:`, error.message);
+        }
+    }
+
+    /**
+     * Get chats for specific account
+     */
+    async getChats(accountId) {
+        const clientData = this.clients.get(accountId);
+        if (!clientData || !clientData.isReady) {
+            throw new Error(`Account ${accountId} is not ready`);
+        }
+
+        const chats = await clientData.client.getChats();
+        return chats;
+    }
+
+    /**
+     * Shutdown all clients
+     */
+    async shutdownAll() {
+        console.log('🛑 Shutting down all clients...');
+        for (const [accountId, clientData] of this.clients.entries()) {
+            try {
+                await clientData.client.destroy();
+                console.log(`✅ Closed ${accountId}`);
+            } catch (error) {
+                console.error(`Error closing ${accountId}:`, error);
+            }
+        }
+        this.clients.clear();
+        console.log('✅ All clients shut down');
+    }
+}
+
+module.exports = MultiClientManager;
+

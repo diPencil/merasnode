@@ -1,0 +1,332 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Finly-inspired purple/violet gradient theme - Light Mode */
+  --background: oklch(0.99 0.01 280);
+  /* Very light purple/lavender background */
+  --foreground: oklch(0.2 0.02 280);
+
+  --card: oklch(1 0 0);
+  /* Pure white cards */
+  --card-foreground: oklch(0.2 0.02 280);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.02 280);
+
+  --primary: oklch(0.55 0.22 280);
+  /* Rich purple primary */
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.65 0.18 300);
+  /* Violet secondary */
+  --secondary-foreground: oklch(0.99 0 0);
+
+  --muted: oklch(0.96 0.01 280);
+  --muted-foreground: oklch(0.5 0.02 280);
+
+  --accent: oklch(0.92 0.02 280);
+  --accent-foreground: oklch(0.2 0.02 280);
+
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --border: oklch(0.92 0.01 280);
+  --input: oklch(0.96 0.01 280);
+  --ring: oklch(0.55 0.22 280);
+
+  --success: oklch(0.6 0.15 145);
+  --success-foreground: oklch(0.99 0 0);
+
+  --warning: oklch(0.75 0.15 85);
+  --warning-foreground: oklch(0.2 0.02 280);
+
+  --chart-1: oklch(0.55 0.22 280);
+  /* Purple */
+  --chart-2: oklch(0.65 0.18 300);
+  /* Violet */
+  --chart-3: oklch(0.75 0.15 85);
+  /* Yellow/Orange */
+  --chart-4: oklch(0.6 0.15 145);
+  /* Green */
+  --chart-5: oklch(0.65 0.2 320);
+  /* Pink */
+
+  --radius: 1rem;
+
+  --sidebar: oklch(0.995 0.005 280);
+  --sidebar-foreground: oklch(0.2 0.02 280);
+  --sidebar-primary: oklch(0.55 0.22 280);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.92 0.02 280);
+  --sidebar-accent-foreground: oklch(0.2 0.02 280);
+  --sidebar-border: oklch(0.94 0.01 280);
+  --sidebar-ring: oklch(0.55 0.22 280);
+
+  --blue-500: oklch(0.6 0.2 250);
+  --violet-500: oklch(0.6 0.2 290);
+}
+
+.dark {
+  /* Finly-inspired purple/violet gradient theme - Dark Mode */
+  --background: oklch(0.15 0.02 280);
+  /* Deep purple/dark background */
+  --foreground: oklch(0.95 0.01 280);
+
+  --card: oklch(0.18 0.025 280);
+  /* Slightly lighter dark purple cards */
+  --card-foreground: oklch(0.95 0.01 280);
+
+  --popover: oklch(0.18 0.025 280);
+  --popover-foreground: oklch(0.95 0.01 280);
+
+  --primary: oklch(0.65 0.22 280);
+  /* Bright purple primary */
+  --primary-foreground: oklch(0.15 0.02 280);
+
+  --secondary: oklch(0.55 0.18 300);
+  /* Violet secondary */
+  --secondary-foreground: oklch(0.95 0.01 280);
+
+  --muted: oklch(0.25 0.02 280);
+  --muted-foreground: oklch(0.65 0.01 280);
+
+  --accent: oklch(0.25 0.02 280);
+  --accent-foreground: oklch(0.95 0.01 280);
+
+  --destructive: oklch(0.55 0.25 27);
+  --destructive-foreground: oklch(0.95 0.01 280);
+
+  --border: oklch(0.25 0.02 280);
+  --input: oklch(0.25 0.02 280);
+  --ring: oklch(0.65 0.22 280);
+
+  --success: oklch(0.6 0.15 145);
+  --success-foreground: oklch(0.95 0.01 280);
+
+  --warning: oklch(0.75 0.15 85);
+  --warning-foreground: oklch(0.15 0.02 280);
+
+  --chart-1: oklch(0.65 0.22 280);
+  /* Bright Purple */
+  --chart-2: oklch(0.55 0.18 300);
+  /* Violet */
+  --chart-3: oklch(0.75 0.15 85);
+  /* Yellow/Orange */
+  --chart-4: oklch(0.6 0.15 145);
+  /* Green */
+  --chart-5: oklch(0.65 0.2 320);
+  /* Pink */
+
+  --sidebar: oklch(0.18 0.025 280);
+  --sidebar-foreground: oklch(0.95 0.01 280);
+  --sidebar-primary: oklch(0.65 0.22 280);
+  --sidebar-primary-foreground: oklch(0.15 0.02 280);
+  --sidebar-accent: oklch(0.25 0.02 280);
+  --sidebar-accent-foreground: oklch(0.95 0.01 280);
+  --sidebar-border: oklch(0.25 0.02 280);
+  --sidebar-ring: oklch(0.65 0.22 280);
+
+  --blue-100: oklch(0.92 0.04 250);
+  --violet-100: oklch(0.92 0.04 290);
+  --green-100: oklch(0.92 0.04 150);
+}
+
+@theme inline {
+  --font-sans: "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-blue-500: var(--blue-500);
+  --color-violet-500: var(--violet-500);
+  --color-blue-100: var(--blue-100);
+  --color-violet-100: var(--violet-100);
+  --color-green-100: var(--green-100);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom shadow utilities for soft, diffused, layered shadows */
+@layer utilities {
+  .shadow-soft {
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.08), 0 4px 16px -4px rgba(0, 0, 0, 0.04);
+  }
+
+  .shadow-soft-xl {
+    box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.12), 0 16px 64px -8px rgba(0, 0, 0, 0.08);
+  }
+
+  .shadow-floating {
+    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.12), 0 16px 48px -16px rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* Finly-style gradient background */
+body {
+  background: linear-gradient(135deg,
+      oklch(0.85 0.08 280) 0%,
+      /* Light purple */
+      oklch(0.88 0.06 300) 25%,
+      /* Lavender */
+      oklch(0.90 0.05 320) 50%,
+      /* Light pink-purple */
+      oklch(0.88 0.06 340) 75%,
+      /* Pink */
+      oklch(0.85 0.08 280) 100%
+      /* Back to purple */
+    );
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+.dark body {
+  background: linear-gradient(135deg,
+      oklch(0.20 0.08 280) 0%,
+      /* Deep purple */
+      oklch(0.18 0.06 300) 25%,
+      /* Dark violet */
+      oklch(0.16 0.05 320) 50%,
+      /* Dark pink-purple */
+      oklch(0.18 0.06 340) 75%,
+      /* Dark pink */
+      oklch(0.20 0.08 280) 100%
+      /* Back to deep purple */
+    );
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Enhanced glassmorphism for cards on gradient background */
+.shadow-soft {
+  backdrop-filter: blur(12px);
+  background: oklch(from var(--card) l c h / 0.8);
+}
+
+.dark .shadow-soft {
+  backdrop-filter: blur(12px);
+  background: oklch(from var(--card) l c h / 0.6);
+}
+
+/* RTL: Arabic font and layout when dir="rtl" (من I18nProvider + سكربت layout) */
+[dir="rtl"] body {
+  font-family: 'Noto Sans Arabic', 'Geist', system-ui, sans-serif;
+}
+
+/* المحتوى الرئيسي يبدأ من اليمين في RTL */
+[dir="rtl"] main {
+  text-align: start;
+}
+
+[dir="rtl"] [class*="max-w-"] {
+  margin-inline: auto;
+}
+
+/* RTL: محاذاة حقول الملفات والزر من اليمين */
+[dir="rtl"] input[type="file"] {
+  direction: rtl;
+  text-align: right;
+}
+
+/* RTL: أزرار الراديو — النص على اليمين والدائرة على اليسار (لقراءة عربي) */
+[dir="rtl"] .settings-radio-label,
+[dir="rtl"] label:has(input[type="radio"]) {
+  flex-direction: row-reverse !important;
+  display: flex !important;
+}
+
+/* RTL: صف رفع الملف — النص على اليمين ثم الزر على اليسار */
+[dir="rtl"] .settings-file-row {
+  direction: rtl;
+  text-align: right;
+}
+
+/* RTL: القوائم المنسدلة — النص من اليمين */
+[dir="rtl"] [data-slot="select-trigger"] {
+  text-align: right !important;
+  direction: rtl;
+}
+[dir="rtl"] [data-slot="select-trigger"] [data-slot="select-value"] {
+  justify-content: flex-end !important;
+  text-align: right !important;
+}
+
+/* RTL: عناصر القائمة — المحتوى من اليمين وأيقونة الصح من اليسار */
+[dir="rtl"] [data-slot="select-item"] {
+  text-align: right !important;
+  padding-right: 0.5rem !important;
+  padding-left: 2rem !important;
+  direction: rtl;
+}
+[dir="rtl"] [data-slot="select-item"] > span:first-child {
+  right: auto !important;
+  left: 0.5rem !important;
+}
+
+/* RTL: حقول الإدخال والنص من اليمين */
+[dir="rtl"] input:not([type="file"]),
+[dir="rtl"] [data-slot="input"] {
+  text-align: right !important;
+  direction: rtl;
+}
+[dir="rtl"] .text-start {
+  text-align: right !important;
+}
+
+/* RTL: ملاحظة "يتم حفظ التغييرات تلقائياً" من اليمين */
+[dir="rtl"] .settings-note {
+  text-align: right;
+}
+
+/* RTL: بطاقات التكاملات — النص أولاً ثم الأيقونة من اليمين، الزر من اليسار */
+[dir="rtl"] .settings-integration-inner {
+  flex-direction: row-reverse !important;
+}

@@ -1,0 +1,398 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// المستخدمين
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  password     String
+  name         String
+  role         UserRole   @default(AGENT)
+  status       UserStatus @default(OFFLINE)
+  isActive     Boolean    @default(true)
+  lastLoginAt  DateTime?
+  lastLogoutAt DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  conversations Conversation[]
+  messages      Message[]
+  logs          Log[]
+  notifications Notification[]
+  bookings      Booking[]
+
+  branches         Branch[]
+  whatsappAccounts WhatsAppAccount[]
+  createdNotes     Note[]
+}
+
+enum UserRole {
+  ADMIN
+  SUPERVISOR
+  AGENT
+}
+
+enum UserStatus {
+  ONLINE
+  OFFLINE
+  AWAY
+}
+
+// جهات الاتصال
+model Contact {
+  id           String    @id @default(uuid())
+  name         String
+  phone        String    @unique
+  email        String?
+  tags         Json?
+  notes        String?   @db.Text
+  followUpDate DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  conversations Conversation[]
+  invoices      Invoice[]
+  bookings      Booking[]
+
+  branchId         String?
+  branch           Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  realNotes        Note[]
+  flowInteractions FlowInteraction[]
+}
+
+// الملاحظات
+model Note {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  createdBy String?
+  creator   User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contactId])
+  @@index([createdBy])
+}
+
+// المحادثات
+model Conversation {
+  id            String             @id @default(uuid())
+  contactId     String
+  contact       Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  assignedToId  String?
+  assignedTo    User?              @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  status        ConversationStatus @default(ACTIVE)
+  isRead        Boolean            @default(false)
+  isArchived    Boolean            @default(false)
+  isBlocked     Boolean            @default(false)
+  lastMessageAt DateTime           @default(now())
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  messages Message[]
+
+  @@index([contactId])
+  @@index([assignedToId])
+}
+
+enum ConversationStatus {
+  ACTIVE
+  RESOLVED
+  PENDING
+}
+
+// الرسائل
+model Message {
+  id                String           @id @default(uuid())
+  conversationId    String
+  conversation      Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId          String?
+  sender            User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  whatsappAccountId String?
+  whatsappAccount   WhatsAppAccount? @relation(fields: [whatsappAccountId], references: [id], onDelete: SetNull)
+  content           String           @db.Text
+  type              MessageType      @default(TEXT)
+  direction         Direction
+  status            MessageStatus    @default(SENT)
+  mediaUrl          String?
+  createdAt         DateTime         @default(now())
+
+  @@index([conversationId])
+  @@index([whatsappAccountId])
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+enum Direction {
+  INCOMING
+  OUTGOING
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+// القوالب
+model Template {
+  id        String         @id @default(uuid())
+  name      String
+  content   String         @db.Text
+  category  String
+  language  String
+  status    TemplateStatus @default(PENDING)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+enum TemplateStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+// سير العمل الآلي
+model BotFlow {
+  id           String            @id @default(uuid())
+  name         String
+  description  String?           @db.Text
+  trigger      String
+  steps        Json
+  isActive     Boolean           @default(false)
+  interactions FlowInteraction[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+model FlowInteraction {
+  id        String   @id @default(uuid())
+  flowId    String
+  flow      BotFlow  @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  stepIndex Int      @default(0)
+  action    String // "TRIGGERED", "STEP", "COMPLETED", "DISMISSED"
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([flowId])
+  @@index([contactId])
+  @@index([action])
+}
+
+// الفروع
+model Branch {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  phone     String?
+  email     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  whatsappAccounts WhatsAppAccount[]
+  users            User[]
+  contacts         Contact[]
+}
+
+// حسابات WhatsApp
+model WhatsAppAccount {
+  id          String         @id @default(uuid())
+  name        String
+  phone       String         @unique
+  provider    String
+  status      WhatsAppStatus @default(DISCONNECTED)
+  qrCode      String?        @db.Text
+  sessionData Json?
+  branchId    String?
+  branch      Branch?        @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  users    User[]
+  messages Message[]
+
+  @@index([branchId])
+}
+
+enum WhatsAppStatus {
+  CONNECTED
+  DISCONNECTED
+  WAITING
+}
+
+// السجلات
+model Log {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  ipAddress  String
+  userAgent  String   @db.Text
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+}
+
+// الإشعارات
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String?
+  user      User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  title     String
+  message   String           @db.Text
+  type      NotificationType @default(INFO)
+  isRead    Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+// API Keys
+model ApiKey {
+  id         String    @id @default(uuid())
+  name       String
+  key        String    @unique
+  isActive   Boolean   @default(true)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime?
+
+  @@index([key])
+}
+
+// CRM Integrations
+model CrmIntegration {
+  id         String    @id @default(uuid())
+  provider   String // Salesforce, HubSpot, etc.
+  apiKey     String
+  apiSecret  String?
+  isActive   Boolean   @default(true)
+  lastSyncAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+// System Settings
+model Settings {
+  id                 String   @id @default(uuid())
+  companyName        String?
+  companyLogo        String?
+  companyDisplayType String   @default("text") // "text" or "logo"
+  timezone           String   @default("UTC+03:00")
+  language           String   @default("en")
+  newMessagesNotif   Boolean  @default(true)
+  assignmentNotif    Boolean  @default(true)
+  templateNotif      Boolean  @default(false)
+  dailySummaryNotif  Boolean  @default(true)
+  twoFactorEnabled   Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+// العروض
+model Offer {
+  id             String   @id @default(uuid())
+  title          String
+  description    String?  @db.Text
+  content        String   @db.Text
+  validFrom      DateTime
+  validTo        DateTime
+  isActive       Boolean  @default(true)
+  targetAudience Json? // JSON array of contact IDs or filters
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([validFrom])
+  @@index([validTo])
+}
+
+// الفواتير
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique
+  contactId     String
+  contact       Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  amount        Float
+  currency      String        @default("SAR")
+  status        InvoiceStatus @default(PENDING)
+  items         Json // JSON array of line items
+  dueDate       DateTime
+  paidAt        DateTime?
+  notes         String?       @db.Text
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([contactId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+// الحجوزات
+model Booking {
+  id            String        @id @default(uuid())
+  bookingNumber String        @unique
+  contactId     String
+  contact       Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  agentId       String?
+  agent         User?         @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  branch        String?
+  status        BookingStatus @default(PENDING)
+  date          DateTime
+  notes         String?       @db.Text
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([contactId])
+  @@index([agentId])
+  @@index([status])
+  @@index([date])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}

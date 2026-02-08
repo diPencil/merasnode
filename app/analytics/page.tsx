@@ -1,0 +1,276 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { AppLayout } from "@/components/app-layout"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { BarChart3, MessageSquare, Users, Clock, TrendingUp } from "lucide-react"
+import { useI18n } from "@/lib/i18n"
+
+export default function AnalyticsPage() {
+    const { t } = useI18n()
+    const [stats, setStats] = useState({
+        totalConversations: 0,
+        totalContacts: 0,
+        avgResponseTime: "0m",
+        totalMessages: 0,
+    })
+    const [analyticsData, setAnalyticsData] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        fetchAnalytics()
+    }, [])
+
+    const fetchAnalytics = async () => {
+        try {
+            setIsLoading(true)
+            const response = await fetch("/api/analytics/overview")
+            const data = await response.json()
+
+            if (data.success) {
+                setStats({
+                    totalConversations: data.data.overview.totalConversations,
+                    totalContacts: data.data.overview.totalContacts,
+                    avgResponseTime: data.data.performance.averageResponseTime,
+                    totalMessages: data.data.overview.totalMessages,
+                })
+                setAnalyticsData(data.data)
+            }
+        } catch (error) {
+            console.error("Error fetching analytics:", error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const analyticsCards = [
+        {
+            title: "Total Conversations",
+            value: stats.totalConversations.toString(),
+            icon: MessageSquare,
+            color: "text-primary",
+            bgColor: "bg-primary/10",
+        },
+        {
+            title: "Total Contacts",
+            value: stats.totalContacts.toString(),
+            icon: Users,
+            color: "text-secondary",
+            bgColor: "bg-secondary/10",
+        },
+        {
+            title: "Avg Response Time",
+            value: stats.avgResponseTime,
+            icon: Clock,
+            color: "text-warning",
+            bgColor: "bg-warning/10",
+        },
+        {
+            title: "Total Messages",
+            value: stats.totalMessages.toString(),
+            icon: TrendingUp,
+            color: "text-success",
+            bgColor: "bg-success/10",
+        },
+    ]
+
+    return (
+        <AppLayout title={t("analytics")}>
+            <div className="space-y-6">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">{t("analytics")}</h2>
+                    <p className="text-muted-foreground">View insights and performance metrics</p>
+                </div>
+
+                {isLoading ? (
+                    <div className="flex h-64 items-center justify-center">
+                        <div className="text-center">
+                            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                            <p className="mt-4 text-sm text-muted-foreground">{t("loading")}</p>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        {/* Stats Grid */}
+                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                            {analyticsCards.map((card) => {
+                                const Icon = card.icon
+                                return (
+                                    <Card key={card.title} className="rounded-2xl shadow-soft">
+                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                                {card.title}
+                                            </CardTitle>
+                                            <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${card.bgColor}`}>
+                                                <Icon className={`h-5 w-5 ${card.color}`} />
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-3xl font-bold">{card.value}</div>
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                <span className="text-success">+12%</span> from last month
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })}
+                        </div>
+
+                        {/* Additional Stats */}
+                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                            <Card className="rounded-2xl shadow-soft">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                                        Active Conversations
+                                    </CardTitle>
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                                        <MessageSquare className="h-5 w-5 text-blue-500" />
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-3xl font-bold">{analyticsData?.overview.activeConversations || 0}</div>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Currently active
+                                    </p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="rounded-2xl shadow-soft">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                                        Response Rate
+                                    </CardTitle>
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
+                                        <TrendingUp className="h-5 w-5 text-green-500" />
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-3xl font-bold">{analyticsData?.performance.responseRate || 0}%</div>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Quick responses
+                                    </p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="rounded-2xl shadow-soft">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                                        Customer Satisfaction
+                                    </CardTitle>
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
+                                        <Users className="h-5 w-5 text-purple-500" />
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-3xl font-bold">{analyticsData?.performance.customerSatisfaction || 0}%</div>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Based on responses
+                                    </p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="rounded-2xl shadow-soft">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                                        Active Users
+                                    </CardTitle>
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
+                                        <Users className="h-5 w-5 text-orange-500" />
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-3xl font-bold">{analyticsData?.performance.activeUsers || 0}</div>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Team members
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Charts and Performance */}
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <Card className="rounded-2xl shadow-soft">
+                                <CardHeader>
+                                    <CardTitle>Daily Activity</CardTitle>
+                                    <CardDescription>Messages and conversations over the last 7 days</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {analyticsData?.charts.dailyActivity?.map((day: any, index: number) => (
+                                            <div key={index} className="flex items-center justify-between">
+                                                <span className="text-sm font-medium">{day.day}</span>
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-sm text-muted-foreground">{day.messages} messages</span>
+                                                    <div className="w-24 bg-muted rounded-full h-2">
+                                                        <div
+                                                            className="bg-primary h-2 rounded-full"
+                                                            style={{ width: `${Math.min((day.messages / 10) * 100, 100)}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="rounded-2xl shadow-soft">
+                                <CardHeader>
+                                    <CardTitle>Conversation Status</CardTitle>
+                                    <CardDescription>Distribution of conversation states</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {analyticsData?.charts.conversationStatuses?.map((status: any, index: number) => (
+                                            <div key={index} className="flex items-center justify-between">
+                                                <span className="text-sm font-medium">{status.name}</span>
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-sm text-muted-foreground">{status.value}</span>
+                                                    <div className="w-24 bg-muted rounded-full h-2">
+                                                        <div
+                                                            className="bg-blue-500 h-2 rounded-full"
+                                                            style={{ width: `${(status.value / Math.max(...analyticsData.charts.conversationStatuses.map((s: any) => s.value))) * 100}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Team Performance */}
+                        <Card className="rounded-2xl shadow-soft">
+                            <CardHeader>
+                                <CardTitle>Team Performance</CardTitle>
+                                <CardDescription>Agent activity and conversation handling</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    {analyticsData?.teamPerformance?.map((agent: any, index: number) => (
+                                        <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                                            <div>
+                                                <p className="font-medium">{agent.name}</p>
+                                                <p className="text-sm text-muted-foreground">{agent.conversations} conversations</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-medium">{agent.messages} messages</p>
+                                                <p className="text-sm text-muted-foreground">{agent.efficiency}% efficiency</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {(!analyticsData?.teamPerformance || analyticsData.teamPerformance.length === 0) && (
+                                        <div className="text-center text-muted-foreground py-8">
+                                            No team performance data available
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
+            </div>
+        </AppLayout>
+    )
+}
