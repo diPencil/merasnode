@@ -51,7 +51,7 @@ class MultiClientManager extends EventEmitter {
             authStrategy: authStrategy,
             puppeteer: {
                 headless: true,
-                executablePath: 'C:\\Users\\mahmo\\.cache\\puppeteer\\chrome\\win64-143.0.7499.169\\chrome-win64\\chrome.exe',
+                executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
@@ -97,9 +97,9 @@ class MultiClientManager extends EventEmitter {
             console.log(`📱 QR Code generated for ${accountId}`);
             clientData.qrCode = qr;
             clientData.status = 'QR_GENERATED';
-            
+
             this.emit('qr', { accountId, qr });
-            
+
             // Update database
             this.updateDatabaseStatus(accountId, 'WAITING', qr);
         });
@@ -119,7 +119,7 @@ class MultiClientManager extends EventEmitter {
             }
 
             this.emit('ready', { accountId, phone: clientData.connectedPhone });
-            
+
             // Update database
             await this.updateDatabaseStatus(accountId, 'CONNECTED', null);
         });
@@ -135,9 +135,9 @@ class MultiClientManager extends EventEmitter {
             console.error(`❌ Auth failure for ${accountId}:`, msg);
             clientData.isReady = false;
             clientData.status = 'AUTH_FAILED';
-            
+
             this.emit('auth_failure', { accountId, error: msg });
-            
+
             // Update database
             this.updateDatabaseStatus(accountId, 'DISCONNECTED', null);
         });
@@ -148,9 +148,9 @@ class MultiClientManager extends EventEmitter {
             clientData.isReady = false;
             clientData.qrCode = null;
             clientData.status = 'DISCONNECTED';
-            
+
             this.emit('disconnected', { accountId, reason });
-            
+
             // Update database
             await this.updateDatabaseStatus(accountId, 'DISCONNECTED', null);
         });
@@ -206,7 +206,7 @@ class MultiClientManager extends EventEmitter {
      */
     async sendMessage(accountId, phoneNumber, message, mediaUrl = null, chatId = null) {
         const clientData = this.clients.get(accountId);
-        
+
         if (!clientData) {
             throw new Error(`Account ${accountId} not found`);
         }
@@ -302,7 +302,7 @@ class MultiClientManager extends EventEmitter {
      */
     async restartClient(accountId) {
         console.log(`🔄 Restarting client ${accountId}...`);
-        
+
         try {
             await this.disconnectClient(accountId);
             // Brief wait so the browser process can release the session folder

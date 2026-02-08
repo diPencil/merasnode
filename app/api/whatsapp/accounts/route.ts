@@ -24,14 +24,14 @@ export async function GET() {
         try {
             const serviceResponse = await fetch('http://localhost:3001/status')
             const serviceData = await serviceResponse.json()
-            
+
             if (serviceData.success) {
                 // Merge database data with live service status
                 const enrichedAccounts = accounts.map(account => {
                     const liveStatus = serviceData.accounts.find(
                         (a: any) => a.accountId === account.id
                     )
-                    
+
                     return {
                         ...account,
                         isReady: liveStatus?.isReady || false,
@@ -118,6 +118,45 @@ export async function POST(request: NextRequest) {
             {
                 success: false,
                 error: 'Failed to create WhatsApp account'
+            },
+            { status: 500 }
+        )
+    }
+}
+
+// DELETE - Remove WhatsApp account
+export async function DELETE(request: NextRequest) {
+    try {
+        const id = request.nextUrl.searchParams.get('id')
+
+        if (!id) {
+            return NextResponse.json(
+                { success: false, error: 'Account ID is required' },
+                { status: 400 }
+            )
+        }
+
+        // Try to disconnect from live service first (ignore errors if service is down)
+        try {
+            await fetch(`http://localhost:3001/disconnect/${id}`, { method: 'POST' })
+        } catch (e) {
+            console.log('Could not disconnect from live service, proceedings with DB deletion')
+        }
+
+        await prisma.whatsAppAccount.delete({
+            where: { id }
+        })
+
+        return NextResponse.json({
+            success: true,
+            message: 'Account deleted successfully'
+        })
+    } catch (error) {
+        console.error('Error deleting WhatsApp account:', error)
+        return NextResponse.json(
+            {
+                success: false,
+                error: 'Failed to delete WhatsApp account'
             },
             { status: 500 }
         )
