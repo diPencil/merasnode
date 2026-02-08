@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Format phone number (remove @ suffix if exists)
-        const phoneNumber = from.split('@')[0]
+        let phoneNumber = from.split('@')[0]
+
 
         // Find or create contact
         let contact = await prisma.contact.findUnique({
