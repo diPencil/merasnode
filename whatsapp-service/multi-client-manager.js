@@ -186,6 +186,17 @@ class MultiClientManager extends EventEmitter {
                     }
                 }
 
+                // Handle Location
+                let locationData = null;
+                if (message.type === 'location') {
+                    locationData = {
+                        latitude: message.location.latitude,
+                        longitude: message.location.longitude,
+                        description: message.location.description
+                    };
+                    console.log(`📍 [${accountId}] Location received: ${locationData.latitude}, ${locationData.longitude}`);
+                }
+
                 // Forward to webhook with accountId
                 const payload = {
                     accountId,
@@ -196,7 +207,8 @@ class MultiClientManager extends EventEmitter {
                     senderName: senderName,
                     senderId: message.author || message.from,
                     hasMedia: message.hasMedia,
-                    media: mediaData, // Include the actual media data
+                    media: mediaData,
+                    location: locationData, // Include location data
                     type: message.type
                 };
 

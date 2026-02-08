@@ -6,7 +6,9 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
         console.log('📥 Webhook received payload:', body);
-        const { from, body: messageBody, timestamp, isGroup, senderName, accountId } = body
+        const { from, timestamp, isGroup, senderName, accountId } = body
+        let messageBody = body.body;
+
 
         // Ignore status broadcasts
         if (from === 'status@broadcast') {
@@ -100,6 +102,13 @@ export async function POST(request: NextRequest) {
             } catch (err) {
                 console.error('❌ Error saving media file:', err)
             }
+        }
+
+        if (body.type === 'location' && body.location) {
+            messageType = 'LOCATION'
+            const { latitude, longitude } = body.location
+            const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
+            messageBody = `📍 Shared Location: ${mapsUrl}`
         }
 
         const message = await prisma.message.create({
