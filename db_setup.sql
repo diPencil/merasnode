@@ -1,0 +1,4 @@
+CREATE USER IF NOT EXISTS 'root'@'localhost' IDENTIFIED BY '';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION;
+ALTER USER 'root'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('');
+FLUSH PRIVILEGES;

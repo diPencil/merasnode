@@ -61,6 +61,7 @@ export default function AccountsPage() {
     name: "",
     phone: ""
   })
+  const [createdAccountId, setCreatedAccountId] = useState<string | null>(null)
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null)
   const { toast } = useToast()
   const { language } = useI18n()
@@ -96,6 +97,16 @@ export default function AccountsPage() {
   }
 
   const handleCreateAccount = async () => {
+    if (createdAccountId) {
+      // Account was already created during QR generation
+      setIsCreateOpen(false)
+      setNewAccount({ name: "", phone: "" })
+      setCreatedAccountId(null)
+      setQrGenerated(false)
+      fetchAccounts()
+      return
+    }
+
     if (!newAccount.name || !newAccount.phone) {
       toast({
         title: "Validation Error",
@@ -124,6 +135,7 @@ export default function AccountsPage() {
         })
         setIsCreateOpen(false)
         setNewAccount({ name: "", phone: "" })
+        setCreatedAccountId(null)
         setQrGenerated(false)
         fetchAccounts()
       } else {
@@ -159,7 +171,8 @@ export default function AccountsPage() {
     if (qrGenerated || status === 'INITIALIZING' || status === 'WAITING_FOR_SCAN') {
       interval = setInterval(async () => {
         try {
-          const res = await fetch('/api/whatsapp/auth')
+          const url = createdAccountId ? `/api/whatsapp/auth?accountId=${createdAccountId}` : '/api/whatsapp/auth'
+          const res = await fetch(url)
           const data = await res.json()
 
           if (data.status) {
@@ -223,21 +236,62 @@ export default function AccountsPage() {
 
 
   const handleGenerateQR = async () => {
+    if (!newAccount.name || !newAccount.phone) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      })
+      return
+    }
+
     setQrGenerated(true)
     setStatus('INITIALIZING')
+
     try {
+      let accountId = createdAccountId
+
+      // 1. Create account first if not already created
+      if (!accountId) {
+        const createRes = await fetch('/api/whatsapp/accounts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...newAccount,
+            provider: provider === "meta-cloud" ? "meta-cloud-api" : "whatsapp-web.js"
+          })
+        })
+        const createData = await createRes.json()
+
+        if (!createData.success) {
+          toast({ title: "Error", description: createData.error || "Failed to create account", variant: "destructive" })
+          setQrGenerated(false)
+          setStatus('DISCONNECTED')
+          return
+        }
+
+        accountId = createData.account.id
+        setCreatedAccountId(accountId)
+        fetchAccounts() // Refresh list in background
+      }
+
+      // 2. Start initialization
       const response = await fetch('/api/whatsapp/auth', {
         method: 'POST',
-        body: JSON.stringify({ action: 'init', force: true })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'init', accountId, force: true })
       })
+
       const data = await response.json()
       if (!data.success) {
         toast({ title: "Error", description: data.error, variant: "destructive" })
         setQrGenerated(false)
+        setStatus('DISCONNECTED')
       }
     } catch (error) {
       toast({ title: "Error", description: "Failed to start WhatsApp Client", variant: "destructive" })
       setQrGenerated(false)
+      setStatus('DISCONNECTED')
     }
   }
 
