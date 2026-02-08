@@ -449,6 +449,22 @@ export default function InboxPage() {
 
     try {
       setIsSending(true)
+
+      // Get the first connected WhatsApp account
+      let whatsappAccountId = null
+      try {
+        const accountsRes = await fetch('/api/whatsapp/accounts')
+        const accountsData = await accountsRes.json()
+        if (accountsData.success && accountsData.accounts && accountsData.accounts.length > 0) {
+          const connectedAccount = accountsData.accounts.find((acc: any) => acc.status === 'CONNECTED')
+          if (connectedAccount) {
+            whatsappAccountId = connectedAccount.id
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching WhatsApp accounts:', err)
+      }
+
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -457,7 +473,8 @@ export default function InboxPage() {
           content: contentToSend,
           direction: 'OUTGOING',
           type: 'TEXT', // Backend handles media type logic based on mediaUrl
-          mediaUrl: mediaUrl
+          mediaUrl: mediaUrl,
+          whatsappAccountId: whatsappAccountId // Include the account ID
         })
       })
 
