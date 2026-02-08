@@ -222,7 +222,9 @@ export function Sidebar({ conversation, onUpdate }: SidebarProps) {
                             </div>
                             <div className="overflow-hidden">
                                 <p className="text-xs text-muted-foreground">Meta ID</p>
-                                <p className="text-sm font-medium truncate">{conversation.contact.externalId || "-"}</p>
+                                <p className="text-sm font-medium truncate">
+                                    {conversation.contact.externalId || (conversation.contact.phone?.length >= 15 ? conversation.contact.phone : "-")}
+                                </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -231,7 +233,9 @@ export function Sidebar({ conversation, onUpdate }: SidebarProps) {
                             </div>
                             <div className="overflow-hidden">
                                 <p className="text-xs text-muted-foreground">{t("phone")}</p>
-                                <p className="text-sm font-medium truncate">{conversation.contact.phone}</p>
+                                <p className="text-sm font-medium truncate">
+                                    {conversation.contact.phone?.length >= 15 ? "-" : conversation.contact.phone}
+                                </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
