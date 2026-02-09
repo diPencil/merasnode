@@ -82,9 +82,9 @@ export default function UsersPage() {
       }
 
       const branchesData = await branchesRes.json()
-      if (branchesData.success) {
+      if (branchesData.success && branchesData.branches) {
         console.log('Fetched Branches:', branchesData.branches)
-        setAvailableBranches(branchesData.branches.map((b: any) => ({ value: b.id, label: b.name })))
+        setAvailableBranches((branchesData.branches || []).map((b: any) => ({ value: b.id, label: b.name })))
       }
 
       // Fetch WhatsApp Accounts
@@ -96,9 +96,9 @@ export default function UsersPage() {
       }
 
       const accountsData = await accountsRes.json()
-      if (accountsData.success) {
+      if (accountsData.success && accountsData.accounts) {
         console.log('Fetched Accounts:', accountsData.accounts)
-        setAvailableAccounts(accountsData.accounts.map((a: any) => ({ value: a.id, label: `${a.name} (${a.phone})` })))
+        setAvailableAccounts((accountsData.accounts || []).map((a: any) => ({ value: a.id, label: `${a.name} (${a.phone})` })))
       }
     } catch (error) {
       console.error('Error fetching metadata:', error)
@@ -117,9 +117,9 @@ export default function UsersPage() {
 
       const data = await response.json()
       if (data.success) {
-        setUsers(data.data)
+        setUsers(data.data || [])
       } else {
-        throw new Error(data.error)
+        setUsers([])
       }
     } catch (error) {
       console.error('Error fetching users:', error)
