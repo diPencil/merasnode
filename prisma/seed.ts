@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client')
+const bcrypt = require('bcryptjs')
 const prisma = new PrismaClient()
 
 async function main() {
@@ -6,12 +7,43 @@ async function main() {
 
     // Delete existing data first
     console.log('🗑️  Cleaning up old data...')
+    await prisma.log.deleteMany({})
+    await prisma.notification.deleteMany({})
     await prisma.message.deleteMany({})
     await prisma.conversation.deleteMany({})
     await prisma.template.deleteMany({})
     await prisma.whatsAppAccount.deleteMany({})
+    await prisma.user.deleteMany({})
     await prisma.contact.deleteMany({})
+    await prisma.branch.deleteMany({})
     console.log('✅ Old data cleaned')
+
+    // Create Main Branch
+    const mainBranch = await prisma.branch.create({
+        data: {
+            name: 'Meras Main Branch',
+            address: 'Riyadh, Saudi Arabia',
+            phone: '920000000',
+            email: 'main@meras.com'
+        }
+    })
+    console.log('✅ Created Main Branch')
+
+    // Create Admin User
+    const hashedPassword = await bcrypt.hash('admin123', 10)
+    const adminUser = await prisma.user.create({
+        data: {
+            name: 'System Admin',
+            email: 'admin@meras.com',
+            password: hashedPassword,
+            role: 'ADMIN',
+            status: 'OFFLINE',
+            branches: {
+                connect: { id: mainBranch.id }
+            }
+        }
+    })
+    console.log('✅ Created Admin User (admin@meras.com / admin123)')
 
     // Create test contacts
     const contacts = await Promise.all([
