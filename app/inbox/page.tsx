@@ -35,7 +35,8 @@ import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Search, Send, Phone, Video, MoreVertical, Paperclip, Smile,
-  MapPin, Mic, Filter, Check, X, Calendar, User, Facebook, Instagram, MessageCircle, Sparkles, Play
+  MapPin, Mic, Filter, Check, X, Calendar, User, Facebook, Instagram,
+  MessageCircle, Sparkles, Play, Building2, StickyNote, Tag, CheckCheck, ExternalLink
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
