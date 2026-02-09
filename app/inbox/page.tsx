@@ -42,6 +42,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
 import { format } from "date-fns"
 import { ar } from "date-fns/locale"
+import { cn } from "@/lib/utils"
 import { getUserRole, getUser } from "@/lib/auth"
 import { Sidebar } from "./Sidebar"
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
@@ -50,6 +51,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { SidebarContent } from "./sidebar-content"
+import { ArrowLeft, Info } from "lucide-react"
 
 interface Message {
   id: string
@@ -847,11 +855,16 @@ export default function InboxPage() {
 
   return (
     <AppLayout title={t("inbox")}>
-      <div className="flex h-[calc(100vh-8rem)] bg-background border rounded-xl overflow-hidden shadow-sm flex-row">
+      <div className="flex h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] h-[calc(100dvh-4rem)] flex-col md:flex-row bg-background border md:rounded-xl overflow-hidden shadow-sm relative">
 
-        {/* Conversations List: in RTL appears on the right */}
-        <div className="w-[350px] flex flex-col border-e bg-muted/10">
-          <div className="p-4 space-y-3 border-b bg-card">
+        {/* LEFT COLUMN: Conversations List */}
+        {/* On Mobile: Show this ONLY if no conversation is selected */}
+        <div className={cn(
+          "flex flex-col border-e bg-muted/10 w-full md:w-[350px] h-full absolute md:relative z-0",
+          selectedConversation ? "hidden md:flex" : "flex"
+        )}>
+          {/* List Header */}
+          <div className="p-4 space-y-3 border-b bg-card sticky top-0 z-10">
             {/* Branch Selector */}
             <Select value={selectedBranch} onValueChange={setSelectedBranch}>
               <SelectTrigger className="w-full bg-muted/50 border-none shadow-none h-9 text-xs font-medium">
@@ -877,10 +890,10 @@ export default function InboxPage() {
                 className="ps-9 bg-muted/50 border-none shadow-none"
               />
             </div>
-            <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1">
+            <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-hide">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant={filterType === 'all' ? "outline" : "default"} size="sm" className="gap-2 text-xs rounded-full h-8">
+                  <Button variant={filterType === 'all' ? "outline" : "default"} size="sm" className="gap-2 text-xs rounded-full h-8 shrink-0">
                     <Filter className="h-3 w-3" />
                     {filterType === 'all' ? t("filters") : filterType === 'unread' ? t("unread") : t("groupsOnly")}
                   </Button>
@@ -899,7 +912,7 @@ export default function InboxPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <div className="flex gap-1">
+              <div className="flex gap-1 shrink-0">
                 <Button
                   variant="ghost" size="icon"
                   onClick={() => showComingSoon('Facebook')}
@@ -934,9 +947,12 @@ export default function InboxPage() {
                 <div
                   key={conversation.id}
                   onClick={() => setSelectedConversation(conversation)}
-                  className={`flex gap-3 p-4 border-b cursor-pointer hover:bg-muted/50 transition-all ${selectedConversation?.id === conversation.id ? "bg-blue-50/50 border-s-4 border-s-primary" : "border-s-4 border-s-transparent"}`}
+                  className={cn(
+                    "flex gap-3 p-4 border-b cursor-pointer hover:bg-muted/50 transition-all",
+                    selectedConversation?.id === conversation.id ? "bg-blue-50/50 border-s-4 border-s-primary" : "border-s-4 border-s-transparent"
+                  )}
                 >
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
                       <AvatarFallback className="bg-primary/10 text-primary font-bold">
                         {getInitials(conversation.contact.name)}
@@ -949,26 +965,26 @@ export default function InboxPage() {
 
                   <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                     <div className="flex justify-between items-start">
-                      <span className="font-semibold text-sm truncate">{conversation.contact.name}</span>
-                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                      <span className="font-semibold text-sm truncate max-w-[70%]">{conversation.contact.name}</span>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
                         {format(new Date(conversation.lastMessageAt), "h:mm a", { locale: dateLocale })}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate line-clamp-1 opacity-80">
+                    <p className="text-xs text-muted-foreground truncate line-clamp-1 opacity-80 pe-2">
                       {conversation.messages?.[0]?.content || t("noMessagesYet")}
                     </p>
-                    <div className="mt-2 flex gap-2">
+                    <div className="mt-2 flex gap-2 flex-wrap">
                       {conversation.leadStatus && (
-                        <Badge variant={conversation.leadStatus === "New" ? "default" : "secondary"} className="h-5 px-1.5 text-[10px] uppercase tracking-wider rounded-md font-medium">
+                        <Badge variant={conversation.leadStatus === "New" ? "default" : "secondary"} className="h-5 px-1.5 text-[10px] uppercase tracking-wider rounded-md font-medium shrink-0">
                           {conversation.leadStatus === "New" ? t("leadStatusNew") : conversation.leadStatus === "Booked" ? t("leadStatusBooked") : t("leadStatusInProgress")}
                         </Badge>
                       )}
                       {(conversation.contact.id.includes('@g.us') || (conversation.contact as any).tags?.includes('whatsapp-group')) && (
-                        <Badge variant="outline" className="h-5 px-1.5 text-[10px] uppercase tracking-wider rounded-md font-medium text-pink-600 border-pink-200 bg-pink-50">
+                        <Badge variant="outline" className="h-5 px-1.5 text-[10px] uppercase tracking-wider rounded-md font-medium text-pink-600 border-pink-200 bg-pink-50 shrink-0">
                           {t("group")}
                         </Badge>
                       )}
-                      {!conversation.isRead && <div className="h-2 w-2 bg-red-500 rounded-full mt-1.5" />}
+                      {!conversation.isRead && <div className="h-2 w-2 bg-red-500 rounded-full mt-1.5 shrink-0" />}
                     </div>
                   </div>
                 </div>
@@ -977,45 +993,60 @@ export default function InboxPage() {
           </div>
         </div>
 
-        {/* MIDDLE COLUMN: Chat Area — RTL-aware */}
+        {/* MIDDLE COLUMN: Chat Area */}
+        {/* On Mobile: Show this ONLY if conversation IS selected (covers list) */}
         {selectedConversation ? (
-          <div className="flex-1 flex flex-col bg-slate-50 relative chat-column" dir={dir}>
+          <div className={cn(
+            "flex-1 flex flex-col bg-slate-50 relative chat-column w-full h-full absolute md:relative z-20 md:z-0",
+            selectedConversation ? "flex" : "hidden md:flex"
+          )} dir={dir}>
             {/* Header */}
-            <div className="h-16 border-b bg-card px-6 flex items-center justify-between shadow-sm z-10">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-9 w-9">
+            <div className="h-16 border-b bg-card px-4 flex items-center justify-between shadow-sm z-30 shrink-0 sticky top-0">
+              <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
+                {/* Mobile Back Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden -ms-2 me-1 h-10 w-10 min-w-10 rounded-full"
+                  onClick={() => setSelectedConversation(null)}
+                >
+                  <ArrowLeft className="h-6 w-6" />
+                </Button>
+
+                <Avatar className="h-9 w-9 shrink-0">
                   <AvatarFallback>{getInitials(selectedConversation.contact.name)}</AvatarFallback>
                 </Avatar>
-                <div>
-                  <h3 className="font-semibold text-sm flex items-center gap-2">
-                    {selectedConversation.contact.name}
-                    {getPlatformIcon(selectedConversation.platform)}
-                    <Badge
-                      variant="outline"
-                      className="ms-2 text-[10px] font-normal text-muted-foreground bg-slate-50 border-slate-200 cursor-help"
-                      title={botFlows.filter(f => f.isActive).map(f => f.trigger).join(", ") || "None"}
-                    >
-                      {t("scanningCount").replace("{n}", String(botFlows.filter(f => f.isActive).length))}
-                    </Badge>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-sm flex items-center gap-1 truncate">
+                    <span className="truncate">{selectedConversation.contact.name}</span>
+                    <span className="shrink-0">{getPlatformIcon(selectedConversation.platform)}</span>
                   </h3>
-                  <p className="text-xs text-green-600 flex items-center gap-1">
-                    <span className="relative flex h-2 w-2">
+                  <p className="text-xs text-green-600 flex items-center gap-1 truncate">
+                    <span className="relative flex h-2 w-2 shrink-0">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                     </span>
-                    {t("lastActiveAgo")} {t("minutesAgo").replace("{n}", "2")}
+                    <span className="truncate">{t("lastActiveAgo")} {t("minutesAgo").replace("{n}", "2")}</span>
                   </p>
                 </div>
-                {suggestedFlow && (
-                  <Badge variant="outline" className="ms-4 bg-purple-50 text-purple-700 animate-pulse border-purple-200">
-                    {t("debugMatchFound").replace("{name}", suggestedFlow.name)}
-                  </Badge>
-                )}
               </div>
-              <div className="flex items-center gap-2">
+
+              <div className="flex items-center gap-1 shrink-0">
+                {/* Mobile Info Button (Sheet Trigger) */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="xl:hidden h-9 w-9">
+                      <Info className="h-5 w-5 text-muted-foreground" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="p-0 w-full sm:w-[400px]">
+                    <SidebarContent conversation={selectedConversation} onUpdate={() => fetchConversations()} />
+                  </SheetContent>
+                </Sheet>
+
                 <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2 h-8">
+                    <Button variant="outline" size="sm" className="gap-2 h-8 hidden sm:flex">
                       <Calendar className="h-4 w-4" /> {t("book")}
                     </Button>
                   </DialogTrigger>
@@ -1027,6 +1058,7 @@ export default function InboxPage() {
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
+                      {/* ... Booking Form ... */}
                       <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="agent" className="text-end">{t("agent")}</Label>
                         <Select
@@ -1072,11 +1104,11 @@ export default function InboxPage() {
                   </DialogContent>
                 </Dialog>
 
-                {/* Resolve and Options */}
+                {/* Resolve Button - hidden on small mobile */}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2 h-8 text-green-600 border-green-200 hover:bg-green-50"
+                  className="hidden sm:flex gap-2 h-8 text-green-600 border-green-200 hover:bg-green-50"
                   onClick={handleResolve}
                   disabled={isLoading}
                 >
@@ -1108,7 +1140,7 @@ export default function InboxPage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Templates Dialog */}
+                {/* Templates & Bots Dialogs */}
                 <Dialog open={isTemplatesOpen} onOpenChange={setIsTemplatesOpen}>
                   <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
@@ -1145,7 +1177,6 @@ export default function InboxPage() {
                   </DialogContent>
                 </Dialog>
 
-                {/* Bot Flows Dialog */}
                 <Dialog open={isBotFlowsDialogOpen} onOpenChange={setIsBotFlowsDialogOpen}>
                   <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
@@ -1190,7 +1221,7 @@ export default function InboxPage() {
             </div>
 
             {/* Messages — RTL: incoming=start (right), outgoing=end (left) */}
-            <div className="chat-messages">
+            <div className="chat-messages p-4 md:p-6 pb-24 overflow-y-auto flex-1">
               {messages.map((message) => {
                 const isOutgoing = message.direction === "OUTGOING"
                 return (
@@ -1198,12 +1229,14 @@ export default function InboxPage() {
                     key={message.id}
                     className={`chat-message-row ${isOutgoing ? "outgoing" : "incoming"}`}
                   >
-                    <div className={`chat-bubble-wrap flex flex-col ${isOutgoing ? "outgoing" : "incoming"}`}>
+                    <div className={`chat-bubble-wrap flex flex-col ${isOutgoing ? "outgoing items-end" : "incoming items-start"}`}>
                       <div
-                        className={`chat-bubble px-4 py-3 rounded-2xl shadow-sm text-sm ${isOutgoing
-                          ? "bg-primary text-primary-foreground outgoing"
-                          : "bg-white text-gray-800 border incoming"
-                          }`}
+                        className={cn(
+                          "chat-bubble px-4 py-2 rounded-2xl shadow-sm text-sm max-w-[85%] md:max-w-[70%]",
+                          isOutgoing
+                            ? "bg-[#dcf8c6] dark:bg-[#005c4b] text-slate-800 dark:text-slate-100 rounded-tr-none"
+                            : "bg-white dark:bg-[#202c33] text-gray-800 dark:text-slate-100 border dark:border-none rounded-tl-none"
+                        )}
                       >
                         {message.type === 'IMAGE' && message.mediaUrl ? (
                           <div className="rounded-lg overflow-hidden max-w-sm">
@@ -1211,7 +1244,7 @@ export default function InboxPage() {
                             {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
                           </div>
                         ) : message.type === 'AUDIO' && message.mediaUrl ? (
-                          <div className="flex items-center gap-2 min-w-[250px] p-1">
+                          <div className="flex items-center gap-2 min-w-[200px] md:min-w-[250px] p-1">
                             <audio controls className="w-full h-10 accent-primary" src={message.mediaUrl} />
                           </div>
                         ) : message.type === 'VIDEO' && message.mediaUrl ? (
@@ -1261,14 +1294,14 @@ export default function InboxPage() {
                             </div>
                           </a>
                         ) : (
-                          <span className="block text-start">{message.content}</span>
+                          <span className="block text-start whitespace-pre-wrap leading-relaxed">{message.content}</span>
                         )}
                       </div>
-                      <div className="chat-bubble-meta">
+                      <div className="chat-bubble-meta mt-1 ms-1 text-[10px] text-gray-500 flex items-center gap-1">
                         <span>{format(new Date(message.createdAt), "h:mm a", { locale: dateLocale })}</span>
                         {isOutgoing && (
-                          <span className="opacity-70" aria-hidden>
-                            {message.status === "READ" ? "✓✓" : "✓"}
+                          <span className={cn("text-[10px]", message.status === "READ" ? "text-blue-500" : "text-gray-400")} aria-hidden>
+                            {message.status === "READ" ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />}
                           </span>
                         )}
                       </div>
@@ -1281,12 +1314,12 @@ export default function InboxPage() {
             </div>
 
             {/* Input bar — RTL: [Attach|Emoji|Mic] → Input → Send; Send on start (right in RTL) */}
-            <div className="bg-card mt-auto chat-input-bar">
-              <div className="flex items-center gap-2 bg-muted/30 p-2 rounded-xl w-full flex-1 min-w-0">
+            <div className="bg-card mt-auto chat-input-bar border-t p-2 md:p-3 sticky bottom-0 z-40 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
+              <div className="flex items-center gap-2 bg-muted/30 p-1.5 md:p-2 rounded-3xl w-full flex-1 min-w-0 border focus-within:ring-2 ring-primary/20 transition-all">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-muted-foreground hover:bg-background shrink-0"
+                  className="text-muted-foreground hover:bg-background shrink-0 rounded-full h-8 w-8 md:h-9 md:w-9"
                   onClick={() => document.getElementById("file-upload")?.click()}
                 >
                   <Paperclip className="h-5 w-5" />
@@ -1340,7 +1373,7 @@ export default function InboxPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground hover:bg-background"
+                      className="text-muted-foreground hover:bg-background h-8 w-8 md:h-9 md:w-9 rounded-full hidden sm:flex"
                     >
                       <Smile className="h-5 w-5" />
                     </Button>
@@ -1357,20 +1390,20 @@ export default function InboxPage() {
 
                 <Input
                   dir={dir}
-                  className="border-none bg-transparent shadow-none focus-visible:ring-0 flex-1 min-w-0"
+                  className="border-none bg-transparent shadow-none focus-visible:ring-0 flex-1 min-w-0 h-9 px-2 text-base"
                   placeholder={t("typeYourMessage")}
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 />
                 {newMessage.trim() ? (
-                  <Button size="icon" onClick={() => handleSendMessage()} disabled={isSending} className="rounded-lg h-9 w-9 shrink-0"><Send className="h-4 w-4" /></Button>
+                  <Button size="icon" onClick={() => handleSendMessage()} disabled={isSending} className="rounded-full h-8 w-8 md:h-9 md:w-9 shrink-0"><Send className="h-4 w-4" /></Button>
                 ) : (
                   <>
                     <Button
                       variant={isRecording ? "destructive" : "ghost"}
                       size="icon"
-                      className={`shrink-0 ${isRecording ? "animate-pulse" : "text-muted-foreground hover:bg-background"}`}
+                      className={`shrink-0 rounded-full h-8 w-8 md:h-9 md:w-9 ${isRecording ? "animate-pulse" : "text-muted-foreground hover:bg-background"}`}
                       onClick={isRecording ? stopRecording : startRecording}
                     >
                       {isRecording ? <div className="h-3 w-3 bg-white rounded-sm" /> : <Mic className="h-5 w-5" />}
@@ -1378,7 +1411,7 @@ export default function InboxPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground hover:bg-background shrink-0"
+                      className="text-muted-foreground hover:bg-background shrink-0 rounded-full h-8 w-8 md:h-9 md:w-9 hidden sm:flex"
                       onClick={handleLocationShare}
                     >
                       <MapPin className="h-5 w-5" />
@@ -1428,7 +1461,7 @@ export default function InboxPage() {
 
           </div >
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 text-center p-8">
+          <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-slate-50 text-center p-8">
             <div className="bg-white p-4 rounded-full shadow-sm mb-4">
               <MessageCircle className="h-8 w-8 text-primary" />
             </div>
@@ -1438,16 +1471,12 @@ export default function InboxPage() {
         )
         }
 
-        {/* RIGHT COLUMN: CRM Sidebar (25% or w-80) */}
+        {/* RIGHT COLUMN: CRM Sidebar (Desktop) */}
         {
           selectedConversation && (
-            <Sidebar
-              conversation={selectedConversation}
-              onUpdate={() => {
-                // Refresh conversations to reflect changes (assignment, etc.)
-                fetchConversations()
-              }}
-            />
+            <div className="hidden xl:flex border-s h-full">
+              <SidebarContent conversation={selectedConversation} onUpdate={() => fetchConversations()} />
+            </div>
           )
         }
       </div >

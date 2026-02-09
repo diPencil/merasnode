@@ -339,7 +339,90 @@ export default function BookingsPage() {
                 </div>
 
                 {/* Table Section */}
-                <div className="border rounded-md bg-card">
+                {/* Mobile View */}
+                <div className="md:hidden space-y-4">
+                    {isLoading ? (
+                        <div className="flex h-32 items-center justify-center">
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                        </div>
+                    ) : filteredBookings.length === 0 ? (
+                        <div className="text-center p-8 text-muted-foreground border rounded-lg bg-card">
+                            {t("noBookingsFound")}
+                        </div>
+                    ) : (
+                        filteredBookings.map((booking) => (
+                            <div key={booking.id} className="bg-card border rounded-xl p-4 shadow-sm active:bg-accent/50 transition-colors">
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-sm text-primary font-bold shrink-0">
+                                            {booking.contact.name.split(' ').map(n => n[0]).join('')}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-sm line-clamp-1">{booking.contact.name}</h4>
+                                            <span className="text-xs text-muted-foreground">{booking.bookingNumber}</span>
+                                        </div>
+                                    </div>
+                                    <Badge
+                                        variant={
+                                            booking.status === 'CONFIRMED' ? 'default' :
+                                                booking.status === 'PENDING' ? 'secondary' :
+                                                    booking.status === 'CANCELLED' ? 'destructive' : 'outline'
+                                        }
+                                        className={
+                                            booking.status === 'CONFIRMED' ? 'bg-green-500 text-white' :
+                                                booking.status === 'PENDING' ? 'bg-yellow-500 text-white' : ''
+                                        }
+                                    >
+                                        {booking.status}
+                                    </Badge>
+                                </div>
+
+                                <div className="space-y-2 text-sm text-muted-foreground mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="h-4 w-4 shrink-0" />
+                                        <span>{format(new Date(booking.date), "MMM d, yyyy • h:mm a")}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <User className="h-4 w-4 shrink-0" />
+                                        <span>{booking.agent?.name || t("unassigned")}</span>
+                                    </div>
+                                    {booking.notes && (
+                                        <p className="text-xs bg-muted/50 p-2 rounded line-clamp-2">
+                                            {booking.notes}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" className="flex-1 h-9" onClick={() => handleAction("View Details", booking.bookingNumber)}>
+                                        {t("viewDetails")}
+                                    </Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 border">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleAction("Edit Booking", booking.bookingNumber)}>
+                                                {t("editBooking")}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                className="text-red-600 focus:text-red-600"
+                                                onClick={() => initiateCancel(booking.bookingNumber)}
+                                            >
+                                                {t("cancelBooking")}
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Desktop View */}
+                <div className="border rounded-md bg-card hidden md:block">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -517,8 +600,8 @@ export default function BookingsPage() {
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="notes">{t("bookingNotes")}</Label>
-                                    <Textarea 
-                                        id="notes" 
+                                    <Textarea
+                                        id="notes"
                                         value={editNotes}
                                         onChange={(e) => setEditNotes(e.target.value)}
                                         placeholder={t("addBookingNotesPlaceholder")}
