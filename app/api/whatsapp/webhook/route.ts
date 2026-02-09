@@ -106,18 +106,22 @@ export async function POST(request: NextRequest) {
                     fs.mkdirSync(uploadDir, { recursive: true })
                 }
 
-                const filename = `${Date.now()}-${body.media.filename || 'media'}.${body.media.mimetype.split('/')[1]}`
+                // Clean extension handling
+                let extension = body.media.mimetype.split('/')[1].split(';')[0]
+                if (extension === 'ogg') extension = 'ogg'
+
+                const filename = `${Date.now()}-${body.media.filename || 'media'}.${extension}`
                 const filepath = path.join(uploadDir, filename)
 
                 fs.writeFileSync(filepath, Buffer.from(body.media.data, 'base64'))
                 mediaUrl = `/uploads/whatsapp/${filename}`
 
-                // Determine message type
+                // Determine messageType (Must match UI)
                 if (body.type === 'ptt' || body.type === 'audio') messageType = 'AUDIO'
                 else if (body.type === 'image') messageType = 'IMAGE'
                 else if (body.type === 'video') messageType = 'VIDEO'
                 else if (body.type === 'document') messageType = 'DOCUMENT'
-                else messageType = 'OTHER'
+                else messageType = 'DOCUMENT' // Fallback
             } catch (err) {
                 console.error('❌ Error saving media file:', err)
             }
@@ -126,8 +130,7 @@ export async function POST(request: NextRequest) {
         if (body.type === 'location' && body.location) {
             messageType = 'LOCATION'
             const { latitude, longitude } = body.location
-            const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
-            messageBody = `📍 Shared Location: ${mapsUrl}`
+            messageBody = `https://www.google.com/maps?q=${latitude},${longitude}`
         }
 
         const message = await prisma.message.create({

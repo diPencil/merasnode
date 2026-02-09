@@ -55,6 +55,8 @@ interface Message {
   direction: "INCOMING" | "OUTGOING"
   status: "SENT" | "DELIVERED" | "READ" | "FAILED"
   createdAt: string
+  type?: "TEXT" | "IMAGE" | "AUDIO" | "VIDEO" | "DOCUMENT" | "LOCATION"
+  mediaUrl?: string
 }
 
 
@@ -1193,7 +1195,64 @@ export default function InboxPage() {
                         : 'bg-white text-gray-800 border rounded-bl-none'
                         }`}
                     >
-                      {message.content}
+                      {message.type === 'IMAGE' && message.mediaUrl ? (
+                        <div className="rounded-lg overflow-hidden max-w-sm">
+                          <img src={message.mediaUrl} alt="Sent Image" className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(message.mediaUrl, '_blank')} />
+                          {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
+                        </div>
+                      ) : message.type === 'AUDIO' && message.mediaUrl ? (
+                        <div className="flex items-center gap-2 min-w-[250px] p-1">
+                          <audio controls className="w-full h-10 accent-primary" src={message.mediaUrl} />
+                        </div>
+                      ) : message.type === 'VIDEO' && message.mediaUrl ? (
+                        <div className="rounded-lg overflow-hidden max-w-sm">
+                          <video controls className="w-full h-auto max-h-[300px]" src={message.mediaUrl} />
+                          {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
+                        </div>
+                      ) : message.type === 'LOCATION' ? (
+                        <div className="rounded-xl overflow-hidden max-w-[280px] border shadow-sm bg-white group/map">
+                          <div className="p-3 bg-slate-50 border-b flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4 text-red-500 fill-red-500/20" />
+                              <span className="text-xs font-bold text-slate-700">Location</span>
+                            </div>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground group-hover/map:text-primary transition-colors" />
+                          </div>
+                          <div
+                            className="h-[140px] w-full bg-slate-100 flex items-center justify-center cursor-pointer relative overflow-hidden"
+                            onClick={() => window.open(message.content, '_blank')}
+                          >
+                            <img
+                              src={`https://maps.googleapis.com/maps/api/staticmap?center=${message.content.split('q=')[1]}&zoom=15&size=300x150&sensor=false&key=`}
+                              alt="Map Preview"
+                              className="w-full h-full object-cover opacity-80"
+                              onError={(e) => {
+                                (e.target as any).style.display = 'none';
+                                (e.target as any).nextSibling.style.display = 'flex';
+                              }}
+                            />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50 hidden">
+                              <MapPin className="h-8 w-8 text-red-500 mb-2 animate-bounce" />
+                              <span className="text-[10px] font-medium text-slate-500 px-4 text-center">Click to view location in Google Maps</span>
+                            </div>
+                          </div>
+                          <a href={message.content} target="_blank" rel="noopener noreferrer" className="block p-3 text-xs text-primary font-medium hover:bg-slate-50 transition-colors text-center border-t">
+                            Open in Maps
+                          </a>
+                        </div>
+                      ) : message.type === 'DOCUMENT' && message.mediaUrl ? (
+                        <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors text-slate-800 border">
+                          <div className="bg-white p-2 rounded shadow-sm">
+                            <Paperclip className="h-5 w-5 text-slate-500" />
+                          </div>
+                          <div className="flex flex-col overflow-hidden">
+                            <span className="text-sm font-medium truncate max-w-[150px]">{message.content || "Document"}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase">Download</span>
+                          </div>
+                        </a>
+                      ) : (
+                        message.content
+                      )}
                     </div>
                     <span className="text-[10px] text-muted-foreground mt-1 px-1">
                       {format(new Date(message.createdAt), 'h:mm a')}
