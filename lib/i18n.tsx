@@ -85,8 +85,6 @@ const translations: Translations = {
   noWhatsAppAccountsFound: { en: "No WhatsApp accounts found", ar: "لم يتم العثور على حسابات واتساب" },
   connectWhatsAppFirst: { en: "Please connect a WhatsApp account first in Manage page.", ar: "يرجى ربط حساب واتساب أولاً من صفحة الإدارة." },
   enableOrDisableBranch: { en: "Enable or disable this branch", ar: "تفعيل أو إيقاف هذا الفرع" },
-  contact: { en: "Contact", ar: "جهة الاتصال" },
-  actions: { en: "Actions", ar: "إجراءات" },
   addContact: { en: "Add Contact", ar: "إضافة جهة اتصال" },
   contactDetails: { en: "Contact Details", ar: "تفاصيل جهة الاتصال" },
   searchContacts: { en: "Search contacts...", ar: "بحث في جهات الاتصال..." },
@@ -354,7 +352,6 @@ const translations: Translations = {
   supervisor: { en: "Supervisor", ar: "مشرف" },
   agentRole: { en: "Agent", ar: "موظف" },
   lastLogin: { en: "Last Login", ar: "آخر دخول" },
-  actions: { en: "Actions", ar: "إجراءات" },
   userCreated: { en: "User created", ar: "تم إنشاء المستخدم" },
   userUpdated: { en: "User updated", ar: "تم تحديث المستخدم" },
   userDeactivated: { en: "User deactivated", ar: "تم إلغاء تفعيل المستخدم" },
@@ -506,7 +503,6 @@ const translations: Translations = {
   groupChat: { en: "Group Chat", ar: "دردشة جماعية" },
   leadCustomer: { en: "Lead Customer", ar: "عميل محتمل" },
   branchLabel: { en: "Branch", ar: "الفرع" },
-  statusLabel: { en: "Status", ar: "الحالة" },
   metaId: { en: "Meta ID", ar: "معرّف Meta" },
   locationLabel: { en: "Location", ar: "الموقع" },
   downloadLabel: { en: "Download", ar: "تنزيل" },
@@ -574,7 +570,6 @@ const translations: Translations = {
   flowTemplatesTitle: { en: "Flow Templates", ar: "قوالب السيور" },
   choosePrebuiltTemplates: { en: "Choose from pre-built automation templates", ar: "اختر من قوالب الأتمتة الجاهزة" },
   noFlowTemplatesFound: { en: "No templates found", ar: "لم يتم العثور على قوالب" },
-  tryAdjustingSearch: { en: "Try adjusting your search or filters", ar: "جرّب تغيير البحث أو التصفية" },
   needCustomFlow: { en: "Need a Custom Flow?", ar: "تحتاج سيراً مخصصاً؟" },
 
   // Bot flows stats
@@ -689,35 +684,37 @@ const LANG_STORAGE_KEY = "meras-lang"
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
     if (typeof window === "undefined") return "ar"
-    return (localStorage.getItem(LANG_STORAGE_KEY) as Language) || "ar"
+    const saved = localStorage.getItem(LANG_STORAGE_KEY) as Language
+    return saved || "ar"
   })
-  const dir = language === "ar" ? "rtl" : "ltr"
 
-  // مزامنة الحالة مع اللغة المحفوظة عند أول mount (اختياري لو اتغيرت من تاب آخر)
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    const saved = localStorage.getItem(LANG_STORAGE_KEY) as Language | null
-    if (saved === "ar" || saved === "en") setLanguageState(saved)
-  }, [])
+  const [dir, setDir] = useState<"ltr" | "rtl">(language === "ar" ? "rtl" : "ltr")
 
-  // تطبيق dir و lang على الصفحة فوراً (وراثة كل الصفحات من document)
   useEffect(() => {
-    document.documentElement.dir = dir
-    document.documentElement.lang = language
-    document.documentElement.setAttribute("data-lang", language)
-    document.body.dir = dir
-  }, [language, dir])
+    const d = language === "ar" ? "rtl" : "ltr"
+    setDir(d)
+    if (typeof window !== "undefined") {
+      document.documentElement.dir = d
+      document.documentElement.lang = language
+      document.documentElement.setAttribute("data-lang", language)
+      document.body.dir = d
+      localStorage.setItem(LANG_STORAGE_KEY, language)
+    }
+  }, [language])
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang)
-    if (typeof window !== "undefined") localStorage.setItem(LANG_STORAGE_KEY, lang)
   }
 
   const t = (key: string): string => {
     return translations[key]?.[language] || key
   }
 
-  return <I18nContext.Provider value={{ language, setLanguage, t, dir }}>{children}</I18nContext.Provider>
+  return (
+    <I18nContext.Provider value={{ language, setLanguage, t, dir }}>
+      {children}
+    </I18nContext.Provider>
+  )
 }
 
 export function useI18n() {
