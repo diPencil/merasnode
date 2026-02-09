@@ -1232,7 +1232,7 @@ export default function InboxPage() {
                                 (e.target as any).nextSibling.style.display = 'flex';
                               }}
                             />
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50 hidden">
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50" style={{ display: 'none' }}>
                               <MapPin className="h-8 w-8 text-red-500 mb-2 animate-bounce" />
                               <span className="text-[10px] font-medium text-slate-500 px-4 text-center">Click to view location in Google Maps</span>
                             </div>
