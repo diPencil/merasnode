@@ -13,6 +13,7 @@ datasource db {
 // المستخدمين
 model User {
   id           String     @id @default(uuid())
+  username     String?    @unique // optional for backward compatibility; case-insensitive (stored lowercase)
   email        String     @unique
   password     String
   name         String

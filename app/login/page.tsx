@@ -75,11 +75,12 @@ export default function LoginPage() {
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="email">{t("emailLabel")}</Label>
+                            <Label htmlFor="email">{t("emailOrUsernameLabel")}</Label>
                             <Input
                                 id="email"
-                                type="email"
-                                placeholder={t("placeholderEmail")}
+                                type="text"
+                                autoComplete="username"
+                                placeholder={t("placeholderEmailOrUsername")}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -115,7 +116,7 @@ export default function LoginPage() {
                         <p className="mb-2">{t("defaultCredentials")}</p>
                         <div className="flex items-center justify-center gap-2">
                             <p className="font-mono text-xs">
-                                admin@meras.com / admin123
+                                admin@meras.com or admin / admin123
                             </p>
                             <Button
                                 type="button"

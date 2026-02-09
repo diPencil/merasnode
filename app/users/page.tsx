@@ -25,6 +25,7 @@ import { authenticatedFetch } from "@/lib/auth"
 interface User {
   id: string
   name: string
+  username?: string | null
   email: string
   role: 'ADMIN' | 'SUPERVISOR' | 'AGENT'
   status: 'ONLINE' | 'OFFLINE' | 'AWAY'
@@ -59,6 +60,7 @@ export default function UsersPage() {
   // Form States
   const [formData, setFormData] = useState({
     name: "",
+    username: "",
     email: "",
     password: "",
     role: "AGENT",
@@ -136,8 +138,13 @@ export default function UsersPage() {
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name || !formData.email || !formData.password) {
-      toast({ title: "Validation Error", description: "Please fill in all required fields", variant: "destructive" })
+    if (!formData.name || !formData.username || !formData.email || !formData.password) {
+      toast({ title: "Validation Error", description: "Please fill in all required fields (including username)", variant: "destructive" })
+      return
+    }
+    const usernameRegex = /^[a-zA-Z0-9_]+$/
+    if (!usernameRegex.test(formData.username) || formData.username.length < 2 || formData.username.length > 50) {
+      toast({ title: "Validation Error", description: "Username: 2–50 characters, letters, numbers and underscores only (no spaces)", variant: "destructive" })
       return
     }
 
@@ -180,6 +187,7 @@ export default function UsersPage() {
         method: 'PUT',
         body: JSON.stringify({
           name: formData.name,
+          username: formData.username || null,
           email: formData.email,
           role: formData.role,
           status: formData.status,
@@ -283,6 +291,7 @@ export default function UsersPage() {
   const resetForm = () => {
     setFormData({
       name: "",
+      username: "",
       email: "",
       password: "",
       role: "AGENT",
@@ -296,6 +305,7 @@ export default function UsersPage() {
     setSelectedUser(user)
     setFormData({
       name: user.name,
+      username: user.username ?? "",
       email: user.email,
       password: "",
       role: user.role,
@@ -308,7 +318,8 @@ export default function UsersPage() {
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (user.username?.toLowerCase() ?? '').includes(searchQuery.toLowerCase())
   )
 
   const getRoleBadge = (role: string) => {
@@ -464,6 +475,19 @@ export default function UsersPage() {
                 <Input id="name" placeholder="John Doe" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="johndoe"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value.replace(/\s/g, '') })}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">Username must be unique. Letters, numbers and underscores only (no spaces).</p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input id="email" type="email" placeholder="john@example.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
               </div>
@@ -597,6 +621,18 @@ export default function UsersPage() {
               <div className="space-y-2">
                 <Label htmlFor="edit-name">Full Name</Label>
                 <Input id="edit-name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-username">Username</Label>
+                <Input
+                  id="edit-username"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="johndoe"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value.replace(/\s/g, '') })}
+                />
+                <p className="text-xs text-muted-foreground">Letters, numbers and underscores only. Must be unique.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-email">Email Address</Label>
@@ -783,6 +819,12 @@ export default function UsersPage() {
                 <Label className="text-right font-semibold">Email:</Label>
                 <p className="col-span-2 text-sm">{selectedUser?.email}</p>
               </div>
+              {selectedUser?.username != null && selectedUser.username !== '' && (
+                <div className="grid grid-cols-3 items-center gap-4">
+                  <Label className="text-right font-semibold">Username:</Label>
+                  <p className="col-span-2 text-sm">{selectedUser.username}</p>
+                </div>
+              )}
               <div className="grid grid-cols-3 items-center gap-4">
                 <Label className="text-right font-semibold">Role:</Label>
                 <div className="col-span-2">{selectedUser && getRoleBadge(selectedUser.role)}</div>

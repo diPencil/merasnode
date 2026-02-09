@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         
         // Add search filter
         if (search) {
-            where.AND = buildSearchFilter(search, ['name', 'email'])
+            where.AND = buildSearchFilter(search, ['name', 'email', 'username'])
         }
 
         // Get total count
@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
             select: {
                 id: true,
                 name: true,
+                username: true,
                 email: true,
                 role: true,
                 status: true,
@@ -121,18 +122,26 @@ export async function POST(request: NextRequest) {
         }
         
         const validatedData = validation.data
+        const usernameLower = validatedData.username.trim().toLowerCase()
 
-        // التحقق من عدم وجود المستخدم
-        const existingUser = await prisma.user.findUnique({
+        // Check email uniqueness
+        const existingByEmail = await prisma.user.findUnique({
             where: { email: validatedData.email }
         })
-
-        if (existingUser) {
+        if (existingByEmail) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: "User with this email already exists"
-                },
+                { success: false, error: "User with this email already exists" },
+                { status: 409 }
+            )
+        }
+
+        // Check username uniqueness (case-insensitive)
+        const existingByUsername = await prisma.user.findUnique({
+            where: { username: usernameLower }
+        })
+        if (existingByUsername) {
+            return NextResponse.json(
+                { success: false, error: "Username is already taken" },
                 { status: 409 }
             )
         }
@@ -140,10 +149,11 @@ export async function POST(request: NextRequest) {
         // Hash the password before saving
         const hashedPassword = await bcrypt.hash(validatedData.password, 10)
         
-        // Create user with relations
+        // Create user with relations (store username lowercase for case-insensitive lookup)
         const user = await prisma.user.create({
             data: {
                 name: validatedData.name,
+                username: usernameLower,
                 email: validatedData.email,
                 password: hashedPassword,
                 role: validatedData.role || 'AGENT',
@@ -158,6 +168,7 @@ export async function POST(request: NextRequest) {
             select: {
                 id: true,
                 name: true,
+                username: true,
                 email: true,
                 role: true,
                 status: true,

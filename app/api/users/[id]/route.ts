@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { updateUserSchema, validateBody } from "@/lib/validations"
 
 // GET - جلب بيانات مستخدم واحد
 export async function GET(
@@ -15,6 +16,7 @@ export async function GET(
             select: {
                 id: true,
                 name: true,
+                username: true,
                 email: true,
                 role: true,
                 status: true,
@@ -68,15 +70,22 @@ export async function PUT(
     props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const params = await props.params;
+        const params = await props.params
         const body = await request.json()
         const { id } = params
 
-        // التحقق من وجود المستخدم
+        const validation = validateBody(updateUserSchema, body)
+        if (!validation.success) {
+            return NextResponse.json(
+                { success: false, error: validation.error },
+                { status: 400 }
+            )
+        }
+        const data = validation.data
+
         const existingUser = await prisma.user.findUnique({
             where: { id }
         })
-
         if (!existingUser) {
             return NextResponse.json(
                 { success: false, error: "User not found" },
@@ -84,24 +93,44 @@ export async function PUT(
             )
         }
 
-        // تحديث البيانات
+        // If username is being updated, check uniqueness (case-insensitive, exclude current user)
+        if (data.username != null && data.username !== '') {
+            const usernameLower = data.username.trim().toLowerCase()
+            const taken = await prisma.user.findFirst({
+                where: {
+                    username: usernameLower,
+                    id: { not: id }
+                }
+            })
+            if (taken) {
+                return NextResponse.json(
+                    { success: false, error: "Username is already taken" },
+                    { status: 409 }
+                )
+            }
+        }
+
         const user = await prisma.user.update({
             where: { id },
             data: {
-                name: body.name,
-                email: body.email,
-                role: body.role,
-                status: body.status,
-                branches: body.branchIds ? {
-                    set: body.branchIds.map((id: string) => ({ id }))
-                } : undefined,
-                whatsappAccounts: body.whatsappAccountIds ? {
-                    set: body.whatsappAccountIds.map((id: string) => ({ id }))
-                } : undefined,
+                ...(data.name != null && { name: data.name }),
+                ...(data.email != null && { email: data.email }),
+                ...(data.username !== undefined && {
+                    username: data.username === '' || data.username === null ? null : data.username.trim().toLowerCase()
+                }),
+                ...(data.role != null && { role: data.role }),
+                ...(data.status != null && { status: data.status }),
+                ...(data.branchIds && {
+                    branches: { set: data.branchIds.map((bid: string) => ({ id: bid })) }
+                }),
+                ...(data.whatsappAccountIds && {
+                    whatsappAccounts: { set: data.whatsappAccountIds.map((wid: string) => ({ id: wid })) }
+                }),
             },
             select: {
                 id: true,
                 name: true,
+                username: true,
                 email: true,
                 role: true,
                 status: true,
@@ -112,10 +141,10 @@ export async function PUT(
             }
         })
 
-        // Create activity log for user update
+        // Create activity log for user update (currentUserId from raw body)
         await prisma.log.create({
             data: {
-                userId: body.currentUserId || null,
+                userId: (body as { currentUserId?: string }).currentUserId || null,
                 action: 'USER_UPDATED',
                 entityType: 'User',
                 entityId: id,

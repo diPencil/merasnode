@@ -18,37 +18,54 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
 
-        if (!body.email || !body.password) {
+        const loginId = (body.email ?? body.loginId ?? '').trim()
+        if (!loginId || !body.password) {
             return NextResponse.json(
                 {
                     success: false,
-                    error: "Email and password are required"
+                    error: "Email/username and password are required"
                 },
                 { status: 400 }
             )
         }
 
-        // البحث عن المستخدم
-        logDebug(`Login attempt for email: ${body.email}`);
-        const user = await prisma.user.findUnique({
-            where: { email: body.email },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                password: true,
-                role: true,
-                status: true,
-                isActive: true
-            }
-        })
+        // If input contains @ → treat as email; else → treat as username (case-insensitive)
+        const isEmail = loginId.includes('@')
+        logDebug(`Login attempt for ${isEmail ? 'email' : 'username'}: ${loginId}`)
+        const user = await (isEmail
+            ? prisma.user.findUnique({
+                where: { email: loginId },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    username: true,
+                    password: true,
+                    role: true,
+                    status: true,
+                    isActive: true
+                }
+            })
+            : prisma.user.findUnique({
+                where: { username: loginId.toLowerCase() },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    username: true,
+                    password: true,
+                    role: true,
+                    status: true,
+                    isActive: true
+                }
+            }))
 
         if (!user) {
-            logDebug('User not found');
+            logDebug('User not found')
             return NextResponse.json(
                 {
                     success: false,
-                    error: "Invalid email or password"
+                    error: "Invalid email, username or password"
                 },
                 { status: 401 }
             )

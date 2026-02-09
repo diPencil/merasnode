@@ -1,8 +1,16 @@
 import { z } from 'zod'
 
+// Username: letters, numbers, underscores only; no spaces; case-insensitive (store lowercase)
+const usernameSchema = z
+    .string()
+    .min(2, 'Username must be at least 2 characters')
+    .max(50, 'Username must be at most 50 characters')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores (no spaces)')
+
 // User validations
 export const createUserSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters').max(100),
+    username: usernameSchema,
     email: z.string().email('Invalid email address'),
     password: z.string().min(6, 'Password must be at least 6 characters').max(100),
     role: z.enum(['ADMIN', 'SUPERVISOR', 'AGENT']).optional(),
@@ -12,6 +20,7 @@ export const createUserSchema = z.object({
 
 export const updateUserSchema = z.object({
     name: z.string().min(2).max(100).optional(),
+    username: usernameSchema.optional().nullable(),
     email: z.string().email().optional(),
     role: z.enum(['ADMIN', 'SUPERVISOR', 'AGENT']).optional(),
     status: z.enum(['ONLINE', 'OFFLINE', 'AWAY']).optional(),

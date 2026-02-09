@@ -29,11 +29,12 @@ async function main() {
     })
     console.log('✅ Created Main Branch')
 
-    // Create Admin User
+    // Create Admin User (username: admin for login with email or username)
     const hashedPassword = await bcrypt.hash('admin123', 10)
     const adminUser = await prisma.user.create({
         data: {
             name: 'System Admin',
+            username: 'admin',
             email: 'admin@meras.com',
             password: hashedPassword,
             role: 'ADMIN',
@@ -43,7 +44,7 @@ async function main() {
             }
         }
     })
-    console.log('✅ Created Admin User (admin@meras.com / admin123)')
+    console.log('✅ Created Admin User (admin@meras.com or username "admin" / admin123)')
 
     // Create test contacts
     const contacts = await Promise.all([

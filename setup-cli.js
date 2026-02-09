@@ -103,10 +103,12 @@ async function createAdmin(email, password, name) {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10)
 
-        // Create admin
+        // Derive username from email (local part, sanitized) for login with email or username
+        const username = (email.split('@')[0] || 'user').replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase().slice(0, 50) || 'admin'
         const admin = await prisma.user.create({
             data: {
                 name,
+                username,
                 email,
                 password: hashedPassword,
                 role: 'ADMIN',
@@ -138,10 +140,11 @@ async function createAgent(email, password, name) {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10)
 
-        // Create agent
+        const username = (email.split('@')[0] || 'user').replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase().slice(0, 50) || 'agent'
         const agent = await prisma.user.create({
             data: {
                 name,
+                username,
                 email,
                 password: hashedPassword,
                 role: 'AGENT',
@@ -313,11 +316,16 @@ async function quickSetup() {
     info('   Password: admin123')
 }
 
+function deriveUsername(email) {
+    return (email.split('@')[0] || 'user').replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase().slice(0, 50) || 'user'
+}
+
 async function interactiveCreateUser() {
     header('👤 Create New User')
     
     const name = await question('Name: ')
     const email = await question('Email: ')
+    const usernameInput = await question('Username (letters, numbers, underscores) [from email]: ')
     const password = await question('Password: ')
     const roleInput = await question('Role (1=Admin, 2=Supervisor, 3=Agent) [3]: ')
     
@@ -328,12 +336,14 @@ async function interactiveCreateUser() {
     }
     
     const role = roleMap[roleInput] || 'AGENT'
+    const username = usernameInput.trim() ? usernameInput.trim().replace(/\s/g, '').toLowerCase().slice(0, 50) : deriveUsername(email)
     const hashedPassword = await bcrypt.hash(password, 10)
     
     try {
         const user = await prisma.user.create({
             data: {
                 name,
+                username,
                 email,
                 password: hashedPassword,
                 role,

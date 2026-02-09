@@ -20,9 +20,10 @@ export async function POST() {
         // Hash the password
         const hashedPassword = await bcrypt.hash("admin123", 10)
 
-        // Create admin user
+        // Create admin user (username for login with email or username)
         const admin = await prisma.user.create({
             data: {
+                username: "admin",
                 email: "admin@meras.com",
                 password: hashedPassword,
                 name: "Admin User",
