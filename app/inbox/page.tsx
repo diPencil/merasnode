@@ -137,6 +137,7 @@ export default function InboxPage() {
   const [isSuggestionSnoozed, setIsSuggestionSnoozed] = useState(false)
   const [settings, setSettings] = useState<any>(null)
   const [lastOrderId, setLastOrderId] = useState<string>("N/A")
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
   const { toast } = useToast()
   const { t, language } = useI18n()
 
@@ -1202,7 +1203,7 @@ export default function InboxPage() {
                     >
                       {message.type === 'IMAGE' && message.mediaUrl ? (
                         <div className="rounded-lg overflow-hidden max-w-sm">
-                          <img src={message.mediaUrl} alt="Sent Image" className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => window.open(message.mediaUrl, '_blank')} />
+                          <img src={message.mediaUrl} alt="Sent Image" className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setPreviewImage(message.mediaUrl || null)} />
                           {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
                         </div>
                       ) : message.type === 'AUDIO' && message.mediaUrl ? (
@@ -1445,6 +1446,29 @@ export default function InboxPage() {
           )
         }
       </div >
+
+      {/* Image Preview Modal */}
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent shadow-none">
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            {previewImage && (
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+              />
+            )}
+            <Button
+              variant="secondary"
+              size="icon"
+              className="absolute top-2 right-2 rounded-full bg-black/50 text-white hover:bg-black/70 border-none h-8 w-8"
+              onClick={() => setPreviewImage(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout >
   )
 }
