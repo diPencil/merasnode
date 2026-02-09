@@ -762,6 +762,9 @@ export default function UsersPage() {
                 {t("deleteUserConfirm")}
               </DialogTitle>
               <DialogDescription>
+                {selectedUser?.name != null
+                  ? t("deleteUserConfirmQuestion").replace("{name}", selectedUser.name) + " "
+                  : ""}
                 {t("deleteUserConfirmDesc")}
               </DialogDescription>
             </DialogHeader>

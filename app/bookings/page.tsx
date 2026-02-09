@@ -176,7 +176,7 @@ export default function BookingsPage() {
                 ))
                 toast({
                     title: t("bookingCancelled"),
-                    description: `${t("bookingNumber")} ${selectedBookingId} ${t("cancelledSuccess")}`,
+                    description: t("bookingCancelledMessage").replace("{id}", selectedBookingId),
                     variant: "destructive"
                 })
             } else {

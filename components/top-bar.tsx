@@ -102,11 +102,11 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
   useEffect(() => {
     // Only fetch if we have a user
     if (currentUser?.id) {
-        fetchNotifications()
+      fetchNotifications()
     }
     // Poll for notifications every 10 seconds
     const interval = setInterval(() => {
-        if (currentUser?.id) fetchNotifications(true)
+      if (currentUser?.id) fetchNotifications(true)
     }, 10000)
     return () => clearInterval(interval)
   }, [currentUser, lastNotificationId])
@@ -167,22 +167,22 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
   }, [language])
 
   return (
-    <div className="flex h-16 items-center justify-between bg-transparent px-8">
+    <div className={`flex h-16 items-center justify-between bg-transparent px-8 ${dir === "rtl" ? "flex-row-reverse" : "flex-row"}`}>
       {/* Section 1: Title/Greeting */}
       <div className="flex items-center gap-4">
         {title && <h1 className="text-2xl font-semibold text-foreground">{title}</h1>}
       </div>
 
       {/* Section 2: Search, Date, Language, Theme, User */}
-      <div className={dir === "rtl" ? "flex items-center gap-4 flex-row-reverse" : "flex items-center gap-4"}>
+      <div className="flex items-center gap-4">
         {/* Search */}
         {showSearch && (
           <div className="relative">
-            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ${dir === "rtl" ? "right-3" : "left-3"}`} />
             <Input
               type="search"
               placeholder={`${t("search")}...`}
-              className="h-10 w-80 rounded-xl bg-card/80 backdrop-blur-sm ps-10 pe-4 border-border/50 shadow-sm"
+              className={`h-10 w-80 rounded-xl bg-card/80 backdrop-blur-sm border-border/50 shadow-sm ${dir === "rtl" ? "pr-10 pl-4" : "pl-10 pr-4"}`}
             />
           </div>
         )}
@@ -201,11 +201,11 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
             <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl hover:bg-muted">
               <Bell className="h-5 w-5 text-muted-foreground" />
               {unreadCount > 0 && (
-                <span className="absolute top-2 end-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background animate-pulse" />
+                <span className={`absolute top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background animate-pulse ${dir === "rtl" ? "left-2" : "right-2"}`} />
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-0" align="end">
+          <PopoverContent className="w-80 p-0" align={dir === "rtl" ? "start" : "end"}>
             <div className="flex items-center justify-between border-b px-4 py-3 bg-muted/30">
               <div className="flex items-center gap-2">
                 <h4 className="font-semibold text-sm">{t("notifications")}</h4>
@@ -276,7 +276,7 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute end-2 top-2 hover:bg-destructive/10 hover:text-destructive"
+                          className={`h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 hover:bg-destructive/10 hover:text-destructive ${dir === "rtl" ? "left-2" : "right-2"}`}
                           onClick={(e) => deleteNotification(notification.id, e)}
                         >
                           <X className="h-3.5 w-3.5" />
@@ -300,12 +300,13 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
-              <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+              <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser?.name || 'User'}`} />
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                 {currentUser?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align={dir === "rtl" ? "start" : "end"} className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">{t("myAccount")}</p>
@@ -316,7 +317,7 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">
-              <Settings className="me-2 h-4 w-4" />
+              <Settings className={`h-4 w-4 ${dir === "rtl" ? "ml-2" : "mr-2"}`} />
               <span>{t("settings")}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -324,7 +325,7 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
               onClick={logout}
               className="cursor-pointer text-destructive focus:text-destructive"
             >
-              <LogOut className="me-2 h-4 w-4" />
+              <LogOut className={`h-4 w-4 ${dir === "rtl" ? "ml-2" : "mr-2"}`} />
               <span>{t("logout")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
