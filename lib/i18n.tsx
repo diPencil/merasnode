@@ -41,6 +41,7 @@ const translations: Translations = {
   allEntities: { en: "All Entities", ar: "كل الكيانات" },
   noActivityLogs: { en: "No activity logs yet", ar: "لا توجد سجلات نشاط بعد" },
   loadingActivityLogs: { en: "Loading activity logs...", ar: "جاري تحميل سجلات النشاط..." },
+  failedToConnectDesc: { en: "Check your internet connection or try again later.", ar: "تحقق من اتصالك بالإنترنت أو حاول مرة أخرى لاحقاً." },
 
   // Common
   search: { en: "Search", ar: "بحث" },
