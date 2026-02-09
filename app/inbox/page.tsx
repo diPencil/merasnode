@@ -138,7 +138,7 @@ export default function InboxPage() {
   const [settings, setSettings] = useState<any>(null)
   const [lastOrderId, setLastOrderId] = useState<string>("N/A")
   const { toast } = useToast()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
 
   // ... existing refs ...
   const searchParams = useSearchParams()
@@ -1187,9 +1187,13 @@ export default function InboxPage() {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.direction === 'OUTGOING' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${message.direction === 'OUTGOING'
+                    ? (language === 'ar' ? 'justify-start' : 'justify-end')
+                    : (language === 'ar' ? 'justify-end' : 'justify-start')}`}
                 >
-                  <div className={`max-w-[70%] group relative ${message.direction === 'OUTGOING' ? 'items-end' : 'items-start'} flex flex-col`}>
+                  <div className={`max-w-[70%] group relative ${message.direction === 'OUTGOING'
+                    ? (language === 'ar' ? 'items-start' : 'items-end')
+                    : (language === 'ar' ? 'items-end' : 'items-start')} flex flex-col`}>
                     <div
                       className={`px-4 py-3 rounded-2xl shadow-sm text-sm ${message.direction === 'OUTGOING'
                         ? 'bg-primary text-primary-foreground rounded-br-none'
