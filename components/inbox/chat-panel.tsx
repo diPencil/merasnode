@@ -189,12 +189,12 @@ export function ChatPanel({ conversation, onBack, onToggleDetails }: ChatPanelPr
                 }
               }}
               placeholder="Type a message..."
-              className="rounded-full bg-background pr-10 shadow-soft"
+              className="rounded-full bg-background pe-10 shadow-soft"
             />
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full"
+              className="absolute end-1 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full"
             >
               <Smile className="h-5 w-5" />
             </Button>

@@ -33,14 +33,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ar" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){var l=document.documentElement.getAttribute('data-lang')||(typeof localStorage!=='undefined'&&localStorage.getItem('meras-lang'))||'ar';var d=l==='ar'?'rtl':'ltr';document.documentElement.dir=d;document.documentElement.lang=l;document.documentElement.setAttribute('data-lang',l);})();`,
-          }}
-        />
-      </head>
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <head />
       <body className="font-sans antialiased" suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
           <I18nProvider>

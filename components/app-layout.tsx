@@ -3,6 +3,7 @@
 import type React from "react"
 import { NavigationRail } from "./navigation-rail"
 import { TopBar } from "./top-bar"
+import { useI18n } from "@/lib/i18n"
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -11,9 +12,16 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children, title, showSearch = false }: AppLayoutProps) {
+  const { dir } = useI18n()
+
   return (
-    /* dir يُورث من document (يضبطه I18nProvider + السكربت في layout) لتفادي وميض LTR */
-    <div className="flex h-screen overflow-hidden bg-background flex-row">
+    /* dir يُورث من document (يضبطه I18nProvider) لتفادي وميض LTR */
+    <div
+      className={`
+        flex h-screen overflow-hidden bg-background
+        ${dir === "rtl" ? "flex-row-reverse" : "flex-row"}
+      `}
+    >
       <NavigationRail />
 
       {/* Main Content Area - المحتوى يورث الاتجاه ويبدأ من اليمين في RTL */}

@@ -56,13 +56,13 @@ export function ConversationsList({
       {/* Search Bar */}
       <div className="border-b border-border/50 bg-card/50 p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-full bg-background/50 pl-10 shadow-soft"
+            className="rounded-full bg-background/50 ps-10 shadow-soft"
           />
         </div>
       </div>
@@ -104,7 +104,7 @@ export function ConversationsList({
               >
                 <div className="flex gap-3">
                   {/* Avatar */}
-                  <Avatar className="h-12 w-12 flex-shrink-0">
+                  <Avatar className="h-12 w-12 shrink-0">
                     <AvatarImage
                       src={conversation.contact.avatar || "/placeholder.svg"}
                       alt={conversation.contact.name}
@@ -122,7 +122,7 @@ export function ConversationsList({
                   <div className="flex-1 overflow-hidden">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="truncate font-medium">{conversation.contact.name}</h3>
-                      <span className="flex-shrink-0 text-xs text-muted-foreground">
+                      <span className="shrink-0 text-xs text-muted-foreground">
                         {formatDistanceToNow(conversation.lastMessageTime, { addSuffix: false })}
                       </span>
                     </div>

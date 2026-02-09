@@ -55,7 +55,7 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
                         <Badge key={option.value} variant="secondary">
                             {option.label}
                             <button
-                                className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                className="ms-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                         handleUnselect(option.value);
@@ -78,7 +78,7 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
                         onBlur={() => setOpen(false)}
                         onFocus={() => setOpen(true)}
                         placeholder={placeholder}
-                        className="ml-2 bg-transparent outline-none placeholder:text-muted-foreground flex-1"
+                        className="ms-2 bg-transparent outline-none placeholder:text-muted-foreground flex-1"
                     />
                 </div>
             </div>
@@ -96,7 +96,7 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
                                             className="cursor-pointer"
                                         >
                                             <div
-                                                className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary ${isSelected
+                                                className={`me-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary ${isSelected
                                                     ? "bg-primary text-primary-foreground"
                                                     : "opacity-50 [&_svg]:invisible"
                                                     }`}

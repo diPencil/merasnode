@@ -49,7 +49,7 @@ const menuItems = [
 export function NavigationRail() {
     const pathname = usePathname()
     const router = useRouter()
-    const { t } = useI18n()
+    const { t, dir } = useI18n()
     const [filteredMenuItems, setFilteredMenuItems] = useState(menuItems)
     const [companyName, setCompanyName] = useState("")
     const [companyLogo, setCompanyLogo] = useState("")
@@ -80,7 +80,13 @@ export function NavigationRail() {
     }, [])
 
     return (
-        <aside className="flex w-56 flex-col bg-sidebar border-e border-border/40">
+        <aside
+            className={cn(
+                "flex w-56 flex-col bg-sidebar border-border/40",
+                // في RTL نريد أن يكون الحد من الجهة اليسار (start في RTL)
+                dir === "rtl" ? "border-s" : "border-e",
+            )}
+        >
             {/* Logo Section */}
             <div className="flex h-16 items-center gap-2 border-b border-border/40 px-4">
                 {companyDisplayType === "logo" && companyLogo ? (

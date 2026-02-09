@@ -40,7 +40,7 @@ interface Notification {
 export function TopBar({ title, showSearch = true }: TopBarProps) {
   const router = useRouter()
   const { toast } = useToast()
-  const { t } = useI18n()
+  const { t, language, dir } = useI18n()
   const [currentDate, setCurrentDate] = useState("")
   const [currentTime, setCurrentTime] = useState("")
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -155,8 +155,9 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
   useEffect(() => {
     const updateDateTime = () => {
       const now = new Date()
-      setCurrentDate(now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }))
-      setCurrentTime(now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }))
+      const locale = language === "ar" ? "ar-SA" : "en-US"
+      setCurrentDate(now.toLocaleDateString(locale, { weekday: "short", month: "short", day: "numeric" }))
+      setCurrentTime(now.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }))
     }
 
     updateDateTime()
@@ -167,13 +168,13 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
 
   return (
     <div className="flex h-16 items-center justify-between bg-transparent px-8">
-      {/* Left: Title/Greeting */}
+      {/* Section 1: Title/Greeting */}
       <div className="flex items-center gap-4">
         {title && <h1 className="text-2xl font-semibold text-foreground">{title}</h1>}
       </div>
 
-      {/* Right: Search, Date, Language, Theme, User */}
-      <div className="flex items-center gap-4">
+      {/* Section 2: Search, Date, Language, Theme, User */}
+      <div className={dir === "rtl" ? "flex items-center gap-4 flex-row-reverse" : "flex items-center gap-4"}>
         {/* Search */}
         {showSearch && (
           <div className="relative">
