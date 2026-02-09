@@ -32,6 +32,7 @@ export default function BotFlowsPage() {
   const [botFlows, setBotFlows] = useState<BotFlow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState<string | null>(null)
+  const { t } = useI18n()
   const { toast } = useToast()
 
   // Fetch bot flows from API or use mock data
@@ -45,9 +46,9 @@ export default function BotFlowsPage() {
       const response = await fetch('/api/bot-flows')
       const data = await response.json()
 
-      if (data.success && data.data.length > 0) {
+      if (data.success && data.data?.length > 0) {
         // Use real data from database
-        setBotFlows(data.data.map((flow: any) => ({
+        setBotFlows((data.data || []).map((flow: any) => ({
           ...flow,
           status: flow.isActive ? 'active' : 'inactive',
           updatedAt: new Date(flow.updatedAt)

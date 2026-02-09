@@ -38,6 +38,7 @@ interface User {
 
 export default function UsersPage() {
   const router = useRouter()
+  const { t } = useI18n()
   const { toast } = useToast()
   const [users, setUsers] = useState<User[]>([])
   const [availableBranches, setAvailableBranches] = useState<{ value: string, label: string }[]>([])
