@@ -222,7 +222,6 @@ const translations: Translations = {
   groupsOnly: { en: "Groups Only", ar: "المجموعات فقط" },
   filterConversations: { en: "Filter Conversations", ar: "تصفية المحادثات" },
   allChats: { en: "All Chats", ar: "جميع المحادثات" },
-  noConversations: { en: "No conversations", ar: "لا توجد محادثات" },
   noMessagesYet: { en: "No messages yet", ar: "لا توجد رسائل بعد" },
   book: { en: "Book", ar: "حجز" },
   bookAppointment: { en: "Book Appointment", ar: "حجز موعد" },
@@ -290,7 +289,6 @@ const translations: Translations = {
   contactAddedSuccessfully: { en: "Contact added successfully", ar: "تم إضافة جهة الاتصال بنجاح" },
   failedToAddContact: { en: "Failed to add contact", ar: "فشل إضافة جهة الاتصال" },
   yourContacts: { en: "Your Contacts", ar: "جهات اتصالك" },
-  blockedContacts: { en: "Blocked Contacts", ar: "جهات الاتصال المحظورة" },
   total: { en: "Total", ar: "الإجمالي" },
   adding: { en: "Adding...", ar: "جاري الإضافة..." },
 
@@ -367,7 +365,6 @@ const translations: Translations = {
   noConversationsYet: { en: "No Conversations Yet", ar: "لا توجد محادثات بعد" },
   recentConversationsAppearHere: { en: "Your recent conversations will appear here once you start chatting.", ar: "ستظهر محادثاتك الأخيرة هنا بمجرد بدء الدردشة." },
   messageTypes: { en: "Message Types", ar: "أنواع الرسائل" },
-  noMessagesYet: { en: "No Messages Yet", ar: "لا توجد رسائل بعد" },
   messageTypeDistribution: { en: "Message type distribution will appear here once you start messaging.", ar: "سيظهر توزيع أنواع الرسائل هنا بمجرد بدء المراسلة." },
   addAccount: { en: "Add Account", ar: "إضافة حساب" },
   noWhatsAppAccounts: { en: "No WhatsApp Accounts", ar: "لا توجد حسابات واتساب" },
@@ -411,7 +408,6 @@ const translations: Translations = {
   slaCompliance: { en: "SLA Compliance", ar: "الالتزام بمعايير الخدمة" },
   alphaBeta: { en: "Alpha Beta", ar: "ألفا بيتا" },
   loadingDashboard: { en: "Loading dashboard...", ar: "جاري تحميل لوحة التحكم..." },
-  notifications: { en: "Notifications", ar: "الإشعارات" },
   markAllAsRead: { en: "Mark all as read", ar: "تعليم الكل كمقروء" },
   clearAll: { en: "Clear all", ar: "مسح الكل" },
   allCaughtUp: { en: "All caught up!", ar: "كل شيء محدث!" },
@@ -491,7 +487,6 @@ const translations: Translations = {
   scanWithWhatsApp: { en: "Scan this code with WhatsApp", ar: "امسح هذا الرمز بواسطة واتساب" },
 
   // Profile
-  profileSettings: { en: "Profile Settings", ar: "إعدادات الملف الشخصي" },
   manageAccountInfo: { en: "Manage your account information", ar: "إدارة معلومات حسابك" },
   profilePicture: { en: "Profile Picture", ar: "صورة الملف الشخصي" },
   imageUrlPlaceholder: { en: "Image URL or path", ar: "رابط الصورة أو المسار" },
@@ -581,9 +576,6 @@ const translations: Translations = {
   english: { en: "English", ar: "English" },
   arabic: { en: "Arabic", ar: "العربية" },
   languageChanged: { en: "Language Changed", ar: "تم تغيير اللغة" },
-  languageSwitchedTo: { en: "Language switched to", ar: "تم التبديل إلى" },
-  chooseFile: { en: "Choose File", ar: "اختر ملفاً" },
-  noFileChosen: { en: "No file chosen", ar: "لم يتم اختيار ملف" },
 
   // Settings - Notifications
   notificationPreferences: { en: "Notification Preferences", ar: "تفضيلات الإشعارات" },
@@ -636,8 +628,8 @@ const LANG_STORAGE_KEY = "meras-lang"
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
-    if (typeof window === "undefined") return "en"
-    return (localStorage.getItem(LANG_STORAGE_KEY) as Language) || "en"
+    if (typeof window === "undefined") return "ar"
+    return (localStorage.getItem(LANG_STORAGE_KEY) as Language) || "ar"
   })
   const dir = language === "ar" ? "rtl" : "ltr"
 
