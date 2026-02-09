@@ -7,7 +7,8 @@ import { Phone, User, Building2, StickyNote, Tag } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow } from "date-fns"
+import { ar } from "date-fns/locale"
 import { useI18n } from "@/lib/i18n"
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -22,7 +23,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ conversation, onUpdate }: SidebarProps) {
-    const { t } = useI18n()
+    const { t, language } = useI18n()
+    const dateLocale = language === "ar" ? ar : undefined
     const [agents, setAgents] = useState<any[]>([])
     const [branches, setBranches] = useState<any[]>([])
     const [notes, setNotes] = useState<any[]>([])
@@ -158,7 +160,7 @@ export function Sidebar({ conversation, onUpdate }: SidebarProps) {
     if (!conversation) return null
 
     return (
-        <div className="w-[320px] bg-card border-l flex-col overflow-y-auto hidden xl:flex h-full">
+        <div className="w-[320px] bg-card border-e flex-col overflow-y-auto hidden xl:flex h-full">
             {/* Profile */}
             <div className="p-8 flex flex-col items-center text-center border-b">
                 <Avatar className="h-24 w-24 mb-4 ring-4 ring-offset-2 ring-slate-50">
@@ -168,14 +170,14 @@ export function Sidebar({ conversation, onUpdate }: SidebarProps) {
                 </Avatar>
                 <h2 className="font-bold text-lg">{conversation.contact.name}</h2>
                 <p className="text-sm text-muted-foreground">
-                    {(conversation.contact.id.includes('@g.us') || (conversation.contact as any).tags?.includes('whatsapp-group'))
-                        ? 'Group Chat'
-                        : 'Lead Customer'}
+                    {(conversation.contact.id.includes("@g.us") || (conversation.contact as any).tags?.includes("whatsapp-group"))
+                        ? t("groupChat")
+                        : t("leadCustomer")}
                 </p>
 
                 <div className="flex flex-col gap-2 w-full mt-6">
                     <div className="bg-orange-50/50 p-2.5 rounded-md border border-orange-100 flex items-center justify-between">
-                        <span className="text-[10px] uppercase font-bold text-orange-500 tracking-wider">Branch</span>
+                        <span className="text-[10px] uppercase font-bold text-orange-500 tracking-wider">{t("branchLabel")}</span>
                         <Select onValueChange={handleUpdateBranch} value={conversation.contact.branchId || undefined}>
                             <SelectTrigger className="h-5 text-xs border-0 bg-transparent p-0 text-orange-700 font-bold w-auto focus:ring-0">
                                 <SelectValue placeholder={t("selectPlaceholder")} />
@@ -188,7 +190,7 @@ export function Sidebar({ conversation, onUpdate }: SidebarProps) {
                         </Select>
                     </div>
                     <div className="bg-purple-50/50 p-2.5 rounded-md border border-purple-100 flex items-center justify-between">
-                        <span className="text-[10px] uppercase font-bold text-purple-500 tracking-wider">Status</span>
+                        <span className="text-[10px] uppercase font-bold text-purple-500 tracking-wider">{t("statusLabel")}</span>
                         <Select onValueChange={(val) => {
                             // Update tags via API
                             fetch(`/api/contacts/${conversation.contactId}`, {
@@ -221,7 +223,7 @@ export function Sidebar({ conversation, onUpdate }: SidebarProps) {
                                 <Building2 className="h-4 w-4" />
                             </div>
                             <div className="overflow-hidden">
-                                <p className="text-xs text-muted-foreground">Meta ID</p>
+                                <p className="text-xs text-muted-foreground">{t("metaId")}</p>
                                 <p className="text-sm font-medium truncate">
                                     {conversation.contact.externalId || (conversation.contact.phone?.length >= 15 ? conversation.contact.phone : "-")}
                                 </p>
@@ -362,7 +364,7 @@ export function Sidebar({ conversation, onUpdate }: SidebarProps) {
                                     </p>
                                     <div className="mt-2 text-[10px] text-slate-400 text-end flex justify-between">
                                         <span>{note.creator?.name || t("systemLabel")}</span>
-                                        <span>{formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}</span>
+                                        <span>{formatDistanceToNow(new Date(note.createdAt), { addSuffix: true, locale: dateLocale })}</span>
                                     </div>
                                 </div>
                             ))

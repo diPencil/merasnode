@@ -41,6 +41,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
 import { format } from "date-fns"
+import { ar } from "date-fns/locale"
 import { getUserRole, getUser } from "@/lib/auth"
 import { Sidebar } from "./Sidebar"
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
@@ -139,7 +140,8 @@ export default function InboxPage() {
   const [lastOrderId, setLastOrderId] = useState<string>("N/A")
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const { toast } = useToast()
-  const { t, language } = useI18n()
+  const { t, language, dir } = useI18n()
+  const dateLocale = language === "ar" ? ar : undefined
 
   // ... existing refs ...
   const searchParams = useSearchParams()
@@ -149,6 +151,12 @@ export default function InboxPage() {
   const [isRecording, setIsRecording] = useState(false)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
+  const chatMessagesEndRef = useRef<HTMLDivElement | null>(null)
+
+  // Scroll chat to bottom when messages change (RTL: scroll position still "bottom" = end of content)
+  useEffect(() => {
+    chatMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages.length, selectedConversation?.id])
 
   useEffect(() => {
     fetchConversations()
@@ -839,10 +847,10 @@ export default function InboxPage() {
 
   return (
     <AppLayout title={t("inbox")}>
-      <div className="flex h-[calc(100vh-8rem)] bg-background border rounded-xl overflow-hidden shadow-sm">
+      <div className={`flex h-[calc(100vh-8rem)] bg-background border rounded-xl overflow-hidden shadow-sm ${dir === "rtl" ? "flex-row-reverse" : "flex-row"}`}>
 
-        {/* LEFT COLUMN: Conversations List (25% or w-80) */}
-        <div className="w-[350px] flex flex-col border-r bg-muted/10">
+        {/* Conversations List: in RTL appears on the right */}
+        <div className="w-[350px] flex flex-col border-e bg-muted/10">
           <div className="p-4 space-y-3 border-b bg-card">
             {/* Branch Selector */}
             <Select value={selectedBranch} onValueChange={setSelectedBranch}>
@@ -877,7 +885,7 @@ export default function InboxPage() {
                     {filterType === 'all' ? t("filters") : filterType === 'unread' ? t("unread") : t("groupsOnly")}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
+                <DropdownMenuContent align={dir === "rtl" ? "end" : "start"}>
                   <DropdownMenuLabel>{t("filterConversations")}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setFilterType('all')}>
@@ -926,8 +934,7 @@ export default function InboxPage() {
                 <div
                   key={conversation.id}
                   onClick={() => setSelectedConversation(conversation)}
-                  className={`flex gap-3 p-4 border-b cursor-pointer hover:bg-muted/50 transition-all ${selectedConversation?.id === conversation.id ? 'bg-blue-50/50 border-l-4 border-l-primary' : 'border-l-4 border-l-transparent'
-                    }`}
+                  className={`flex gap-3 p-4 border-b cursor-pointer hover:bg-muted/50 transition-all ${selectedConversation?.id === conversation.id ? "bg-blue-50/50 border-s-4 border-s-primary" : "border-s-4 border-s-transparent"}`}
                 >
                   <div className="relative">
                     <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
@@ -935,7 +942,7 @@ export default function InboxPage() {
                         {getInitials(conversation.contact.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full shadow-sm">
+                    <div className="absolute -bottom-1 -end-1 bg-white p-0.5 rounded-full shadow-sm">
                       {getPlatformIcon(conversation.platform)}
                     </div>
                   </div>
@@ -944,7 +951,7 @@ export default function InboxPage() {
                     <div className="flex justify-between items-start">
                       <span className="font-semibold text-sm truncate">{conversation.contact.name}</span>
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                        {format(new Date(conversation.lastMessageAt), 'h:mm a')}
+                        {format(new Date(conversation.lastMessageAt), "h:mm a", { locale: dateLocale })}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground truncate line-clamp-1 opacity-80">
@@ -952,8 +959,8 @@ export default function InboxPage() {
                     </p>
                     <div className="mt-2 flex gap-2">
                       {conversation.leadStatus && (
-                        <Badge variant={conversation.leadStatus === 'New' ? "default" : "secondary"} className="h-5 px-1.5 text-[10px] uppercase tracking-wider rounded-md font-medium">
-                          {conversation.leadStatus}
+                        <Badge variant={conversation.leadStatus === "New" ? "default" : "secondary"} className="h-5 px-1.5 text-[10px] uppercase tracking-wider rounded-md font-medium">
+                          {conversation.leadStatus === "New" ? t("leadStatusNew") : conversation.leadStatus === "Booked" ? t("leadStatusBooked") : t("leadStatusInProgress")}
                         </Badge>
                       )}
                       {(conversation.contact.id.includes('@g.us') || (conversation.contact as any).tags?.includes('whatsapp-group')) && (
@@ -970,9 +977,9 @@ export default function InboxPage() {
           </div>
         </div>
 
-        {/* MIDDLE COLUMN: Chat Area (50% or flex-1) */}
+        {/* MIDDLE COLUMN: Chat Area — RTL-aware */}
         {selectedConversation ? (
-          <div className="flex-1 flex flex-col bg-slate-50 relative">
+          <div className="flex-1 flex flex-col bg-slate-50 relative chat-column" dir={dir}>
             {/* Header */}
             <div className="h-16 border-b bg-card px-6 flex items-center justify-between shadow-sm z-10">
               <div className="flex items-center gap-3">
@@ -986,9 +993,9 @@ export default function InboxPage() {
                     <Badge
                       variant="outline"
                       className="ms-2 text-[10px] font-normal text-muted-foreground bg-slate-50 border-slate-200 cursor-help"
-                      title={botFlows.filter(f => f.isActive).map(f => f.trigger).join(', ') || 'None'}
+                      title={botFlows.filter(f => f.isActive).map(f => f.trigger).join(", ") || "None"}
                     >
-                      Scanning ({botFlows.filter(f => f.isActive).length})
+                      {t("scanningCount").replace("{n}", String(botFlows.filter(f => f.isActive).length))}
                     </Badge>
                   </h3>
                   <p className="text-xs text-green-600 flex items-center gap-1">
@@ -996,13 +1003,12 @@ export default function InboxPage() {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                     </span>
-                    {t("lastActiveAgo")} 2 min
+                    {t("lastActiveAgo")} {t("minutesAgo").replace("{n}", "2")}
                   </p>
                 </div>
-                {/* Debug Match Info */}
                 {suggestedFlow && (
                   <Badge variant="outline" className="ms-4 bg-purple-50 text-purple-700 animate-pulse border-purple-200">
-                    DEBUG: Match Found ({suggestedFlow.name})
+                    {t("debugMatchFound").replace("{name}", suggestedFlow.name)}
                   </Badge>
                 )}
               </div>
@@ -1083,7 +1089,7 @@ export default function InboxPage() {
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align={dir === "rtl" ? "start" : "end"}>
                     <DropdownMenuLabel>{t("chatOptions")}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setIsTemplatesOpen(true)}>
@@ -1183,18 +1189,20 @@ export default function InboxPage() {
               </div>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
-              {messages.map((message) => (
+            {/* Messages — RTL: incoming=start (right), outgoing=end (left) */}
+            <div className="chat-messages">
+              {messages.map((message) => {
+                const isOutgoing = message.direction === "OUTGOING"
+                return (
                 <div
                   key={message.id}
-                  className="flex w-full"
+                  className={`chat-message-row ${isOutgoing ? "outgoing" : "incoming"}`}
                 >
-                  <div className={`max-w-[85%] sm:max-w-[70%] group relative flex flex-col ${message.direction === 'OUTGOING' ? 'ms-auto items-end' : 'me-auto items-start'}`}>
+                  <div className={`chat-bubble-wrap flex flex-col ${isOutgoing ? "outgoing" : "incoming"}`}>
                     <div
-                      className={`px-4 py-3 rounded-2xl shadow-sm text-sm ${message.direction === 'OUTGOING'
-                        ? 'bg-primary text-primary-foreground rounded-br-none'
-                        : 'bg-white text-gray-800 border rounded-bl-none'
+                      className={`chat-bubble px-4 py-3 rounded-2xl shadow-sm text-sm ${isOutgoing
+                        ? "bg-primary text-primary-foreground outgoing"
+                        : "bg-white text-gray-800 border incoming"
                         }`}
                     >
                       {message.type === 'IMAGE' && message.mediaUrl ? (
@@ -1216,7 +1224,7 @@ export default function InboxPage() {
                           <div className="p-3 bg-slate-50 border-b flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <MapPin className="h-4 w-4 text-red-500 fill-red-500/20" />
-                              <span className="text-xs font-bold text-slate-700">Location</span>
+                              <span className="text-xs font-bold text-slate-700">{t("locationLabel")}</span>
                             </div>
                             <ExternalLink className="h-3 w-3 text-muted-foreground group-hover/map:text-primary transition-colors" />
                           </div>
@@ -1233,13 +1241,13 @@ export default function InboxPage() {
                                 (e.target as any).nextSibling.style.display = 'flex';
                               }}
                             />
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50" style={{ display: 'none' }}>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50" style={{ display: "none" }}>
                               <MapPin className="h-8 w-8 text-red-500 mb-2 animate-bounce" />
-                              <span className="text-[10px] font-medium text-slate-500 px-4 text-center">Click to view location in Google Maps</span>
+                              <span className="text-[10px] font-medium text-slate-500 px-4 text-center">{t("clickToViewInMaps")}</span>
                             </div>
                           </div>
                           <a href={message.content} target="_blank" rel="noopener noreferrer" className="block p-3 text-xs text-primary font-medium hover:bg-slate-50 transition-colors text-center border-t">
-                            Open in Maps
+                            {t("openInMaps")}
                           </a>
                         </div>
                       ) : message.type === 'DOCUMENT' && message.mediaUrl ? (
@@ -1248,38 +1256,37 @@ export default function InboxPage() {
                             <Paperclip className="h-5 w-5 text-slate-500" />
                           </div>
                           <div className="flex flex-col overflow-hidden">
-                            <span className="text-sm font-medium truncate max-w-[150px]">{message.content || "Document"}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase">Download</span>
+                            <span className="text-sm font-medium truncate max-w-[150px]">{message.content || t("documentLabel")}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase">{t("downloadLabel")}</span>
                           </div>
                         </a>
                       ) : (
-                        message.content
+                        <span className="block text-start">{message.content}</span>
                       )}
                     </div>
-                    <span className="text-[10px] text-muted-foreground mt-1 px-1">
-                      {format(new Date(message.createdAt), 'h:mm a')}
-                      {message.direction === 'OUTGOING' && (
-                        <span className="ms-1 opacity-70">
-                          {message.status === 'READ' ? '✓✓' : '✓'}
+                    <div className="chat-bubble-meta">
+                      <span>{format(new Date(message.createdAt), "h:mm a", { locale: dateLocale })}</span>
+                      {isOutgoing && (
+                        <span className="opacity-70" aria-hidden>
+                          {message.status === "READ" ? "✓✓" : "✓"}
                         </span>
                       )}
-                    </span>
+                    </div>
                   </div>
                 </div>
-              ))}
+              )})}
 
-              {/* Dynamic AI Suggestion (Moved to fixed overlay below) */}
-
+              <div ref={chatMessagesEndRef} aria-hidden className="min-h-2" />
             </div>
 
-            {/* Input */}
-            <div className="p-4 bg-card border-t mt-auto">
-              <div className="flex items-center gap-2 bg-muted/30 p-2 rounded-xl">
+            {/* Input bar — RTL: [Attach|Emoji|Mic] → Input → Send; Send on start (right in RTL) */}
+            <div className="bg-card mt-auto chat-input-bar">
+              <div className="flex items-center gap-2 bg-muted/30 p-2 rounded-xl w-full flex-1 min-w-0">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-muted-foreground hover:bg-background"
-                  onClick={() => document.getElementById('file-upload')?.click()}
+                  className="text-muted-foreground hover:bg-background shrink-0"
+                  onClick={() => document.getElementById("file-upload")?.click()}
                 >
                   <Paperclip className="h-5 w-5" />
                 </Button>
@@ -1337,7 +1344,7 @@ export default function InboxPage() {
                       <Smile className="h-5 w-5" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 border-none bg-transparent shadow-none" side="top" align="start">
+                  <PopoverContent className="w-full p-0 border-none bg-transparent shadow-none" side="top" align={dir === "rtl" ? "end" : "start"}>
                     <EmojiPicker
                       onEmojiClick={(emojiData: EmojiClickData) => setNewMessage(prev => prev + emojiData.emoji)}
                       autoFocusSearch={false}
@@ -1348,20 +1355,21 @@ export default function InboxPage() {
                 </Popover>
 
                 <Input
-                  className="border-none bg-transparent shadow-none focus-visible:ring-0 px-2"
+                  dir={dir}
+                  className="border-none bg-transparent shadow-none focus-visible:ring-0 flex-1 min-w-0"
                   placeholder={t("typeYourMessage")}
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 />
                 {newMessage.trim() ? (
-                  <Button size="icon" onClick={() => handleSendMessage()} disabled={isSending} className="rounded-lg h-9 w-9"><Send className="h-4 w-4" /></Button>
+                  <Button size="icon" onClick={() => handleSendMessage()} disabled={isSending} className="rounded-lg h-9 w-9 shrink-0"><Send className="h-4 w-4" /></Button>
                 ) : (
                   <>
                     <Button
                       variant={isRecording ? "destructive" : "ghost"}
                       size="icon"
-                      className={isRecording ? "animate-pulse" : "text-muted-foreground hover:bg-background"}
+                      className={`shrink-0 ${isRecording ? "animate-pulse" : "text-muted-foreground hover:bg-background"}`}
                       onClick={isRecording ? stopRecording : startRecording}
                     >
                       {isRecording ? <div className="h-3 w-3 bg-white rounded-sm" /> : <Mic className="h-5 w-5" />}
@@ -1369,7 +1377,7 @@ export default function InboxPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground hover:bg-background"
+                      className="text-muted-foreground hover:bg-background shrink-0"
                       onClick={handleLocationShare}
                     >
                       <MapPin className="h-5 w-5" />
@@ -1380,15 +1388,15 @@ export default function InboxPage() {
 
               {/* Dynamic AI Suggestion Fixed Overlay */}
               {suggestedFlow && !isSuggestionSnoozed && (
-                <div className="absolute bottom-20 left-4 right-4 z-20">
+                <div className="absolute bottom-20 start-4 end-4 z-20">
                   <div className="flex items-center justify-between p-4 bg-white border-2 border-purple-200 rounded-2xl shadow-xl animate-in fade-in zoom-in duration-300">
                     <div className="flex items-center gap-4">
                       <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
                         <Sparkles className="h-5 w-5 text-purple-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-900 leading-tight">Recommend: Start "{suggestedFlow.name}"?</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">Auto-detected keyword matching trigger: "{suggestedFlow.trigger}"</p>
+                        <p className="text-sm font-bold text-slate-900 leading-tight">{t("recommendStartFlow").replace("{name}", suggestedFlow.name)}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{t("autoDetectedTrigger").replace("{trigger}", suggestedFlow.trigger)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1402,14 +1410,14 @@ export default function InboxPage() {
                           setTimeout(() => setIsSuggestionSnoozed(false), 10000)
                         }}
                       >
-                        Dismiss
+                        {t("dismiss")}
                       </Button>
                       <Button
                         size="sm"
                         className="h-9 px-5 rounded-full bg-purple-600 hover:bg-purple-700 text-white gap-2 text-xs font-bold shadow-md shadow-purple-200"
                         onClick={() => handleAcceptSuggestion(suggestedFlow)}
                       >
-                        <Play className="h-4 w-4 fill-current" /> Use Flow
+                        <Play className="h-4 w-4 fill-current" /> {t("useFlow")}
                       </Button>
                     </div>
                   </div>
@@ -1457,7 +1465,7 @@ export default function InboxPage() {
             <Button
               variant="secondary"
               size="icon"
-              className="absolute -top-4 -right-4 rounded-full bg-black/60 text-white hover:bg-black/80 border-2 border-white/20 h-10 w-10 shadow-xl z-50"
+              className="absolute -top-4 -end-4 rounded-full bg-black/60 text-white hover:bg-black/80 border-2 border-white/20 h-10 w-10 shadow-xl z-50"
               onClick={() => setPreviewImage(null)}
             >
               <X className="h-5 w-5" />

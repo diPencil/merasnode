@@ -456,6 +456,28 @@ const translations: Translations = {
   tagsPlaceholder: { en: "vip, new lead...", ar: "مميز، عميل محتمل..." },
   writeNotePlaceholder: { en: "Write a note...", ar: "اكتب ملاحظة..." },
 
+  // Inbox - lead status & labels (unified terminology)
+  leadStatusNew: { en: "New", ar: "جديد" },
+  leadStatusBooked: { en: "Booked", ar: "محجوز" },
+  leadStatusInProgress: { en: "In Progress", ar: "قيد التنفيذ" },
+  scanningCount: { en: "Scanning ({n})", ar: "جاري المسح ({n})" },
+  recommendStartFlow: { en: "Recommend: Start \"{name}\"?", ar: "التوصية: بدء \"{name}\"؟" },
+  autoDetectedTrigger: { en: "Auto-detected keyword matching trigger: \"{trigger}\"", ar: "تطابق تلقائي للمحفز: \"{trigger}\"" },
+  dismiss: { en: "Dismiss", ar: "تجاهل" },
+  useFlow: { en: "Use Flow", ar: "استخدام السير" },
+  groupChat: { en: "Group Chat", ar: "دردشة جماعية" },
+  leadCustomer: { en: "Lead Customer", ar: "عميل محتمل" },
+  branchLabel: { en: "Branch", ar: "الفرع" },
+  statusLabel: { en: "Status", ar: "الحالة" },
+  metaId: { en: "Meta ID", ar: "معرّف Meta" },
+  locationLabel: { en: "Location", ar: "الموقع" },
+  downloadLabel: { en: "Download", ar: "تنزيل" },
+  openInMaps: { en: "Open in Maps", ar: "فتح في الخرائط" },
+  clickToViewInMaps: { en: "Click to view location in Google Maps", ar: "انقر لعرض الموقع في خرائط Google" },
+  documentLabel: { en: "Document", ar: "مستند" },
+  minutesAgo: { en: "{n} min", ar: "منذ {n} د" },
+  debugMatchFound: { en: "DEBUG: Match Found ({name})", ar: "تصحيح: تطابق ({name})" },
+
   // WhatsApp accounts
   manageWhatsAppAccounts: { en: "Manage your WhatsApp business accounts", ar: "إدارة حسابات واتساب للأعمال" },
   connectWhatsAppAccount: { en: "Connect WhatsApp Account", ar: "ربط حساب واتساب" },

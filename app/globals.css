@@ -330,3 +330,90 @@ body {
 [dir="rtl"] .settings-integration-inner {
   flex-direction: row-reverse !important;
 }
+
+/* ========== RTL Chat / Messaging ========== */
+/* Chat column: flow top→bottom, content aligned to start (right in RTL) */
+.chat-column {
+  display: flex;
+  flex-direction: column;
+  text-align: start;
+}
+.chat-column .chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding-inline: 1rem;
+  padding-block: 1rem;
+}
+/* Message row: no centering; alignment via bubble-wrap margins only */
+.chat-message-row {
+  width: 100%;
+  display: flex;
+  margin-block-end: 1.5rem;
+}
+/* Incoming: bubble at start (right in RTL) — margin-inline-start: auto on opposite side */
+.chat-message-row.incoming .chat-bubble-wrap {
+  margin-inline-start: 0;
+  margin-inline-end: auto;
+  align-items: flex-start;
+}
+/* Outgoing: bubble at end (left in RTL) */
+.chat-message-row.outgoing .chat-bubble-wrap {
+  margin-inline-start: auto;
+  margin-inline-end: 0;
+  align-items: flex-end;
+}
+.chat-bubble-wrap {
+  max-inline-size: 85%;
+}
+@media (min-width: 640px) {
+  .chat-bubble-wrap {
+    max-inline-size: 70%;
+  }
+}
+/* Bubble: logical radius (tail at correct edge) */
+.chat-bubble {
+  text-align: start;
+  inline-size: fit-content;
+}
+/* Incoming: light bg, flat corner at start-bottom */
+.chat-bubble.incoming {
+  border-end-start-radius: 0;
+}
+/* Outgoing: primary, flat corner at end-bottom */
+.chat-bubble.outgoing {
+  border-end-end-radius: 0;
+}
+/* Timestamp row under bubble: smaller font, aligned with bubble edge */
+.chat-bubble-meta {
+  font-size: 0.625rem;
+  color: var(--muted-foreground);
+  margin-block-start: 0.25rem;
+  padding-inline: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.chat-bubble-wrap.outgoing .chat-bubble-meta {
+  flex-direction: row-reverse;
+}
+/* Input bar: RTL order handled by flex-row-reverse on container */
+.chat-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 1rem;
+  padding-block: 1rem;
+  border-block-start: 1px solid var(--border);
+}
+[dir="rtl"] .chat-input-bar {
+  flex-direction: row-reverse;
+}
+.chat-input-bar input {
+  flex: 1;
+  min-inline-size: 0;
+  text-align: start;
+  padding-inline-start: 0.5rem;
+  padding-inline-end: 0.5rem;
+}

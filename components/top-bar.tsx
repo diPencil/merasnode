@@ -161,10 +161,10 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
     }
 
     updateDateTime()
-    const interval = setInterval(updateDateTime, 1000) // Update every second
+    const interval = setInterval(updateDateTime, 1000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [language])
 
   return (
     <div className="flex h-16 items-center justify-between bg-transparent px-8">
@@ -270,7 +270,7 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
                           </p>
                           <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
                             <Calendar className="h-2.5 w-2.5" />
-                            {new Date(notification.createdAt).toLocaleString()}
+                            {new Date(notification.createdAt).toLocaleString(language === "ar" ? "ar-SA" : "en-US", { dateStyle: "short", timeStyle: "short" })}
                           </p>
                         </div>
                         <Button

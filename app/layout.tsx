@@ -32,6 +32,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Default SSR: Arabic RTL. I18nProvider syncs lang/dir on client when user switches language.
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head />
