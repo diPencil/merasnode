@@ -24,8 +24,8 @@ function Progress({
     >
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
-        className="bg-primary h-full flex-1 transition-all rtl:ms-auto"
-        style={dir === "rtl" ? { width: `${v}%` } : { transform: `translateX(-${100 - v}%)`, width: "100%" }}
+        className="bg-primary h-full flex-1 transition-all"
+        style={dir === "rtl" ? { width: `${v}%` } : { transform: `translateX(-${100 - v}%)` }}
       />
     </ProgressPrimitive.Root>
   )

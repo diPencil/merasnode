@@ -18,8 +18,7 @@ export function AppLayout({ children, title, showSearch = false }: AppLayoutProp
     /* dir يُورث من document (يضبطه I18nProvider) لتفادي وميض LTR */
     <div
       className={`
-        flex h-screen overflow-hidden bg-background
-        ${dir === "rtl" ? "flex-row-reverse" : "flex-row"}
+        flex h-screen overflow-hidden bg-background flex-row
       `}
     >
       <NavigationRail />

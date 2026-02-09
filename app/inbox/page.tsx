@@ -847,7 +847,7 @@ export default function InboxPage() {
 
   return (
     <AppLayout title={t("inbox")}>
-      <div className={`flex h-[calc(100vh-8rem)] bg-background border rounded-xl overflow-hidden shadow-sm ${dir === "rtl" ? "flex-row-reverse" : "flex-row"}`}>
+      <div className="flex h-[calc(100vh-8rem)] bg-background border rounded-xl overflow-hidden shadow-sm flex-row">
 
         {/* Conversations List: in RTL appears on the right */}
         <div className="w-[350px] flex flex-col border-e bg-muted/10">
@@ -885,7 +885,7 @@ export default function InboxPage() {
                     {filterType === 'all' ? t("filters") : filterType === 'unread' ? t("unread") : t("groupsOnly")}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align={dir === "rtl" ? "end" : "start"}>
+                <DropdownMenuContent align="start">
                   <DropdownMenuLabel>{t("filterConversations")}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setFilterType('all')}>
@@ -1089,7 +1089,7 @@ export default function InboxPage() {
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align={dir === "rtl" ? "start" : "end"}>
+                  <DropdownMenuContent align="end">
                     <DropdownMenuLabel>{t("chatOptions")}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setIsTemplatesOpen(true)}>
@@ -1194,87 +1194,88 @@ export default function InboxPage() {
               {messages.map((message) => {
                 const isOutgoing = message.direction === "OUTGOING"
                 return (
-                <div
-                  key={message.id}
-                  className={`chat-message-row ${isOutgoing ? "outgoing" : "incoming"}`}
-                >
-                  <div className={`chat-bubble-wrap flex flex-col ${isOutgoing ? "outgoing" : "incoming"}`}>
-                    <div
-                      className={`chat-bubble px-4 py-3 rounded-2xl shadow-sm text-sm ${isOutgoing
-                        ? "bg-primary text-primary-foreground outgoing"
-                        : "bg-white text-gray-800 border incoming"
-                        }`}
-                    >
-                      {message.type === 'IMAGE' && message.mediaUrl ? (
-                        <div className="rounded-lg overflow-hidden max-w-sm">
-                          <img src={message.mediaUrl} alt="Sent Image" className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setPreviewImage(message.mediaUrl || null)} />
-                          {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
-                        </div>
-                      ) : message.type === 'AUDIO' && message.mediaUrl ? (
-                        <div className="flex items-center gap-2 min-w-[250px] p-1">
-                          <audio controls className="w-full h-10 accent-primary" src={message.mediaUrl} />
-                        </div>
-                      ) : message.type === 'VIDEO' && message.mediaUrl ? (
-                        <div className="rounded-lg overflow-hidden max-w-sm">
-                          <video controls className="w-full h-auto max-h-[300px]" src={message.mediaUrl} />
-                          {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
-                        </div>
-                      ) : message.type === 'LOCATION' ? (
-                        <div className="rounded-xl overflow-hidden max-w-[280px] border shadow-sm bg-white group/map">
-                          <div className="p-3 bg-slate-50 border-b flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4 text-red-500 fill-red-500/20" />
-                              <span className="text-xs font-bold text-slate-700">{t("locationLabel")}</span>
-                            </div>
-                            <ExternalLink className="h-3 w-3 text-muted-foreground group-hover/map:text-primary transition-colors" />
+                  <div
+                    key={message.id}
+                    className={`chat-message-row ${isOutgoing ? "outgoing" : "incoming"}`}
+                  >
+                    <div className={`chat-bubble-wrap flex flex-col ${isOutgoing ? "outgoing" : "incoming"}`}>
+                      <div
+                        className={`chat-bubble px-4 py-3 rounded-2xl shadow-sm text-sm ${isOutgoing
+                          ? "bg-primary text-primary-foreground outgoing"
+                          : "bg-white text-gray-800 border incoming"
+                          }`}
+                      >
+                        {message.type === 'IMAGE' && message.mediaUrl ? (
+                          <div className="rounded-lg overflow-hidden max-w-sm">
+                            <img src={message.mediaUrl} alt="Sent Image" className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setPreviewImage(message.mediaUrl || null)} />
+                            {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
                           </div>
-                          <div
-                            className="h-[140px] w-full bg-slate-100 flex items-center justify-center cursor-pointer relative overflow-hidden"
-                            onClick={() => window.open(message.content, '_blank')}
-                          >
-                            <img
-                              src={`https://maps.googleapis.com/maps/api/staticmap?center=${message.content.split('q=')[1]}&zoom=15&size=300x150&sensor=false&key=`}
-                              alt="Map Preview"
-                              className="w-full h-full object-cover opacity-80"
-                              onError={(e) => {
-                                (e.target as any).style.display = 'none';
-                                (e.target as any).nextSibling.style.display = 'flex';
-                              }}
-                            />
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50" style={{ display: "none" }}>
-                              <MapPin className="h-8 w-8 text-red-500 mb-2 animate-bounce" />
-                              <span className="text-[10px] font-medium text-slate-500 px-4 text-center">{t("clickToViewInMaps")}</span>
-                            </div>
+                        ) : message.type === 'AUDIO' && message.mediaUrl ? (
+                          <div className="flex items-center gap-2 min-w-[250px] p-1">
+                            <audio controls className="w-full h-10 accent-primary" src={message.mediaUrl} />
                           </div>
-                          <a href={message.content} target="_blank" rel="noopener noreferrer" className="block p-3 text-xs text-primary font-medium hover:bg-slate-50 transition-colors text-center border-t">
-                            {t("openInMaps")}
+                        ) : message.type === 'VIDEO' && message.mediaUrl ? (
+                          <div className="rounded-lg overflow-hidden max-w-sm">
+                            <video controls className="w-full h-auto max-h-[300px]" src={message.mediaUrl} />
+                            {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
+                          </div>
+                        ) : message.type === 'LOCATION' ? (
+                          <div className="rounded-xl overflow-hidden max-w-[280px] border shadow-sm bg-white group/map">
+                            <div className="p-3 bg-slate-50 border-b flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-red-500 fill-red-500/20" />
+                                <span className="text-xs font-bold text-slate-700">{t("locationLabel")}</span>
+                              </div>
+                              <ExternalLink className="h-3 w-3 text-muted-foreground group-hover/map:text-primary transition-colors" />
+                            </div>
+                            <div
+                              className="h-[140px] w-full bg-slate-100 flex items-center justify-center cursor-pointer relative overflow-hidden"
+                              onClick={() => window.open(message.content, '_blank')}
+                            >
+                              <img
+                                src={`https://maps.googleapis.com/maps/api/staticmap?center=${message.content.split('q=')[1]}&zoom=15&size=300x150&sensor=false&key=`}
+                                alt="Map Preview"
+                                className="w-full h-full object-cover opacity-80"
+                                onError={(e) => {
+                                  (e.target as any).style.display = 'none';
+                                  (e.target as any).nextSibling.style.display = 'flex';
+                                }}
+                              />
+                              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50" style={{ display: "none" }}>
+                                <MapPin className="h-8 w-8 text-red-500 mb-2 animate-bounce" />
+                                <span className="text-[10px] font-medium text-slate-500 px-4 text-center">{t("clickToViewInMaps")}</span>
+                              </div>
+                            </div>
+                            <a href={message.content} target="_blank" rel="noopener noreferrer" className="block p-3 text-xs text-primary font-medium hover:bg-slate-50 transition-colors text-center border-t">
+                              {t("openInMaps")}
+                            </a>
+                          </div>
+                        ) : message.type === 'DOCUMENT' && message.mediaUrl ? (
+                          <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors text-slate-800 border">
+                            <div className="bg-white p-2 rounded shadow-sm">
+                              <Paperclip className="h-5 w-5 text-slate-500" />
+                            </div>
+                            <div className="flex flex-col overflow-hidden">
+                              <span className="text-sm font-medium truncate max-w-[150px]">{message.content || t("documentLabel")}</span>
+                              <span className="text-[10px] text-muted-foreground uppercase">{t("downloadLabel")}</span>
+                            </div>
                           </a>
-                        </div>
-                      ) : message.type === 'DOCUMENT' && message.mediaUrl ? (
-                        <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors text-slate-800 border">
-                          <div className="bg-white p-2 rounded shadow-sm">
-                            <Paperclip className="h-5 w-5 text-slate-500" />
-                          </div>
-                          <div className="flex flex-col overflow-hidden">
-                            <span className="text-sm font-medium truncate max-w-[150px]">{message.content || t("documentLabel")}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase">{t("downloadLabel")}</span>
-                          </div>
-                        </a>
-                      ) : (
-                        <span className="block text-start">{message.content}</span>
-                      )}
-                    </div>
-                    <div className="chat-bubble-meta">
-                      <span>{format(new Date(message.createdAt), "h:mm a", { locale: dateLocale })}</span>
-                      {isOutgoing && (
-                        <span className="opacity-70" aria-hidden>
-                          {message.status === "READ" ? "✓✓" : "✓"}
-                        </span>
-                      )}
+                        ) : (
+                          <span className="block text-start">{message.content}</span>
+                        )}
+                      </div>
+                      <div className="chat-bubble-meta">
+                        <span>{format(new Date(message.createdAt), "h:mm a", { locale: dateLocale })}</span>
+                        {isOutgoing && (
+                          <span className="opacity-70" aria-hidden>
+                            {message.status === "READ" ? "✓✓" : "✓"}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )})}
+                )
+              })}
 
               <div ref={chatMessagesEndRef} aria-hidden className="min-h-2" />
             </div>
@@ -1344,7 +1345,7 @@ export default function InboxPage() {
                       <Smile className="h-5 w-5" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 border-none bg-transparent shadow-none" side="top" align={dir === "rtl" ? "end" : "start"}>
+                  <PopoverContent className="w-full p-0 border-none bg-transparent shadow-none" side="top" align="start">
                     <EmojiPicker
                       onEmojiClick={(emojiData: EmojiClickData) => setNewMessage(prev => prev + emojiData.emoji)}
                       autoFocusSearch={false}

@@ -160,7 +160,7 @@ export function Sidebar({ conversation, onUpdate }: SidebarProps) {
     if (!conversation) return null
 
     return (
-        <div className="w-[320px] bg-card border-e flex-col overflow-y-auto hidden xl:flex h-full">
+        <div className="w-[320px] bg-card border-s flex-col overflow-y-auto hidden xl:flex h-full">
             {/* Profile */}
             <div className="p-8 flex flex-col items-center text-center border-b">
                 <Avatar className="h-24 w-24 mb-4 ring-4 ring-offset-2 ring-slate-50">

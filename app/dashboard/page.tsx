@@ -69,9 +69,11 @@ function MomentumChart({ data, trend }: { data: MessageByDay[]; trend?: string }
   const pathD = `M ${points.join(" L ")}`
   const strokeClass = trend === "down" ? "text-red-500 dark:text-red-400" : trend === "stable" ? "text-slate-500 dark:text-slate-400" : "text-green-500 dark:text-green-400"
   return (
-    <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
-      <path d={pathD} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={strokeClass} />
-    </svg>
+    <div className="w-full h-full rtl:scale-x-[-1]">
+      <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
+        <path d={pathD} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={strokeClass} />
+      </svg>
+    </div>
   )
 }
 
@@ -157,6 +159,11 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // RTL helper for Recharts
+  const getRechartsData = <T extends any>(data: T[]): T[] => {
+    return dir === 'rtl' ? [...data].reverse() : data
   }
 
   // Helper for dynamic colors to ensure visibility
@@ -357,15 +364,17 @@ export default function DashboardPage() {
                             tickLine={false}
                             tick={{ fill: '#64748B', fontSize: 11 }}
                             dy={10}
+                            reversed={dir === 'rtl'}
                           />
                           <YAxis
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: '#64748B', fontSize: 11 }}
+                            orientation={dir === 'rtl' ? 'right' : 'left'}
                           />
                           <Tooltip
                             cursor={{ fill: '#F1F5F9' }}
-                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', textAlign: dir === 'rtl' ? 'right' : 'left', direction: dir }}
                           />
                           <Legend wrapperStyle={{ paddingTop: '20px' }} />
                           <Bar

@@ -661,7 +661,7 @@ export default function ContactsPage() {
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align={dir === "rtl" ? "start" : "end"} className="rounded-xl shadow-soft-lg">
+                          <DropdownMenuContent align="end" className="rounded-xl shadow-soft-lg">
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation()
                               setSelectedContact(contact)
