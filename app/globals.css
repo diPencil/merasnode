@@ -301,14 +301,14 @@ body {
 
 /* RTL: عناصر القائمة — المحتوى من اليمين وأيقونة الصح من اليسار */
 [dir="rtl"] [data-slot="select-item"] {
-  text-align: right !important;
-  padding-right: 0.5rem !important;
-  padding-left: 2rem !important;
+  text-align: end !important;
+  padding-inline-start: 2rem !important;
+  padding-inline-end: 0.5rem !important;
   direction: rtl;
 }
 [dir="rtl"] [data-slot="select-item"] > span:first-child {
-  right: auto !important;
-  left: 0.5rem !important;
+  inset-inline-start: 0.5rem !important;
+  inset-inline-end: auto !important;
 }
 
 /* RTL: حقول الإدخال والنص من اليمين */
@@ -329,6 +329,49 @@ body {
 /* RTL: بطاقات التكاملات — النص أولاً ثم الأيقونة من اليمين، الزر من اليسار */
 [dir="rtl"] .settings-integration-inner {
   flex-direction: row-reverse !important;
+}
+
+/* ========== GLOBAL RTL: Tables, Cards, Forms, Search ========== */
+[dir="rtl"] [data-slot="table"],
+[dir="rtl"] table {
+  direction: rtl;
+  text-align: start;
+}
+[dir="rtl"] [data-slot="table-head"],
+[dir="rtl"] th {
+  text-align: start;
+  padding-inline-start: 0.5rem;
+  padding-inline-end: 0.5rem;
+}
+[dir="rtl"] [data-slot="table-cell"],
+[dir="rtl"] td {
+  text-align: start;
+  padding-inline-start: 0.5rem;
+  padding-inline-end: 0.5rem;
+}
+[dir="rtl"] [data-slot="card-header"] {
+  text-align: start;
+}
+[dir="rtl"] [data-slot="card-action"] {
+  justify-self: start;
+}
+[dir="rtl"] [data-slot="card-content"],
+[dir="rtl"] [data-slot="card-footer"] {
+  padding-inline-start: 1.5rem;
+  padding-inline-end: 1.5rem;
+}
+/* Search: icon at start */
+[dir="rtl"] .search-input-wrap .search-icon {
+  inset-inline-start: 0.75rem;
+  inset-inline-end: auto;
+}
+/* Pagination: logical spacing */
+[dir="rtl"] [data-slot="pagination-content"] {
+  flex-direction: row-reverse;
+}
+[dir="rtl"] [data-slot="pagination-link"] {
+  padding-inline-start: 0.625rem;
+  padding-inline-end: 0.625rem;
 }
 
 /* ========== RTL Chat / Messaging ========== */

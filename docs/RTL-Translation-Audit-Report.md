@@ -178,3 +178,51 @@ Added in `lib/i18n.tsx`:
 
 ### Scroll
 - Messages container scrolls with a sentinel at the bottom; `scrollIntoView({ behavior: "smooth" })` runs when `messages.length` or `selectedConversation?.id` changes so the view stays at the latest message.
+
+---
+
+## 8. Full system RTL + translation (execution summary)
+
+**Applied across:** Global layout, Tables, Pagination, Contacts, Branches, and shared UI.
+
+### Global RTL foundation
+- **Layout:** `<html lang="ar" dir="rtl">` remains default; `I18nProvider` sets `document.documentElement.dir` and `lang` on client when language changes. Direction propagates to all components.
+- **CSS (strict):** No `left`/`right` for layout. Use only: `margin-inline-start`/`end`, `padding-inline-start`/`end`, `inset-inline-start`/`end`, `text-align: start`/`end`, logical border-radius. Global RTL rules in `app/globals.css` for tables (`[dir="rtl"] table`, `th`, `td`), cards (`[data-slot="card-action"]` justify-self: start), pagination (`[data-slot="pagination-content"]` flex-direction: row-reverse).
+
+### Tables (critical)
+- **Table component:** `TableHead` and `TableCell` use `text-start` and `pe-0` (not `text-left`/`pr-0`). Column order in DOM: `#` first (appears far right in RTL), then content columns, then **Actions** last (appears far left in RTL). Actions column uses `text-end` for alignment.
+- **Per-page:** Contacts and Branches table headers and action cells use `text-end`; dropdowns use `align={dir === "rtl" ? "start" : "end"}` so menus open from the correct RTL side.
+
+### Cards & lists
+- Card header/action/content use global RTL rules; titles and content aligned via `text-align: start`. No mirrored spacing: all padding/margin use logical properties in new/updated components.
+
+### Forms & search
+- Search inputs: icon positioned with `start-2.5` (not `left-2.5`); input `className` includes `ps-9` and `text-start`. Placeholders use `t()`. Labels and inputs inherit RTL from `[dir="rtl"]` on document/container.
+
+### Empty states
+- All visible empty-state titles and descriptions use `t()`. Branches: `noMatchingBranches`, `noBranchesFound`, `tryAdjustingSearch`, `getStartedAddingBranch`. CTA buttons use `me-2` (not `mr-2`) for icon spacing.
+
+### Icons & actions
+- Pagination: `PaginationPrevious`/`PaginationNext` use `t("paginationPrevious")`/`t("paginationNext")` and `ChevronLeftIcon`/`ChevronRightIcon` with `dir === "rtl" && "rotate-180"` so direction is correct. Dropdown menus use `align` based on `dir` for RTL.
+
+### Translation audit (mandatory)
+- **New keys (lib/i18n.tsx):** contactLabel, createdLabel, actionsLabel, viewDetails, editContactLabel, sendMessageLabel, blockContactLabel, unblockContactLabel, blockedBadge, importLabel, exportLabel, allContactsLabel, blockedContactsLabel, goToPreviousPage, goToNextPage, morePages, paginationPrevious, paginationNext, branchCreatedSuccess, branchUpdatedSuccess, branchDeletedSuccess, failedToLoadBranches, failedToSaveBranch, failedToDeleteBranch, deleteBranchConfirmDesc, searchBranches, editBranch, updateBranchInfo, addNewBranchLocation, noMatchingBranches, noBranchesFound, tryAdjustingSearch, getStartedAddingBranch, noWhatsAppAccountsFound, connectWhatsAppFirst, enableOrDisableBranch, contact, actions.
+- **Contacts page:** All table headers, buttons (Blocked Contacts, All Contacts, Import, Export, Add Contact), dropdown items (View details, Edit contact, Send message, Block/Unblock), BLOCKED badge, and CSV headers use `t()`. Date format uses `date-fns` with `ar` locale.
+- **Branches page:** All toasts, search placeholder, dialog titles/descriptions, form labels/placeholders, empty state copy, table headers, dropdown label/items, and delete confirmation dialog use `t()`. Search icon `start-2.5`; action cell `text-end`; dropdown `align` by `dir`.
+
+### Affected pages & components
+| Page/Component | RTL | Translation |
+|----------------|-----|-------------|
+| app/globals.css | Global table/card/pagination RTL rules | — |
+| components/ui/table.tsx | text-start, pe-0 | — |
+| components/ui/pagination.tsx | ps/pe, rotate chevrons in RTL | Previous/Next/More pages |
+| app/contacts/page.tsx | Search start, table text-end, dropdown align | All labels, toasts, CSV headers, dates |
+| app/branches/page.tsx | Search start, table text-end, dropdown align, me-2 | All toasts, dialogs, empty state, placeholders |
+| app/inbox/* (previous phase) | Chat column dir, bubbles, input bar | Status, scan, suggestions, sidebar labels |
+
+### Acceptance criteria (system-wide)
+- [x] Arabic UI uses RTL throughout; no layout `left`/`right` in new/changed code.
+- [x] Tables: column order RTL-aware; # right, Actions left; text-align start/end.
+- [x] No hardcoded English in Contacts/Branches; one language per screen.
+- [x] Pagination and dropdowns RTL-aware (align + chevrons).
+- [ ] Remaining pages (Offers, Invoices, Templates, Users, Analytics, Dashboard): same pattern to be applied in follow-up PRs.

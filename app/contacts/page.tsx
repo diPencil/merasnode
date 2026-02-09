@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { AppLayout } from "@/components/app-layout"
+import { format } from "date-fns"
+import { ar } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,7 +27,6 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
 import { Search, Plus, MoreVertical, Mail, Phone, Tag, Download, Upload, ShieldOff, Users } from "lucide-react"
-import { format } from "date-fns"
 
 interface Contact {
   id: string
@@ -41,7 +42,8 @@ interface Contact {
 export default function ContactsPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const { t } = useI18n()
+  const { t, language, dir } = useI18n()
+  const dateLocale = language === "ar" ? ar : undefined
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -112,7 +114,7 @@ export default function ContactsPage() {
       return
     }
 
-    const headers = ['Name', 'Phone', 'Email', 'Tags', 'Notes']
+    const headers = [t("nameLabel"), t("phone"), t("email"), t("tags"), t("notes")]
     const csvContent = [
       headers.join(','),
       ...contacts.map(contact => [
@@ -506,31 +508,31 @@ export default function ContactsPage() {
 
           <div className="flex items-center gap-2">
             <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder={t("searchContacts")}
-                className="ps-9 h-9"
+                className="ps-9 h-9 text-start"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Button
-              variant={viewMode === 'blocked' ? 'default' : 'outline'}
+              variant={viewMode === "blocked" ? "default" : "outline"}
               size="sm"
-              className={`h-9 gap-2 ${viewMode === 'blocked' ? 'bg-red-600 hover:bg-red-700 text-white' : ''}`}
-              onClick={() => setViewMode(viewMode === 'all' ? 'blocked' : 'all')}
+              className={`h-9 gap-2 ${viewMode === "blocked" ? "bg-red-600 hover:bg-red-700 text-white" : ""}`}
+              onClick={() => setViewMode(viewMode === "all" ? "blocked" : "all")}
             >
-              {viewMode === 'all' ? <ShieldOff className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-              <span className="hidden sm:inline">{viewMode === 'all' ? 'Blocked Contacts' : 'All Contacts'}</span>
+              {viewMode === "all" ? <ShieldOff className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+              <span className="hidden sm:inline">{viewMode === "all" ? t("blockedContactsLabel") : t("allContactsLabel")}</span>
             </Button>
             <Button variant="outline" size="sm" className="h-9 gap-2" onClick={handleImport}>
               <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline">Import</span>
+              <span className="hidden sm:inline">{t("importLabel")}</span>
             </Button>
             <Button variant="outline" size="sm" className="h-9 gap-2" onClick={handleExport}>
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden sm:inline">{t("exportLabel")}</span>
             </Button>
             <input
               type="file"
@@ -540,7 +542,7 @@ export default function ContactsPage() {
               onChange={handleFileChange}
             />
             <Button size="sm" className="h-9" onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="me-2 h-4 w-4" />
               {t("addContact")}
             </Button>
           </div>
@@ -578,12 +580,12 @@ export default function ContactsPage() {
               <TableHeader>
                 <TableRow className="border-border/50">
                   <TableHead className="w-[50px]">#</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Tags</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right w-[100px]">Actions</TableHead>
+                  <TableHead>{t("contactLabel")}</TableHead>
+                  <TableHead>{t("phone")}</TableHead>
+                  <TableHead>{t("email")}</TableHead>
+                  <TableHead>{t("tags")}</TableHead>
+                  <TableHead>{t("createdLabel")}</TableHead>
+                  <TableHead className="text-end w-[100px]">{t("actionsLabel")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -614,7 +616,7 @@ export default function ContactsPage() {
                           </Avatar>
                           <div>
                             <span className="font-medium">{contact.name}</span>
-                            {isBlocked && <Badge variant="destructive" className="ms-2 text-[10px] h-5">BLOCKED</Badge>}
+                            {isBlocked && <Badge variant="destructive" className="ms-2 text-[10px] h-5">{t("blockedBadge")}</Badge>}
                           </div>
                         </div>
                       </TableCell>
@@ -651,7 +653,7 @@ export default function ContactsPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{format(new Date(contact.createdAt), "MMM dd, yyyy")}</TableCell>
+                      <TableCell className="text-muted-foreground">{format(new Date(contact.createdAt), "MMM dd, yyyy", { locale: dateLocale })}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -659,12 +661,12 @@ export default function ContactsPage() {
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-xl shadow-soft-lg">
+                          <DropdownMenuContent align={dir === "rtl" ? "start" : "end"} className="rounded-xl shadow-soft-lg">
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation()
                               setSelectedContact(contact)
                             }}>
-                              View details
+                              {t("viewDetails")}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation()
@@ -673,18 +675,18 @@ export default function ContactsPage() {
                                 name: contact.name,
                                 phone: contact.phone,
                                 email: contact.email || "",
-                                tags: Array.isArray(contact.tags) ? contact.tags.join(', ') : (contact.tags || ""),
+                                tags: Array.isArray(contact.tags) ? contact.tags.join(", ") : (contact.tags || ""),
                                 notes: contact.notes || ""
                               })
                               setIsEditDialogOpen(true)
                             }}>
-                              Edit contact
+                              {t("editContactLabel")}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation()
                               handleSendMessage(contact.id)
                             }}>
-                              Send message
+                              {t("sendMessageLabel")}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -694,7 +696,7 @@ export default function ContactsPage() {
                                 handleToggleBlock(contact)
                               }}
                             >
-                              {isBlocked ? 'Unblock Contact' : 'Block Contact'}
+                              {isBlocked ? t("unblockContactLabel") : t("blockContactLabel")}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem

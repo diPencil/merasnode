@@ -66,7 +66,7 @@ interface Branch {
 }
 
 export default function BranchesPage() {
-    const { t } = useI18n()
+    const { t, dir } = useI18n()
     const { toast } = useToast()
     const [branches, setBranches] = useState<Branch[]>([])
     const [registeredAccounts, setRegisteredAccounts] = useState<any[]>([])
@@ -112,8 +112,8 @@ export default function BranchesPage() {
         } catch (error) {
             console.error("Error fetching branches:", error)
             toast({
-                title: "Error",
-                description: "Failed to load branches",
+                title: t("error"),
+                description: t("failedToLoadBranches"),
                 variant: "destructive",
             })
         } finally {
@@ -136,8 +136,8 @@ export default function BranchesPage() {
             const data = await response.json()
             if (data.success) {
                 toast({
-                    title: "Success",
-                    description: editingBranch ? "Branch updated successfully" : "Branch created successfully",
+                    title: t("success"),
+                    description: editingBranch ? t("branchUpdatedSuccess") : t("branchCreatedSuccess"),
                 })
                 setIsDialogOpen(false)
                 resetForm()
@@ -147,8 +147,8 @@ export default function BranchesPage() {
             }
         } catch (error) {
             toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to save branch",
+                title: t("error"),
+                description: error instanceof Error ? error.message : t("failedToSaveBranch"),
                 variant: "destructive",
             })
         }
@@ -171,19 +171,19 @@ export default function BranchesPage() {
 
             if (data.success) {
                 toast({
-                    title: "Success",
-                    description: "Branch deleted successfully",
+                    title: t("success"),
+                    description: t("branchDeletedSuccess"),
                 })
                 fetchBranches()
             } else {
-                console.error('Delete failed:', data.error)
-                throw new Error(data.error || 'Failed to delete branch')
+                console.error("Delete failed:", data.error)
+                throw new Error(data.error || t("failedToDeleteBranch"))
             }
         } catch (error) {
-            console.error('Delete error:', error)
+            console.error("Delete error:", error)
             toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to delete branch",
+                title: t("error"),
+                description: error instanceof Error ? error.message : t("failedToDeleteBranch"),
                 variant: "destructive",
             })
         } finally {
@@ -231,17 +231,17 @@ export default function BranchesPage() {
                         <div className="flex items-center gap-2">
                             <h2 className="text-2xl font-bold tracking-tight">{t("branches")}</h2>
                             <Badge variant="outline" className="text-sm px-2.5 py-0.5 h-7">
-                                Total: {filteredBranches.length}
+                                {t("total")}: {filteredBranches.length}
                             </Badge>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="relative w-full sm:w-64">
-                            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Search className="absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 type="search"
-                                placeholder={t("search") || "Search branches..."}
-                                className="pl-9 h-9"
+                                placeholder={t("searchBranches")}
+                                className="ps-9 h-9 text-start"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -259,9 +259,9 @@ export default function BranchesPage() {
                             <DialogContent className="sm:max-w-[500px]">
                                 <form onSubmit={handleSubmit}>
                                     <DialogHeader>
-                                        <DialogTitle>{editingBranch ? "Edit Branch" : t("addBranch")}</DialogTitle>
+                                        <DialogTitle>{editingBranch ? t("editBranch") : t("addBranch")}</DialogTitle>
                                         <DialogDescription>
-                                            {editingBranch ? "Update branch information" : "Add a new branch location"}
+                                            {editingBranch ? t("updateBranchInfo") : t("addNewBranchLocation")}
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="grid gap-4 py-4">
@@ -272,7 +272,7 @@ export default function BranchesPage() {
                                                 value={formData.name}
                                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                                 required
-                                                placeholder="Ex: Main Office"
+                                                placeholder={t("mainBranch")}
                                             />
                                         </div>
                                         <div className="grid gap-2">
@@ -281,7 +281,7 @@ export default function BranchesPage() {
                                                 id="address"
                                                 value={formData.address}
                                                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                                placeholder="Ex: 123 Business St, City"
+                                                placeholder={t("address")}
                                             />
                                         </div>
                                         <div className="grid gap-2">
@@ -291,7 +291,7 @@ export default function BranchesPage() {
                                                 onValueChange={(value) => setFormData({ ...formData, phone: value })}
                                             >
                                                 <SelectTrigger id="phone">
-                                                    <SelectValue placeholder="Select a registered number" />
+                                                    <SelectValue placeholder={t("selectPlaceholder")} />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {registeredAccounts.length > 0 ? (
@@ -302,7 +302,7 @@ export default function BranchesPage() {
                                                         ))
                                                     ) : (
                                                         <div className="p-2 text-sm text-muted-foreground text-center">
-                                                            No WhatsApp accounts found
+                                                            {t("noWhatsAppAccountsFound")}
                                                         </div>
                                                     )}
                                                 </SelectContent>
@@ -310,7 +310,7 @@ export default function BranchesPage() {
                                             {registeredAccounts.length === 0 && (
                                                 <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 text-xs text-muted-foreground">
                                                     <span className="text-amber-500">⚠</span>
-                                                    Please connect a WhatsApp account first in Manage page.
+                                                    {t("connectWhatsAppFirst")}
                                                 </div>
                                             )}
                                         </div>
@@ -321,13 +321,13 @@ export default function BranchesPage() {
                                                 type="email"
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                                placeholder="Ex: contact@company.com"
+                                                placeholder={t("placeholderEmailExample")}
                                             />
                                         </div>
                                         <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                                             <div className="space-y-0.5">
                                                 <Label htmlFor="isActive" className="text-base">{t("active")}</Label>
-                                                <p className="text-sm text-muted-foreground">Enable or disable this branch</p>
+                                                <p className="text-sm text-muted-foreground">{t("enableOrDisableBranch")}</p>
                                             </div>
                                             <Switch
                                                 id="isActive"
@@ -364,10 +364,10 @@ export default function BranchesPage() {
                                     <Building2 className="h-10 w-10 text-muted-foreground/50" />
                                 </div>
                                 <h3 className="text-lg font-semibold">
-                                    {searchQuery ? "No matching branches found" : "No branches found"}
+                                    {searchQuery ? t("noMatchingBranches") : t("noBranchesFound")}
                                 </h3>
                                 <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                                    {searchQuery ? "Try adjusting your search terms" : "Get started by adding your first branch location."}
+                                    {searchQuery ? t("tryAdjustingSearch") : t("getStartedAddingBranch")}
                                 </p>
                                 {!searchQuery && (
                                     <Button
@@ -378,7 +378,7 @@ export default function BranchesPage() {
                                             setIsDialogOpen(true)
                                         }}
                                     >
-                                        <Plus className="mr-2 h-4 w-4" />
+                                        <Plus className="me-2 h-4 w-4" />
                                         {t("addBranch")}
                                     </Button>
                                 )}
@@ -392,7 +392,7 @@ export default function BranchesPage() {
                                         <TableHead className="w-[100px]">{t("status")}</TableHead>
                                         <TableHead className="w-[25%]">{t("contact")}</TableHead>
                                         <TableHead>{t("address")}</TableHead>
-                                        <TableHead className="text-right w-[80px]">{t("actions") || "Actions"}</TableHead>
+                                        <TableHead className="text-end w-[80px]">{t("actionsLabel")}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -454,18 +454,18 @@ export default function BranchesPage() {
                                                     <span className="text-muted-foreground/50 text-xs">-</span>
                                                 )}
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-end">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <span className="sr-only">Open menu</span>
+                                                            <span className="sr-only">{t("actionsLabel")}</span>
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-[160px]">
-                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                    <DropdownMenuContent align={dir === "rtl" ? "start" : "end"} className="w-[160px]">
+                                                        <DropdownMenuLabel>{t("actionsLabel")}</DropdownMenuLabel>
                                                         <DropdownMenuItem onClick={() => openEditDialog(branch)}>
-                                                            <Edit className="mr-2 h-4 w-4" />
+                                                            <Edit className="me-2 h-4 w-4" />
                                                             {t("edit")}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
@@ -473,7 +473,7 @@ export default function BranchesPage() {
                                                             onClick={() => handleDelete(branch.id)}
                                                             className="text-destructive focus:text-destructive"
                                                         >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            <Trash2 className="me-2 h-4 w-4" />
                                                             {t("delete")}
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
@@ -492,16 +492,15 @@ export default function BranchesPage() {
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the branch
-                            and unlink any associated WhatsApp accounts.
+                            {t("deleteBranchConfirmDesc")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                         <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
+                            {t("delete")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
