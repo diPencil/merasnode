@@ -64,7 +64,7 @@ export default function AccountsPage() {
   const [createdAccountId, setCreatedAccountId] = useState<string | null>(null)
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null)
   const { toast } = useToast()
-  const { language } = useI18n()
+  const { t } = useI18n()
 
   useEffect(() => {
     fetchAccounts()
@@ -80,15 +80,15 @@ export default function AccountsPage() {
         setAccounts(data.accounts)
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Failed to fetch accounts",
+          title: t("error"),
+          description: data.error || t("failedToFetchAccounts"),
           variant: "destructive"
         })
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to fetch WhatsApp accounts",
+        title: t("error"),
+        description: t("failedToFetchWhatsAppAccounts"),
         variant: "destructive"
       })
     } finally {
@@ -109,8 +109,8 @@ export default function AccountsPage() {
 
     if (!newAccount.name || !newAccount.phone) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
+        title: t("validationError"),
+        description: t("pleaseFillAllRequiredFields"),
         variant: "destructive"
       })
       return
@@ -130,8 +130,8 @@ export default function AccountsPage() {
 
       if (data.success) {
         toast({
-          title: "Success",
-          description: "WhatsApp account created successfully"
+          title: t("success"),
+          description: t("whatsAppAccountCreatedSuccess")
         })
         setIsCreateOpen(false)
         setNewAccount({ name: "", phone: "" })
@@ -147,8 +147,8 @@ export default function AccountsPage() {
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create WhatsApp account",
+        title: t("error"),
+        description: t("failedToCreateWhatsAppAccount"),
         variant: "destructive"
       })
     }
@@ -157,8 +157,8 @@ export default function AccountsPage() {
   const handleCopyWebhook = () => {
     navigator.clipboard.writeText("https://your-domain.com/api/webhook")
     toast({
-      title: "Copied to clipboard",
-      description: "Webhook URL has been copied",
+      title: t("copiedToClipboard"),
+      description: t("webhookUrlCopied"),
     })
   }
 
@@ -211,21 +211,21 @@ export default function AccountsPage() {
 
       if (data.success) {
         toast({
-          title: "Success",
-          description: "Account deleted successfully",
+          title: t("success"),
+          description: t("accountDeletedSuccess"),
         })
         fetchAccounts()
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Failed to delete account",
+          title: t("error"),
+          description: data.error || t("failedToDeleteAccount"),
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to delete account",
+        title: t("error"),
+        description: t("failedToDeleteAccount"),
         variant: "destructive",
       })
     } finally {
@@ -238,8 +238,8 @@ export default function AccountsPage() {
   const handleGenerateQR = async () => {
     if (!newAccount.name || !newAccount.phone) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
+        title: t("validationError"),
+        description: t("pleaseFillAllRequiredFields"),
         variant: "destructive"
       })
       return
@@ -284,12 +284,12 @@ export default function AccountsPage() {
 
       const data = await response.json()
       if (!data.success) {
-        toast({ title: "Error", description: data.error, variant: "destructive" })
+        toast({ title: t("error"), description: data.error, variant: "destructive" })
         setQrGenerated(false)
         setStatus('DISCONNECTED')
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to start WhatsApp Client", variant: "destructive" })
+      toast({ title: t("error"), description: t("failedToStartWhatsAppClient"), variant: "destructive" })
       setQrGenerated(false)
       setStatus('DISCONNECTED')
     }
@@ -328,12 +328,12 @@ export default function AccountsPage() {
   const disconnectedAccounts = accounts.filter(a => a.status === 'DISCONNECTED').length
 
   return (
-    <AppLayout title="WhatsApp Accounts">
+    <AppLayout title={t("whatsAppAccountsPageTitle")}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">WhatsApp Accounts</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{t("whatsAppAccountsPageTitle")}</h2>
             <p className="text-muted-foreground">Manage your WhatsApp business accounts</p>
           </div>
 

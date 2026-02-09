@@ -100,14 +100,14 @@ export default function BotFlowsPage() {
       ))
 
       toast({
-        title: "Success",
-        description: `Bot flow ${newStatus ? 'activated' : 'deactivated'} successfully`,
+        title: t("success"),
+        description: newStatus ? t("botFlowActivatedSuccess") : t("botFlowDeactivatedSuccess"),
       })
     } catch (error) {
-      console.error('Error updating bot flow:', error)
+      console.error("Error updating bot flow:", error)
       toast({
-        title: "Error",
-        description: "Failed to update bot flow status",
+        title: t("error"),
+        description: t("failedToUpdateBotFlowStatus"),
         variant: "destructive"
       })
     } finally {
@@ -140,21 +140,21 @@ export default function BotFlowsPage() {
         {/* Header Actions */}
         <div className="flex items-center justify-between">
           <div className="relative w-96">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search bot flows..."
+              placeholder={t("searchBotFlows")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="rounded-full bg-card pl-10 shadow-soft"
+              className="rounded-full bg-card ps-10 shadow-soft"
             />
           </div>
           <Button
             onClick={() => router.push('/bot-flows/create')}
             className="rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Create Bot Flow
+            <Plus className="me-2 h-4 w-4" />
+            {t("createBotFlow")}
           </Button>
         </div>
 
@@ -164,8 +164,8 @@ export default function BotFlowsPage() {
             <div className="col-span-full flex items-center justify-center h-64 text-muted-foreground">
               <div className="text-center">
                 <Workflow className="h-16 w-16 mx-auto opacity-50 mb-4" />
-                <p className="text-lg font-medium">No bot flows found</p>
-                <p className="text-sm">Create your first automated workflow to get started</p>
+                <p className="text-lg font-medium">{t("noBotFlowsFound")}</p>
+                <p className="text-sm">{t("createFirstBotFlow")}</p>
               </div>
             </div>
           ) : (
@@ -189,29 +189,29 @@ export default function BotFlowsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="rounded-lg bg-muted/50 p-3">
-                    <p className="text-xs font-medium text-muted-foreground">Trigger</p>
+                    <p className="text-xs font-medium text-muted-foreground">{t("triggerLabel")}</p>
                     <p className="mt-1 text-sm">{flow.trigger}</p>
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Steps</span>
+                    <span className="text-muted-foreground">{t("stepsLabel")}</span>
                     <Badge variant="secondary" className="rounded-full">
                       {Array.isArray(flow.steps) ? flow.steps.length : flow.steps}
                     </Badge>
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Status</span>
+                    <span className="text-muted-foreground">{t("status")}</span>
                     <Badge variant={flow.status === "active" ? "default" : "secondary"} className="rounded-full">
                       {flow.status === "active" ? (
                         <>
-                          <Play className="mr-1 h-3 w-3" />
-                          Active
+                          <Play className="me-1 h-3 w-3" />
+                          {t("active")}
                         </>
                       ) : (
                         <>
-                          <Pause className="mr-1 h-3 w-3" />
-                          Inactive
+                          <Pause className="me-1 h-3 w-3" />
+                          {t("inactive")}
                         </>
                       )}
                     </Badge>

@@ -128,16 +128,16 @@ export default function BookingsPage() {
                 setBookings(data.data)
             } else {
                 toast({
-                    title: "Error",
-                    description: "Failed to load bookings",
+                    title: t("error"),
+                    description: t("failedToLoadBookings"),
                     variant: "destructive"
                 })
             }
         } catch (error) {
-            console.error('Error fetching bookings:', error)
+            console.error("Error fetching bookings:", error)
             toast({
-                title: "Error",
-                description: "Failed to connect to server",
+                title: t("error"),
+                description: t("failedToConnectToServer"),
                 variant: "destructive"
             })
         } finally {
@@ -155,8 +155,8 @@ export default function BookingsPage() {
 
     const handleExport = () => {
         toast({
-            title: "Exporting Data",
-            description: "Your bookings are being exported to Excel...",
+            title: t("exportingData"),
+            description: t("bookingsExportingToExcel"),
         })
     }
 
@@ -175,18 +175,18 @@ export default function BookingsPage() {
                     b.bookingNumber === selectedBookingId ? { ...b, status: "CANCELLED" } : b
                 ))
                 toast({
-                    title: "Booking Cancelled",
-                    description: `Booking ${selectedBookingId} has been cancelled successfully.`,
+                    title: t("bookingCancelled"),
+                    description: `${t("bookingNumber")} ${selectedBookingId} ${t("cancelledSuccess")}`,
                     variant: "destructive"
                 })
             } else {
                 throw new Error(data.error)
             }
         } catch (error) {
-            console.error('Error cancelling booking:', error)
+            console.error("Error cancelling booking:", error)
             toast({
-                title: "Error",
-                description: "Failed to cancel booking",
+                title: t("error"),
+                description: t("failedToCancelBooking"),
                 variant: "destructive"
             })
         }
@@ -227,8 +227,8 @@ export default function BookingsPage() {
 
             if (data.success) {
                 toast({
-                    title: "Request Sent",
-                    description: `Your edit request for ${selectedBookingId} has been sent to the Admin.`,
+                    title: t("requestSent"),
+                    description: t("editRequestSentToAdmin"),
                 })
             } else {
                 throw new Error(data.error)
@@ -236,8 +236,8 @@ export default function BookingsPage() {
         } catch (error) {
             console.error("Error sending request:", error)
             toast({
-                title: "Error Sending Request",
-                description: "Failed to notify admin. Please try again.",
+                title: t("errorSendingRequest"),
+                description: t("failedToNotifyAdmin"),
                 variant: "destructive"
             })
         }
@@ -249,8 +249,8 @@ export default function BookingsPage() {
             const booking = bookings.find(b => b.bookingNumber === selectedBookingId)
             if (!booking) {
                 toast({
-                    title: "Error",
-                    description: "Booking not found",
+                    title: t("error"),
+                    description: t("bookingNotFound"),
                     variant: "destructive"
                 })
                 return
@@ -271,18 +271,18 @@ export default function BookingsPage() {
                 // Refresh bookings to get updated data
                 await fetchBookings()
                 toast({
-                    title: "Changes Saved",
-                    description: `Booking ${selectedBookingId} updated successfully.`,
+                    title: t("changesSaved"),
+                    description: t("bookingUpdatedSuccess"),
                 })
                 setIsDialogOpen(false)
             } else {
-                throw new Error(data.error || "Failed to update booking")
+                throw new Error(data.error || t("failedToUpdateBooking"))
             }
         } catch (error) {
-            console.error('Error updating booking:', error)
+            console.error("Error updating booking:", error)
             toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to update booking",
+                title: t("error"),
+                description: error instanceof Error ? error.message : t("failedToUpdateBooking"),
                 variant: "destructive"
             })
         }
@@ -294,9 +294,9 @@ export default function BookingsPage() {
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
-                        <h2 className="text-2xl font-bold tracking-tight">Your Bookings</h2>
+                        <h2 className="text-2xl font-bold tracking-tight">{t("yourBookings")}</h2>
                         <Badge variant="outline" className="text-sm px-2.5 py-0.5 h-7">
-                            Total: {filteredBookings.length}
+                            {t("total")}: {filteredBookings.length}
                         </Badge>
                     </div>
 
@@ -314,26 +314,26 @@ export default function BookingsPage() {
                                         setUserRole('ADMIN')
                                     }
                                 }}
-                                className="mr-2"
+                                className="me-2"
                             >
-                                {userRole === 'ADMIN' ? <Shield className="mr-2 h-4 w-4" /> : <User className="mr-2 h-4 w-4" />}
-                                {userRole === 'ADMIN' ? 'Admin View' : 'Employee View'}
+                                {userRole === "ADMIN" ? <Shield className="me-2 h-4 w-4" /> : <User className="me-2 h-4 w-4" />}
+                                {userRole === "ADMIN" ? t("adminView") : t("employeeView")}
                             </Button>
                         )}
 
                         <div className="relative w-full sm:w-64">
-                            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Search className="absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 type="search"
-                                placeholder="Search bookings..."
-                                className="pl-9 h-9"
+                                placeholder={t("searchBookings")}
+                                className="ps-9 h-9"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
                         <Button variant="outline" size="sm" className="h-9 gap-2" onClick={handleExport}>
                             <Download className="h-4 w-4" />
-                            <span className="hidden sm:inline">Export Excel</span>
+                            <span className="hidden sm:inline">{t("exportExcel")}</span>
                         </Button>
                     </div>
                 </div>
@@ -344,13 +344,13 @@ export default function BookingsPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[100px]">ID</TableHead>
-                                <TableHead>Customer</TableHead>
-                                <TableHead>Branch</TableHead>
-                                <TableHead>Agent</TableHead>
-                                <TableHead>Notes</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead>{t("customerLabel")}</TableHead>
+                                <TableHead>{t("branchLabel")}</TableHead>
+                                <TableHead>{t("agent")}</TableHead>
+                                <TableHead>{t("notes")}</TableHead>
+                                <TableHead>{t("dateLabel")}</TableHead>
+                                <TableHead>{t("status")}</TableHead>
+                                <TableHead className="text-end">{t("actionsLabel")}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -359,14 +359,14 @@ export default function BookingsPage() {
                                     <TableCell colSpan={8} className="h-24 text-center">
                                         <div className="flex items-center justify-center gap-2">
                                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                                            <span className="text-muted-foreground">Loading bookings...</span>
+                                            <span className="text-muted-foreground">{t("loadingBookings")}</span>
                                         </div>
                                     </TableCell>
                                 </TableRow>
                             ) : filteredBookings.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
-                                        No bookings found.
+                                        {t("noBookingsFound")}
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -385,7 +385,7 @@ export default function BookingsPage() {
                                         <TableCell>
                                             <div className="flex items-center text-muted-foreground text-sm">
                                                 <User className="mr-1 h-3 w-3" />
-                                                {booking.agent?.name || 'Unassigned'}
+                                                {booking.agent?.name || t("unassigned")}
                                             </div>
                                         </TableCell>
                                         <TableCell className="max-w-[200px] truncate" title={booking.notes}>
@@ -429,16 +429,16 @@ export default function BookingsPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem onClick={() => handleAction("View Details", booking.bookingNumber)}>
-                                                        View Details
+                                                        {t("viewDetails")}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handleAction("Edit Booking", booking.bookingNumber)}>
-                                                        Edit Booking
+                                                        {t("editBooking")}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         className="text-red-600 focus:text-red-600"
                                                         onClick={() => initiateCancel(booking.bookingNumber)}
                                                     >
-                                                        Cancel Booking
+                                                        {t("cancelBooking")}
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -455,59 +455,58 @@ export default function BookingsPage() {
                     <DialogContent className="sm:max-w-[500px]">
                         <DialogHeader>
                             <DialogTitle>
-                                {currentAction === "View Details" ? "Booking Details" :
-                                    userRole === 'ADMIN' ? "Edit Booking" : "Request Booking Update"}
+                                {currentAction === "View Details" ? t("bookingDetails") :
+                                    userRole === "ADMIN" ? t("editBooking") : t("requestBookingUpdate")}
                             </DialogTitle>
                             <DialogDescription>
-                                {currentAction === "View Details" ? "Full details for the selected booking." :
-                                    userRole === 'ADMIN' ? "Update booking information directly." :
-                                        "Submit a request to the admin for changes."}
+                                {currentAction === "View Details" ? t("fullDetailsForBooking") :
+                                    userRole === "ADMIN" ? t("updateBookingDirectly") : t("submitRequestToAdmin")}
                             </DialogDescription>
                         </DialogHeader>
 
                         {selectedBooking && currentAction === "View Details" && (
                             <div className="grid gap-4 py-4">
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right font-semibold">ID</Label>
+                                    <Label className="text-end font-semibold">ID</Label>
                                     <div className="col-span-3">{selectedBooking.id}</div>
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right font-semibold">Customer</Label>
+                                    <Label className="text-end font-semibold">{t("customerLabel")}</Label>
                                     <div className="col-span-3">{selectedBooking.contact.name}</div>
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right font-semibold">Agent</Label>
-                                    <div className="col-span-3">{selectedBooking.agent?.name || 'Unassigned'}</div>
+                                    <Label className="text-end font-semibold">{t("agent")}</Label>
+                                    <div className="col-span-3">{selectedBooking.agent?.name || t("unassigned")}</div>
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right font-semibold">Status</Label>
+                                    <Label className="text-end font-semibold">{t("status")}</Label>
                                     <div className="col-span-3">
                                         <Badge variant="outline">{selectedBooking.status}</Badge>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-4 items-start gap-4">
-                                    <Label className="text-right font-semibold pt-2">Notes</Label>
+                                    <Label className="text-end font-semibold pt-2">{t("notes")}</Label>
                                     <div className="col-span-3 p-3 bg-muted/50 rounded-md text-sm">
-                                        {selectedBooking.notes || "No notes available."}
+                                        {selectedBooking.notes || t("noNotesAvailable")}
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {selectedBooking && currentAction === "Edit Booking" && userRole === 'ADMIN' && (
+                        {selectedBooking && currentAction === "Edit Booking" && userRole === "ADMIN" && (
                             <div className="grid gap-4 py-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="customer">Customer Name</Label>
+                                    <Label htmlFor="customer">{t("customerName")}</Label>
                                     <Input id="customer" value={selectedBooking.contact.name} disabled />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="agent">Assigned Agent</Label>
+                                    <Label htmlFor="agent">{t("assignedAgent")}</Label>
                                     <Select value={editAgentId || "unassigned"} onValueChange={(value) => setEditAgentId(value === "unassigned" ? "" : value)}>
                                         <SelectTrigger id="agent">
-                                            <SelectValue placeholder="Select an agent" />
+                                            <SelectValue placeholder={t("selectAnAgent")} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="unassigned">Unassigned</SelectItem>
+                                            <SelectItem value="unassigned">{t("unassigned")}</SelectItem>
                                             {agents.map((agent) => (
                                                 <SelectItem key={agent.id} value={agent.id}>
                                                     {agent.name} ({agent.role})
@@ -517,28 +516,28 @@ export default function BookingsPage() {
                                     </Select>
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="notes">Booking Notes</Label>
+                                    <Label htmlFor="notes">{t("bookingNotes")}</Label>
                                     <Textarea 
                                         id="notes" 
                                         value={editNotes}
                                         onChange={(e) => setEditNotes(e.target.value)}
-                                        placeholder="Add booking notes..."
+                                        placeholder={t("addBookingNotesPlaceholder")}
                                     />
                                 </div>
                             </div>
                         )}
 
-                        {selectedBooking && currentAction === "Edit Booking" && userRole === 'EMPLOYEE' && (
+                        {selectedBooking && currentAction === "Edit Booking" && userRole === "EMPLOYEE" && (
                             <div className="grid gap-4 py-4">
                                 <div className="bg-yellow-500/10 text-yellow-600 p-3 rounded-md text-sm flex items-center gap-2">
                                     <ShieldAlert className="h-4 w-4" />
-                                    Only Admins can edit directly. Send a request below.
+                                    {t("onlyAdminsCanEdit")}
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="request">Reason for Change / New Details</Label>
+                                    <Label htmlFor="request">{t("reasonForChange")}</Label>
                                     <Textarea
                                         id="request"
-                                        placeholder="e.g. Customer wants to reschedule to next Monday..."
+                                        placeholder={t("reasonPlaceholder")}
                                         value={editReason}
                                         onChange={(e) => setEditReason(e.target.value)}
                                         className="h-32"
@@ -549,16 +548,16 @@ export default function BookingsPage() {
 
                         <DialogFooter>
                             {currentAction === "View Details" ? (
-                                <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
-                            ) : userRole === 'ADMIN' ? (
+                                <Button onClick={() => setIsDialogOpen(false)}>{t("close")}</Button>
+                            ) : userRole === "ADMIN" ? (
                                 <div className="flex gap-2">
-                                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                                    <Button onClick={handleSaveEdit}>Save Changes</Button>
+                                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t("cancel")}</Button>
+                                    <Button onClick={handleSaveEdit}>{t("saveChangesLabel")}</Button>
                                 </div>
                             ) : (
                                 <div className="flex gap-2">
-                                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                                    <Button onClick={handleSubmitRequest}>Send Request</Button>
+                                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t("cancel")}</Button>
+                                    <Button onClick={handleSubmitRequest}>{t("sendRequest")}</Button>
                                 </div>
                             )}
                         </DialogFooter>
@@ -571,16 +570,15 @@ export default function BookingsPage() {
                         <DialogHeader>
                             <DialogTitle className="text-red-600 flex items-center gap-2">
                                 <ShieldAlert className="h-5 w-5" />
-                                Cancel Booking?
+                                {t("cancelBookingTitle")}
                             </DialogTitle>
                             <DialogDescription>
-                                Are you sure you want to cancel booking <strong>{selectedBookingId}</strong>?
-                                This action cannot be undone.
+                                {t("cancelBookingConfirm")}
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter className="gap-2 sm:gap-0">
-                            <Button variant="ghost" onClick={() => setIsCancelDialogOpen(false)}>Thinking About It</Button>
-                            <Button variant="destructive" onClick={confirmCancel}>Yes, Cancel Booking</Button>
+                            <Button variant="ghost" onClick={() => setIsCancelDialogOpen(false)}>{t("thinkingAboutIt")}</Button>
+                            <Button variant="destructive" onClick={confirmCancel}>{t("yesCancelBooking")}</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -589,18 +587,18 @@ export default function BookingsPage() {
             <AlertDialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Switch to Employee View?</AlertDialogTitle>
+                        <AlertDialogTitle>{t("switchToEmployeeView")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            You are about to switch to the Employee view. This will restrict your access to admin-only features.
+                            {t("switchToEmployeeViewDesc")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                         <AlertDialogAction onClick={() => {
-                            setUserRole('EMPLOYEE')
+                            setUserRole("EMPLOYEE")
                             setIsRoleDialogOpen(false)
                         }}>
-                            Switch to Employee
+                            {t("switchToEmployee")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

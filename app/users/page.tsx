@@ -127,8 +127,8 @@ export default function UsersPage() {
     } catch (error) {
       console.error('Error fetching users:', error)
       toast({
-        title: "Error",
-        description: "Failed to load users",
+        title: t("error"),
+        description: t("failedToLoadUsers"),
         variant: "destructive"
       })
     } finally {
@@ -139,12 +139,12 @@ export default function UsersPage() {
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name || !formData.username || !formData.email || !formData.password) {
-      toast({ title: "Validation Error", description: "Please fill in all required fields (including username)", variant: "destructive" })
+      toast({ title: t("validationError"), description: t("pleaseFillRequiredFields"), variant: "destructive" })
       return
     }
     const usernameRegex = /^[a-zA-Z0-9_]+$/
     if (!usernameRegex.test(formData.username) || formData.username.length < 2 || formData.username.length > 50) {
-      toast({ title: "Validation Error", description: "Username: 2–50 characters, letters, numbers and underscores only (no spaces)", variant: "destructive" })
+      toast({ title: t("validationError"), description: t("usernameValidation"), variant: "destructive" })
       return
     }
 
@@ -165,12 +165,12 @@ export default function UsersPage() {
         setUsers([data.data, ...users])
         setIsAddDialogOpen(false)
         resetForm()
-        toast({ title: "Success", description: "User created successfully" })
+        toast({ title: t("success"), description: t("userCreatedSuccess") })
       } else {
         throw new Error(data.error)
       }
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to create user", variant: "destructive" })
+      toast({ title: t("error"), description: error.message || t("failedToCreateUser"), variant: "destructive" })
     } finally {
       setIsSubmitting(false)
     }
@@ -208,12 +208,12 @@ export default function UsersPage() {
         setIsEditDialogOpen(false)
         setSelectedUser(null)
         resetForm()
-        toast({ title: "Success", description: "User updated successfully" })
+        toast({ title: t("success"), description: t("userUpdatedSuccess") })
       } else {
         throw new Error(data.error)
       }
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update user", variant: "destructive" })
+      toast({ title: t("error"), description: error.message || t("failedToUpdateUser"), variant: "destructive" })
     } finally {
       setIsSubmitting(false)
     }
@@ -239,12 +239,12 @@ export default function UsersPage() {
         setUsers(users.filter(u => u.id !== selectedUser.id))
         setIsDeleteDialogOpen(false)
         setSelectedUser(null)
-        toast({ title: "Success", description: "User deleted successfully" })
+        toast({ title: t("success"), description: t("userDeletedSuccess") })
       } else {
         throw new Error(data.error)
       }
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete user", variant: "destructive" })
+      toast({ title: t("error"), description: error.message || t("failedToDeleteUser"), variant: "destructive" })
     } finally {
       setIsSubmitting(false)
     }
@@ -277,12 +277,12 @@ export default function UsersPage() {
         setUsers(users.map(u => u.id === selectedUser.id ? { ...u, isActive: newActiveStatus } : u))
         setIsDeactivateDialogOpen(false)
         setSelectedUser(null)
-        toast({ title: "Success", description: `User ${action} successfully` })
+        toast({ title: t("success"), description: t("userActionSuccess") })
       } else {
         throw new Error(data.error)
       }
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || `Failed to ${action.slice(0, -1)} user`, variant: "destructive" })
+      toast({ title: t("error"), description: error.message || t("failedToActionUser"), variant: "destructive" })
     } finally {
       setIsSubmitting(false)
     }
@@ -324,9 +324,9 @@ export default function UsersPage() {
 
   const getRoleBadge = (role: string) => {
     switch (role) {
-      case 'ADMIN': return <Badge variant="default" className="bg-purple-600 hover:bg-purple-700">Admin</Badge>
-      case 'SUPERVISOR': return <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">Supervisor</Badge>
-      default: return <Badge variant="outline">Agent</Badge>
+      case "ADMIN": return <Badge variant="default" className="bg-purple-600 hover:bg-purple-700">{t("admin")}</Badge>
+      case "SUPERVISOR": return <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">{t("supervisor")}</Badge>
+      default: return <Badge variant="outline">{t("agentRole")}</Badge>
     }
   }
 
@@ -336,26 +336,26 @@ export default function UsersPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight">User Management</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{t("userManagement")}</h2>
             <Badge variant="outline" className="text-sm px-2.5 py-0.5 h-7">
-              Total: {users.length}
+              {t("total")}: {users.length}
             </Badge>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search users..."
-                className="pl-9 h-9"
+                placeholder={t("searchUsers")}
+                className="ps-9 h-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Button size="sm" className="h-9" onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add User
+              <Plus className="me-2 h-4 w-4" />
+              {t("addUser")}
             </Button>
           </div>
         </div>
@@ -369,20 +369,20 @@ export default function UsersPage() {
           ) : filteredUsers.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center text-muted-foreground">
               <UserIcon className="h-12 w-12 mb-4 opacity-20" />
-              <p>No users found matching your search.</p>
+              <p>{t("noUsersFound")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow className="border-border/50">
                   <TableHead className="w-16">#</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Details</TableHead>
-                  <TableHead>Created At</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead className="w-20">Options</TableHead>
+                  <TableHead>{t("userLabel")}</TableHead>
+                  <TableHead>{t("role")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                  <TableHead>{t("details")}</TableHead>
+                  <TableHead>{t("createdAt")}</TableHead>
+                  <TableHead>{t("activeLabel")}</TableHead>
+                  <TableHead className="w-20">{t("options")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -412,7 +412,7 @@ export default function UsersPage() {
                     <TableCell>
                       <div className="flex flex-col gap-1 text-xs text-muted-foreground">
                         {user.branches && user.branches.length > 0 && (
-                          <span>{user.branches.length} Branches</span>
+                          <span>{user.branches.length} {t("branches")}</span>
                         )}
                         {user.whatsappAccounts && user.whatsappAccounts.length > 0 && (
                           <span>{user.whatsappAccounts.length} WhatsApp</span>
@@ -444,13 +444,13 @@ export default function UsersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl">
                           <DropdownMenuItem onClick={() => { setSelectedUser(user); setIsDetailsDialogOpen(true); }}>
-                            User Details
+                            {t("userDetails")}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => openEditDialog(user)}>
-                            Edit User
+                            {t("editUser")}
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
-                            Delete User
+                            {t("delete")} {t("userLabel")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -466,21 +466,21 @@ export default function UsersPage() {
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
-              <DialogDescription>Create a new user account with specific permissions.</DialogDescription>
+              <DialogTitle>{t("addNewUser")}</DialogTitle>
+              <DialogDescription>{t("createNewUserDescription")}</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleAddUser} className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" placeholder="John Doe" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                <Label htmlFor="name">{t("fullName")}</Label>
+                <Input id="name" placeholder={t("placeholderName")} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">{t("username")}</Label>
                 <Input
                   id="username"
                   type="text"
                   autoComplete="username"
-                  placeholder="johndoe"
+                  placeholder={t("placeholderUsername")}
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value.replace(/\s/g, '') })}
                   required
@@ -488,33 +488,33 @@ export default function UsersPage() {
                 <p className="text-xs text-muted-foreground">Username must be unique. Letters, numbers and underscores only (no spaces).</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" placeholder="john@example.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
+                <Label htmlFor="email">{t("emailAddress")}</Label>
+                <Input id="email" type="email" placeholder={t("placeholderEmailExample")} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="••••••••" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
+                <Label htmlFor="password">{t("passwordLabel")}</Label>
+                <Input id="password" type="password" placeholder={t("placeholderPasswordDots")} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Role</Label>
+                  <Label>{t("role")}</Label>
                   <Select value={formData.role} onValueChange={(val) => setFormData({ ...formData, role: val })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="AGENT">Agent</SelectItem>
-                      <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
-                      <SelectItem value="ADMIN">Admin</SelectItem>
+                      <SelectItem value="AGENT">{t("agentRole")}</SelectItem>
+                      <SelectItem value="SUPERVISOR">{t("supervisor")}</SelectItem>
+                      <SelectItem value="ADMIN">{t("admin")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Status</Label>
+                  <Label>{t("status")}</Label>
                   <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ONLINE">Online</SelectItem>
-                      <SelectItem value="AWAY">Away</SelectItem>
-                      <SelectItem value="OFFLINE">Offline</SelectItem>
+                      <SelectItem value="ONLINE">{t("online")}</SelectItem>
+                      <SelectItem value="AWAY">{t("away")}</SelectItem>
+                      <SelectItem value="OFFLINE">{t("offline")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -522,20 +522,20 @@ export default function UsersPage() {
 
               {/* Branch Selection */}
               <div className="space-y-2">
-                <Label>Assigned Branches</Label>
+                <Label>{t("assignedBranches")}</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-between">
                       {formData.branchIds.length > 0
-                        ? `${formData.branchIds.length} branch(es) selected`
-                        : "Select branches..."}
-                      <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                        ? t("branchesSelectedCount").replace("{n}", String(formData.branchIds.length))
+                        : t("selectBranches")}
+                      <ChevronDown className="ms-2 h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" align="start">
                     <div className="max-h-64 overflow-auto p-4 space-y-2">
                       {availableBranches.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No branches available</p>
+                        <p className="text-sm text-muted-foreground">{t("noBranchesAvailable")}</p>
                       ) : (
                         availableBranches.map((branch) => (
                           <div key={branch.value} className="flex items-center space-x-2">
@@ -563,20 +563,20 @@ export default function UsersPage() {
 
               {/* WhatsApp Account Selection */}
               <div className="space-y-2">
-                <Label>Assigned WhatsApp Accounts</Label>
+                <Label>{t("assignedWhatsAppAccounts")}</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-between">
                       {formData.whatsappAccountIds.length > 0
-                        ? `${formData.whatsappAccountIds.length} account(s) selected`
-                        : "Select WhatsApp accounts..."}
-                      <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                        ? t("accountsSelectedCount").replace("{n}", String(formData.whatsappAccountIds.length))
+                        : t("selectWhatsAppAccounts")}
+                      <ChevronDown className="ms-2 h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" align="start">
                     <div className="max-h-64 overflow-auto p-4 space-y-2">
                       {availableAccounts.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No WhatsApp accounts available</p>
+                        <p className="text-sm text-muted-foreground">{t("noWhatsAppAccountsAvailable")}</p>
                       ) : (
                         availableAccounts.map((account) => (
                           <div key={account.value} className="flex items-center space-x-2">
@@ -603,8 +603,8 @@ export default function UsersPage() {
               </div>
 
               <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Creating..." : "Create User"}</Button>
+                <Button type="button" variant="ghost" onClick={() => setIsAddDialogOpen(false)}>{t("cancel")}</Button>
+                <Button type="submit" disabled={isSubmitting}>{isSubmitting ? t("creating") : t("createUser")}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -614,12 +614,12 @@ export default function UsersPage() {
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
-              <DialogDescription>Update user details and permissions.</DialogDescription>
+              <DialogTitle>{t("editUser")}</DialogTitle>
+              <DialogDescription>{t("updateUserDetailsAndPermissions")}</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleEditUser} className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-name">Full Name</Label>
+                <Label htmlFor="edit-name">{t("fullName")}</Label>
                 <Input id="edit-name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
               </div>
               <div className="space-y-2">
@@ -628,36 +628,36 @@ export default function UsersPage() {
                   id="edit-username"
                   type="text"
                   autoComplete="username"
-                  placeholder="johndoe"
+                  placeholder={t("placeholderUsername")}
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value.replace(/\s/g, '') })}
                 />
                 <p className="text-xs text-muted-foreground">Letters, numbers and underscores only. Must be unique.</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-email">Email Address</Label>
+                <Label htmlFor="edit-email">{t("emailAddress")}</Label>
                 <Input id="edit-email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Role</Label>
+                  <Label>{t("role")}</Label>
                   <Select value={formData.role} onValueChange={(val) => setFormData({ ...formData, role: val })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="AGENT">Agent</SelectItem>
-                      <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
-                      <SelectItem value="ADMIN">Admin</SelectItem>
+                      <SelectItem value="AGENT">{t("agentRole")}</SelectItem>
+                      <SelectItem value="SUPERVISOR">{t("supervisor")}</SelectItem>
+                      <SelectItem value="ADMIN">{t("admin")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Status</Label>
+                  <Label>{t("status")}</Label>
                   <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ONLINE">Online</SelectItem>
-                      <SelectItem value="AWAY">Away</SelectItem>
-                      <SelectItem value="OFFLINE">Offline</SelectItem>
+                      <SelectItem value="ONLINE">{t("online")}</SelectItem>
+                      <SelectItem value="AWAY">{t("away")}</SelectItem>
+                      <SelectItem value="OFFLINE">{t("offline")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -665,20 +665,20 @@ export default function UsersPage() {
 
               {/* Branch Selection */}
               <div className="space-y-2">
-                <Label>Assigned Branches</Label>
+                <Label>{t("assignedBranches")}</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-between">
                       {formData.branchIds.length > 0
-                        ? `${formData.branchIds.length} branch(es) selected`
-                        : "Select branches..."}
-                      <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                        ? t("branchesSelectedCount").replace("{n}", String(formData.branchIds.length))
+                        : t("selectBranches")}
+                      <ChevronDown className="ms-2 h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" align="start">
                     <div className="max-h-64 overflow-auto p-4 space-y-2">
                       {availableBranches.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No branches available</p>
+                        <p className="text-sm text-muted-foreground">{t("noBranchesAvailable")}</p>
                       ) : (
                         availableBranches.map((branch) => (
                           <div key={branch.value} className="flex items-center space-x-2">
@@ -706,20 +706,20 @@ export default function UsersPage() {
 
               {/* WhatsApp Account Selection */}
               <div className="space-y-2">
-                <Label>Assigned WhatsApp Accounts</Label>
+                <Label>{t("assignedWhatsAppAccounts")}</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-between">
                       {formData.whatsappAccountIds.length > 0
-                        ? `${formData.whatsappAccountIds.length} account(s) selected`
-                        : "Select WhatsApp accounts..."}
-                      <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                        ? t("accountsSelectedCount").replace("{n}", String(formData.whatsappAccountIds.length))
+                        : t("selectWhatsAppAccounts")}
+                      <ChevronDown className="ms-2 h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0" align="start">
                     <div className="max-h-64 overflow-auto p-4 space-y-2">
                       {availableAccounts.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No WhatsApp accounts available</p>
+                        <p className="text-sm text-muted-foreground">{t("noWhatsAppAccountsAvailable")}</p>
                       ) : (
                         availableAccounts.map((account) => (
                           <div key={account.value} className="flex items-center space-x-2">
@@ -746,8 +746,8 @@ export default function UsersPage() {
               </div>
 
               <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Changes"}</Button>
+                <Button type="button" variant="ghost" onClick={() => setIsEditDialogOpen(false)}>{t("cancel")}</Button>
+                <Button type="submit" disabled={isSubmitting}>{isSubmitting ? t("savingChanges") : t("saveChangesLabel")}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -759,17 +759,16 @@ export default function UsersPage() {
             <DialogHeader>
               <DialogTitle className="text-red-600 flex items-center gap-2">
                 <AlertCircle className="h-5 w-5" />
-                Delete User?
+                {t("deleteUserConfirm")}
               </DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete <strong>{selectedUser?.name}</strong>?
-                This action cannot be undone and will remove their access immediately.
+                {t("deleteUserConfirmDesc")}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>{t("cancel")}</Button>
               <Button variant="destructive" onClick={handleDeleteUser} disabled={isSubmitting}>
-                {isSubmitting ? "Deleting..." : "Yes, Delete User"}
+                {isSubmitting ? t("deleting") : t("yesDeleteUser")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -779,25 +778,22 @@ export default function UsersPage() {
         <Dialog open={isDeactivateDialogOpen} onOpenChange={setIsDeactivateDialogOpen}>
           <DialogContent className="sm:max-w-[400px]">
             <DialogHeader>
-              <DialogTitle className={`${selectedUser?.isActive === false ? 'text-green-600' : 'text-orange-600'} flex items-center gap-2`}>
+              <DialogTitle className={`${selectedUser?.isActive === false ? "text-green-600" : "text-orange-600"} flex items-center gap-2`}>
                 <AlertCircle className="h-5 w-5" />
-                {selectedUser?.isActive === false ? 'Activate' : 'Deactivate'} User?
+                {selectedUser?.isActive === false ? t("activateDeactivateUserTitle") : t("deactivateUserTitle")}
               </DialogTitle>
               <DialogDescription>
-                Are you sure you want to {selectedUser?.isActive === false ? 'activate' : 'deactivate'} <strong>{selectedUser?.name}</strong>?
-                {selectedUser?.isActive === false
-                  ? ' This will restore their access to the system.'
-                  : ' This will prevent them from logging in without deleting their data.'}
+                {selectedUser?.isActive === false ? t("activateUserConfirmDesc") : t("deactivateUserConfirmDesc")} <strong>{selectedUser?.name}</strong>
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setIsDeactivateDialogOpen(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setIsDeactivateDialogOpen(false)}>{t("cancel")}</Button>
               <Button
-                variant={selectedUser?.isActive === false ? 'default' : 'secondary'}
+                variant={selectedUser?.isActive === false ? "default" : "secondary"}
                 onClick={handleDeactivateUser}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Processing..." : `Yes, ${selectedUser?.isActive === false ? 'Activate' : 'Deactivate'} User`}
+                {isSubmitting ? t("processing") : (selectedUser?.isActive === false ? t("yesActivateUser") : t("yesDeactivateUser"))}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -807,59 +803,59 @@ export default function UsersPage() {
         <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>User Details</DialogTitle>
-              <DialogDescription>Comprehensive information about this user account</DialogDescription>
+              <DialogTitle>{t("userDetails")}</DialogTitle>
+              <DialogDescription>{t("userDetailsDescription")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-3 items-center gap-4">
-                <Label className="text-right font-semibold">Name:</Label>
+                <Label className="text-end font-semibold">{t("nameLabel")}</Label>
                 <p className="col-span-2">{selectedUser?.name}</p>
               </div>
               <div className="grid grid-cols-3 items-center gap-4">
-                <Label className="text-right font-semibold">Email:</Label>
+                <Label className="text-end font-semibold">{t("emailLabel")}</Label>
                 <p className="col-span-2 text-sm">{selectedUser?.email}</p>
               </div>
-              {selectedUser?.username != null && selectedUser.username !== '' && (
+              {selectedUser?.username != null && selectedUser.username !== "" && (
                 <div className="grid grid-cols-3 items-center gap-4">
-                  <Label className="text-right font-semibold">Username:</Label>
+                  <Label className="text-end font-semibold">{t("username")}:</Label>
                   <p className="col-span-2 text-sm">{selectedUser.username}</p>
                 </div>
               )}
               <div className="grid grid-cols-3 items-center gap-4">
-                <Label className="text-right font-semibold">Role:</Label>
+                <Label className="text-end font-semibold">{t("role")}:</Label>
                 <div className="col-span-2">{selectedUser && getRoleBadge(selectedUser.role)}</div>
               </div>
               <div className="grid grid-cols-3 items-center gap-4">
-                <Label className="text-right font-semibold">Status:</Label>
+                <Label className="text-end font-semibold">{t("status")}:</Label>
                 <div className="col-span-2">
-                  <Badge variant={selectedUser?.status === 'ONLINE' ? 'default' : selectedUser?.status === 'AWAY' ? 'secondary' : 'outline'}>
+                  <Badge variant={selectedUser?.status === "ONLINE" ? "default" : selectedUser?.status === "AWAY" ? "secondary" : "outline"}>
                     {selectedUser?.status}
                   </Badge>
                 </div>
               </div>
               <div className="grid grid-cols-3 items-center gap-4">
-                <Label className="text-right font-semibold">Active:</Label>
-                <p className="col-span-2">{selectedUser?.isActive !== false ? 'Yes' : 'No'}</p>
+                <Label className="text-end font-semibold">{t("activeLabel")}</Label>
+                <p className="col-span-2">{selectedUser?.isActive !== false ? t("yes") : t("no")}</p>
               </div>
               <div className="border-t pt-4">
                 <div className="grid grid-cols-3 items-center gap-4">
-                  <Label className="text-right font-semibold">Last Login:</Label>
+                  <Label className="text-end font-semibold">{t("lastLogin")}:</Label>
                   <p className="col-span-2 text-sm">
                     {selectedUser?.lastLoginAt
-                      ? format(new Date(selectedUser.lastLoginAt), 'PPpp')
-                      : 'Never'}
+                      ? format(new Date(selectedUser.lastLoginAt), "PPpp")
+                      : t("never")}
                   </p>
                 </div>
                 <div className="grid grid-cols-3 items-center gap-4 mt-2">
-                  <Label className="text-right font-semibold">Last Logout:</Label>
+                  <Label className="text-end font-semibold">{t("lastLogout")}</Label>
                   <p className="col-span-2 text-sm">
                     {selectedUser?.lastLogoutAt
-                      ? format(new Date(selectedUser.lastLogoutAt), 'PPpp')
-                      : 'Never'}
+                      ? format(new Date(selectedUser.lastLogoutAt), "PPpp")
+                      : t("never")}
                   </p>
                 </div>
                 <div className="grid grid-cols-3 items-center gap-4 mt-2">
-                  <Label className="text-right font-semibold">Session Duration:</Label>
+                  <Label className="text-end font-semibold">{t("sessionDuration")}</Label>
                   <p className="col-span-2 text-sm">
                     {selectedUser?.lastLoginAt ? (() => {
                       const loginTime = new Date(selectedUser.lastLoginAt)
@@ -868,37 +864,37 @@ export default function UsersPage() {
                       const hours = Math.floor(duration / (1000 * 60 * 60))
                       const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60))
                       return `${hours}h ${minutes}m`
-                    })() : 'N/A'}
+                    })() : "N/A"}
                   </p>
                 </div>
               </div>
               <div className="border-t pt-4">
                 <div className="grid grid-cols-3 items-center gap-4">
-                  <Label className="text-right font-semibold">Created:</Label>
+                  <Label className="text-end font-semibold">{t("createdLabel")}:</Label>
                   <p className="col-span-2 text-sm">
-                    {selectedUser && format(new Date(selectedUser.createdAt), 'PPpp')}
+                    {selectedUser && format(new Date(selectedUser.createdAt), "PPpp")}
                   </p>
                 </div>
                 <div className="grid grid-cols-3 items-center gap-4 mt-2">
-                  <Label className="text-right font-semibold">Branches:</Label>
+                  <Label className="text-end font-semibold">{t("branchesLabel")}</Label>
                   <p className="col-span-2 text-sm">
                     {selectedUser?.branches && selectedUser.branches.length > 0
-                      ? selectedUser.branches.map(b => b.name).join(', ')
-                      : 'None'}
+                      ? selectedUser.branches.map(b => b.name).join(", ")
+                      : t("none")}
                   </p>
                 </div>
                 <div className="grid grid-cols-3 items-center gap-4 mt-2">
-                  <Label className="text-right font-semibold">WhatsApp:</Label>
+                  <Label className="text-end font-semibold">{t("whatsAppLabel")}</Label>
                   <p className="col-span-2 text-sm">
                     {selectedUser?.whatsappAccounts && selectedUser.whatsappAccounts.length > 0
-                      ? `${selectedUser.whatsappAccounts.length} account(s)`
-                      : 'None'}
+                      ? t("nAccounts").replace("{n}", String(selectedUser.whatsappAccounts.length))
+                      : t("none")}
                   </p>
                 </div>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>Close</Button>
+              <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>{t("close")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

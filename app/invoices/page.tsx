@@ -126,8 +126,8 @@ export default function InvoicesPage() {
             const data = await response.json()
             if (data.success) {
                 toast({
-                    title: "Success",
-                    description: "Invoice created successfully",
+                    title: t("success"),
+                    description: t("invoiceCreatedSuccess"),
                 })
                 setIsDialogOpen(false)
                 resetForm()
@@ -137,8 +137,8 @@ export default function InvoicesPage() {
             }
         } catch (error) {
             toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to create invoice",
+                title: t("error"),
+                description: error instanceof Error ? error.message : t("failedToCreateInvoice"),
                 variant: "destructive",
             })
         }
@@ -160,7 +160,7 @@ export default function InvoicesPage() {
             PAID: { variant: "default", label: t("paid"), className: "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 border-none shadow-none font-normal" },
             PENDING: { variant: "secondary", label: t("pending"), className: "bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 border-none shadow-none font-normal" },
             OVERDUE: { variant: "destructive", label: t("overdue"), className: "bg-red-500/15 text-red-600 hover:bg-red-500/25 border-none shadow-none font-normal" },
-            CANCELLED: { variant: "outline", label: "Cancelled", className: "text-muted-foreground" },
+            CANCELLED: { variant: "outline", label: t("cancelled"), className: "text-muted-foreground" },
         }
         const config = variants[status] || variants.PENDING
         return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>
@@ -223,8 +223,8 @@ export default function InvoicesPage() {
             const data = await response.json()
             if (data.success) {
                 toast({
-                    title: "Success",
-                    description: `Invoice sent to ${selectedInvoice.contact.name}`,
+                    title: t("success"),
+                    description: t("invoiceSentTo").replace("{name}", selectedInvoice.contact.name),
                 })
                 setIsSendDialogOpen(false)
             } else {
@@ -232,8 +232,8 @@ export default function InvoicesPage() {
             }
         } catch (error) {
             toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to send invoice",
+                title: t("error"),
+                description: error instanceof Error ? error.message : t("failedToSendInvoice"),
                 variant: "destructive",
             })
         }
@@ -356,8 +356,8 @@ export default function InvoicesPage() {
                 doc.save(`Invoice-${invoice.invoiceNumber}.pdf`)
 
                 toast({
-                    title: "Success",
-                    description: "PDF generated successfully",
+                    title: t("success"),
+                    description: t("pdfGeneratedSuccess"),
                 })
             }
 
@@ -459,15 +459,15 @@ export default function InvoicesPage() {
                 doc.save(`Invoice-${invoice.invoiceNumber}.pdf`)
 
                 toast({
-                    title: "Success",
-                    description: "PDF generated (logo unavailable)",
+                    title: t("success"),
+                    description: t("pdfGeneratedLogoUnavailable"),
                 })
             }
         } catch (error) {
             console.error('Error generating PDF:', error)
             toast({
-                title: "Error",
-                description: "Failed to generate PDF",
+                title: t("error"),
+                description: t("failedToGeneratePdf"),
                 variant: "destructive",
             })
         }
@@ -526,7 +526,7 @@ export default function InvoicesPage() {
                                                 required
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select customer" />
+                                                    <SelectValue placeholder={t("selectCustomer")} />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {contacts?.map((contact) => (
@@ -541,7 +541,7 @@ export default function InvoicesPage() {
                                             <Label htmlFor="description">Service / Description</Label>
                                             <Input
                                                 id="description"
-                                                placeholder="e.g. Consulting Services"
+                                                placeholder={t("servicePlaceholder")}
                                                 value={formData.description}
                                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                             />
@@ -610,10 +610,10 @@ export default function InvoicesPage() {
                         <div className="flex h-64 flex-col items-center justify-center p-8 text-center">
                             <Receipt className="h-12 w-12 text-muted-foreground/50" />
                             <h3 className="mt-4 text-lg font-semibold">
-                                {searchQuery ? "No matching invoices found" : "No invoices found"}
+                                {searchQuery ? t("noMatchingInvoices") : t("noInvoicesFound")}
                             </h3>
                             <p className="mt-2 text-sm text-muted-foreground">
-                                {searchQuery ? "Try adjusting your search terms" : "Create your first invoice to get started"}
+                                {searchQuery ? t("tryAdjustingSearch") : t("createFirstInvoice")}
                             </p>
                             {!searchQuery && (
                                 <Button
@@ -637,12 +637,12 @@ export default function InvoicesPage() {
                                 <TableHeader>
                                     <TableRow className="bg-muted/30 hover:bg-muted/30">
                                         <TableHead className="w-[50px]">#</TableHead>
-                                        <TableHead>{t("invoiceNumber") || "Invoice #"}</TableHead>
-                                        <TableHead>{t("customer")}</TableHead>
-                                        <TableHead>{t("amount")}</TableHead>
+                                        <TableHead>{t("invoiceNumber")}</TableHead>
+                                        <TableHead>{t("customerLabel")}</TableHead>
+                                        <TableHead>{t("amountLabel")}</TableHead>
                                         <TableHead>{t("status")}</TableHead>
-                                        <TableHead>{t("dueDate")}</TableHead>
-                                        <TableHead className="text-right w-[80px]">{t("actions") || "Actions"}</TableHead>
+                                        <TableHead>{t("dueDateLabel")}</TableHead>
+                                        <TableHead className="text-end w-[80px]">{t("actionsLabel")}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -673,22 +673,22 @@ export default function InvoicesPage() {
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <span className="sr-only">Open menu</span>
+                                                            <span className="sr-only">{t("openMenu")}</span>
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-[200px]">
-                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuLabel>{t("actionsLabel")}</DropdownMenuLabel>
                                                         <DropdownMenuItem onClick={() => openViewDialog(invoice)}>
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            {t("view") || "View Details"}
+                                                            <Eye className="me-2 h-4 w-4" />
+                                                            {t("viewDetails")}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => handleGeneratePDF(invoice)}>
-                                                            <Download className="mr-2 h-4 w-4" />
+                                                            <Download className="me-2 h-4 w-4" />
                                                             {t("generatePDF")}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => openSendDialog(invoice)}>
-                                                            <Send className="mr-2 h-4 w-4" />
+                                                            <Send className="me-2 h-4 w-4" />
                                                             {t("sendInvoice")}
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>

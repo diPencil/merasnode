@@ -79,8 +79,8 @@ export default function TemplatesPage() {
 
     if (!newTemplate.name || !newTemplate.content || !newTemplate.category) {
       toast({
-        title: "Validation Error",
-        description: "Name, content, and category are required",
+        title: t("validationError"),
+        description: t("nameContentCategoryRequired"),
         variant: "destructive"
       })
       return
@@ -104,14 +104,14 @@ export default function TemplatesPage() {
         if (editingId) {
           setTemplates(templates.map(t => t.id === editingId ? data.data : t))
           toast({
-            title: "Success",
-            description: "Template updated successfully"
+            title: t("success"),
+            description: t("templateUpdatedSuccess")
           })
         } else {
           setTemplates([...templates, data.data])
           toast({
-            title: "Success",
-            description: "Template created successfully"
+            title: t("success"),
+            description: t("templateCreatedSuccess")
           })
         }
         setIsCreateOpen(false)
@@ -119,15 +119,15 @@ export default function TemplatesPage() {
         setEditingId(null)
       } else {
         toast({
-          title: "Error",
-          description: data.error || 'Failed to create template',
+          title: t("error"),
+          description: data.error || t("failedToCreateTemplate"),
           variant: "destructive"
         })
       }
     } catch (err) {
       toast({
-        title: "Error",
-        description: 'Failed to connect to server',
+        title: t("error"),
+        description: t("failedToConnectToServer"),
         variant: "destructive"
       })
       console.error('Error creating template:', err)
@@ -169,8 +169,8 @@ export default function TemplatesPage() {
   const handleUse = (template: Template) => {
     navigator.clipboard.writeText(template.content)
     toast({
-      title: "Copied!",
-      description: "Template content copied to clipboard.",
+      title: t("templateCopied"),
+      description: t("templateContentCopied"),
     })
   }
 
@@ -201,9 +201,9 @@ export default function TemplatesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight">Message Templates</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{t("messageTemplates")}</h2>
             <Badge variant="outline" className="text-sm px-2.5 py-0.5 h-7">
-              Total: {filteredTemplates.length}
+              {t("total")}: {filteredTemplates.length}
             </Badge>
           </div>
 
@@ -222,22 +222,22 @@ export default function TemplatesPage() {
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="h-9">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Template
+                  <Plus className="me-2 h-4 w-4" />
+                  {t("createTemplate")}
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
-                  <DialogTitle>{editingId ? 'Edit Message Template' : 'Create Message Template'}</DialogTitle>
-                  <DialogDescription>{editingId ? 'Update your existing template' : 'Create a reusable message template for quick responses'}</DialogDescription>
+                  <DialogTitle>{editingId ? t("editMessageTemplate") : t("createMessageTemplate")}</DialogTitle>
+                  <DialogDescription>{editingId ? t("updateExistingTemplate") : t("createReusableTemplate")}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreateTemplate}>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Template Name *</Label>
+                      <Label htmlFor="name">{t("templateName")} *</Label>
                       <Input
                         id="name"
-                        placeholder="e.g., Welcome Message"
+                        placeholder={t("templateNamePlaceholder")}
                         value={newTemplate.name}
                         onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
                         required
@@ -245,10 +245,10 @@ export default function TemplatesPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="category">Category *</Label>
+                        <Label htmlFor="category">{t("categoryRequired")}</Label>
                         <Select value={newTemplate.category} onValueChange={(value) => setNewTemplate({ ...newTemplate, category: value })}>
                           <SelectTrigger id="category">
-                            <SelectValue placeholder="Select category" />
+                            <SelectValue placeholder={t("selectCategory")} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="onboarding">Onboarding</SelectItem>
@@ -259,10 +259,10 @@ export default function TemplatesPage() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="language">Language</Label>
+                        <Label htmlFor="language">{t("languageLabel")}</Label>
                         <Select value={newTemplate.language} onValueChange={(value) => setNewTemplate({ ...newTemplate, language: value })}>
                           <SelectTrigger id="language">
-                            <SelectValue placeholder="Select language" />
+                            <SelectValue placeholder={t("selectLanguage")} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="en">English</SelectItem>
@@ -272,7 +272,7 @@ export default function TemplatesPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="content">Message Content *</Label>
+                      <Label htmlFor="content">{t("messageContent")} *</Label>
                       <div className="flex flex-wrap gap-2 mb-2">
                         {AVAILABLE_VARIABLES.map((v) => (
                           <Badge
@@ -288,7 +288,7 @@ export default function TemplatesPage() {
                       <Textarea
                         id="content"
                         ref={textareaRef}
-                        placeholder="Hello {{name}}, welcome to our service!"
+                        placeholder={t("templateContentPlaceholder")}
                         className="min-h-32"
                         value={newTemplate.content}
                         onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })}
@@ -301,10 +301,10 @@ export default function TemplatesPage() {
                   </div>
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => { setIsCreateOpen(false); setEditingId(null); setNewTemplate({ name: "", content: "", category: "", language: "en" }) }}>
-                      Cancel
+                      {t("cancel")}
                     </Button>
                     <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? 'Saving...' : (editingId ? 'Update Template' : 'Create Template')}
+                      {isSubmitting ? t("savingChanges") : (editingId ? t("updateTemplate") : t("createTemplate"))}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -318,12 +318,12 @@ export default function TemplatesPage() {
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-              <p className="mt-4 text-sm text-muted-foreground">Loading templates...</p>
+              <p className="mt-4 text-sm text-muted-foreground">{t("loadingTemplates")}</p>
             </div>
           </div>
         ) : filteredTemplates.length === 0 ? (
           <div className="flex h-64 items-center justify-center">
-            <p className="text-sm text-muted-foreground">No templates found</p>
+            <p className="text-sm text-muted-foreground">{t("noTemplatesFound")}</p>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

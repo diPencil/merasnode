@@ -226,3 +226,28 @@ Added in `lib/i18n.tsx`:
 - [x] No hardcoded English in Contacts/Branches; one language per screen.
 - [x] Pagination and dropdowns RTL-aware (align + chevrons).
 - [ ] Remaining pages (Offers, Invoices, Templates, Users, Analytics, Dashboard): same pattern to be applied in follow-up PRs.
+
+---
+
+## 9. Translations-only pass (i18n cleanup)
+
+**Date:** 2025-02-09  
+**Scope:** Complete missing Arabic translations; no RTL layout changes.
+
+### Pages updated
+- **Bookings** – Toasts, page title, table headers, search/export, dialogs (view/edit/cancel/role switch), empty state, dropdown labels.
+- **Users** – Toasts, user management header, search, add/edit/delete/deactivate dialogs, form labels and placeholders, table headers, details dialog, role/status labels.
+- **Offers** – Toasts (load/create/update/delete/send), empty state, create/edit dialog, send-offer dialog titles and descriptions.
+- **Invoices** – Toasts (create/send/PDF), status badge (Cancelled), empty state, table headers, dropdown (Actions, View, Generate PDF, Send), placeholders (Select customer, service).
+- **Templates** – Toasts (validation/success/error), message templates header, search, create/edit dialog (title, description, labels, placeholders), loading and empty state.
+- **Bot flows** – Toasts (activated/deactivated/failed), search placeholder, create button, empty state (no flows, create first), trigger/steps/status labels.
+- **Accounts (WhatsApp)** – Toasts (fetch/create/delete/copy/webhook/connect/start client), page title, all user-facing messages.
+
+### i18n changes
+- New keys in `lib/i18n.tsx` for bookings, users, offers, invoices, templates, bot flows, and accounts (page titles, descriptions, empty states, buttons, placeholders, helper text, consistent terminology).
+- Terminology aligned: e.g. "No data found", "Search", "Total", "Active"/"Inactive", "Actions", "View Details" use shared keys across pages.
+
+### Deliverables
+- All missing translations added; Arabic UI uses one language per screen.
+- Translation files updated and kept organized by feature.
+- Build verified (`pnpm run build`).

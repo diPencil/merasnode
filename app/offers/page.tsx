@@ -85,8 +85,8 @@ export default function OffersPage() {
         } catch (error) {
             console.error("Error fetching offers:", error)
             toast({
-                title: "Error",
-                description: "Failed to load offers",
+                title: t("error"),
+                description: t("failedToLoadOffers"),
                 variant: "destructive",
             })
         } finally {
@@ -125,8 +125,8 @@ export default function OffersPage() {
             const data = await response.json()
             if (data.success) {
                 toast({
-                    title: "Success",
-                    description: editingOffer ? "Offer updated successfully" : "Offer created successfully",
+                    title: t("success"),
+                    description: editingOffer ? t("offerUpdatedSuccess") : t("offerCreatedSuccess"),
                 })
                 setIsDialogOpen(false)
                 resetForm()
@@ -136,30 +136,30 @@ export default function OffersPage() {
             }
         } catch (error) {
             toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to save offer",
+                title: t("error"),
+                description: error instanceof Error ? error.message : t("failedToSaveOffer"),
                 variant: "destructive",
             })
         }
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this offer?")) return
+        if (!confirm(t("confirmDeleteOffer"))) return
 
         try {
             const response = await fetch(`/api/offers/${id}`, { method: "DELETE" })
             const data = await response.json()
             if (data.success) {
                 toast({
-                    title: "Success",
-                    description: "Offer deleted successfully",
+                    title: t("success"),
+                    description: t("offerDeletedSuccess"),
                 })
                 fetchOffers()
             }
         } catch (error) {
             toast({
-                title: "Error",
-                description: "Failed to delete offer",
+                title: t("error"),
+                description: t("failedToDeleteOffer"),
                 variant: "destructive",
             })
         }
@@ -256,8 +256,8 @@ export default function OffersPage() {
     const handleSendOffer = async () => {
         if (!selectedOffer) {
             toast({
-                title: "Error",
-                description: "No offer selected",
+                title: t("error"),
+                description: t("noOfferSelected"),
                 variant: "destructive",
             })
             return
@@ -266,8 +266,8 @@ export default function OffersPage() {
         if (sendMode === "single") {
             if (!selectedContactId) {
                 toast({
-                    title: "Error",
-                    description: "Please select a contact",
+                    title: t("error"),
+                    description: t("pleaseSelectContact"),
                     variant: "destructive",
                 })
                 return
@@ -278,15 +278,15 @@ export default function OffersPage() {
             if (success) {
                 const contact = contacts.find(c => c.id === selectedContactId)
                 toast({
-                    title: "Success",
-                    description: `Offer sent to ${contact?.name || 'contact'}`,
+                    title: t("success"),
+                    description: t("offerSentToContact").replace("{name}", contact?.name || t("contactLabel")),
                 })
                 setIsSendDialogOpen(false)
                 setSelectedContactId("")
             } else {
                 toast({
-                    title: "Error",
-                    description: "Failed to send offer",
+                    title: t("error"),
+                    description: t("failedToSendOffer"),
                     variant: "destructive",
                 })
             }
@@ -294,8 +294,8 @@ export default function OffersPage() {
             // Bulk send
             if (selectedContactIds.length === 0) {
                 toast({
-                    title: "Error",
-                    description: "Please select at least one contact",
+                    title: t("error"),
+                    description: t("pleaseSelectAtLeastOneContact"),
                     variant: "destructive",
                 })
                 return
@@ -317,8 +317,8 @@ export default function OffersPage() {
             }
 
             toast({
-                title: "Bulk Send Complete",
-                description: `Sent to ${successCount} contact(s)${failCount > 0 ? `, ${failCount} failed` : ''}`,
+                title: t("bulkSendComplete"),
+                description: t("sentToContactsCount").replace("{n}", String(successCount)) + (failCount > 0 ? `, ${t("bulkSendFailedCount").replace("{n}", String(failCount))}` : ""),
             })
 
             setIsSendDialogOpen(false)
@@ -332,7 +332,7 @@ export default function OffersPage() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-bold tracking-tight">{t("offers")}</h2>
-                        <p className="text-muted-foreground">Create and manage promotional offers for customers</p>
+                        <p className="text-muted-foreground">{t("offersPageDescription")}</p>
                     </div>
                     <Dialog open={isDialogOpen} onOpenChange={(open) => {
                         setIsDialogOpen(open)
@@ -347,8 +347,8 @@ export default function OffersPage() {
                         <DialogContent className="sm:max-w-[600px]">
                             <form onSubmit={handleSubmit}>
                                 <DialogHeader>
-                                    <DialogTitle>{editingOffer ? "Edit Offer" : t("createOffer")}</DialogTitle>
-                                    <DialogDescription>Create promotional offers to send to customers</DialogDescription>
+                                    <DialogTitle>{editingOffer ? t("editOffer") : t("createOffer")}</DialogTitle>
+                                    <DialogDescription>{t("createPromotionalOffersDesc")}</DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
                                     <div className="grid gap-2">
@@ -431,8 +431,8 @@ export default function OffersPage() {
                     <Card className="rounded-2xl shadow-soft">
                         <CardContent className="flex h-64 flex-col items-center justify-center">
                             <Tag className="h-12 w-12 text-muted-foreground/50" />
-                            <p className="mt-4 text-sm text-muted-foreground">No offers found</p>
-                            <p className="text-xs text-muted-foreground">Create your first offer to get started</p>
+                            <p className="mt-4 text-sm text-muted-foreground">{t("noOffersFound")}</p>
+                            <p className="text-xs text-muted-foreground">{t("createFirstOffer")}</p>
                         </CardContent>
                     </Card>
                 ) : (
@@ -505,9 +505,9 @@ export default function OffersPage() {
                 <Dialog open={isSendDialogOpen} onOpenChange={setIsSendDialogOpen}>
                     <DialogContent className="sm:max-w-[500px]">
                         <DialogHeader>
-                            <DialogTitle>Send Offer</DialogTitle>
+                            <DialogTitle>{t("sendOfferDialogTitle")}</DialogTitle>
                             <DialogDescription>
-                                Choose to send to a single contact or multiple contacts
+                                {t("sendOfferDialogDesc")}
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
