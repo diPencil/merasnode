@@ -23,6 +23,24 @@ const translations: Translations = {
   logs: { en: "Logs", ar: "السجلات" },
   activityLogs: { en: "Activity Logs", ar: "سجل النشاط" },
   settings: { en: "Settings", ar: "الإعدادات" },
+  activities: { en: "Activities", ar: "الأنشطة" },
+
+  // Activity Logs
+  trackActivityLogs: { en: "Track all system activities and user actions", ar: "تتبع جميع نشاطات النظام وإجراءات المستخدمين" },
+  recentActivity: { en: "Recent Activity", ar: "النشاط الأخير" },
+  recentActivityDesc: { en: "Latest system events and user actions with detailed metadata", ar: "أحدث أحداث النظام وإجراءات المستخدم مع بيانات تفصيلية" },
+  action: { en: "Action", ar: "الإجراء" },
+  entity: { en: "Entity", ar: "الكيان" },
+  device: { en: "Device", ar: "الجهاز" },
+  ipAddress: { en: "IP Address", ar: "عنوان IP" },
+  timestamp: { en: "Timestamp", ar: "الوقت" },
+  clearFilters: { en: "Clear Filters", ar: "مسح التصفيات" },
+  actionType: { en: "Action Type", ar: "نوع الإجراء" },
+  allActions: { en: "All Actions", ar: "كل الإجراءات" },
+  entityType: { en: "Entity Type", ar: "نوع الكيان" },
+  allEntities: { en: "All Entities", ar: "كل الكيانات" },
+  noActivityLogs: { en: "No activity logs yet", ar: "لا توجد سجلات نشاط بعد" },
+  loadingActivityLogs: { en: "Loading activity logs...", ar: "جاري تحميل سجلات النشاط..." },
 
   // Common
   search: { en: "Search", ar: "بحث" },
@@ -64,6 +82,7 @@ const translations: Translations = {
   blockedContactsLabel: { en: "Blocked Contacts", ar: "جهات الاتصال المحظورة" },
   goToPreviousPage: { en: "Go to previous page", ar: "الانتقال للصفحة السابقة" },
   goToNextPage: { en: "Go to next page", ar: "الانتقال للصفحة التالية" },
+  more: { en: "More", ar: "المزيد" },
   morePages: { en: "More pages", ar: "صفحات أخرى" },
   paginationPrevious: { en: "Previous", ar: "السابق" },
   paginationNext: { en: "Next", ar: "التالي" },
@@ -443,13 +462,13 @@ const translations: Translations = {
   cancelled: { en: "Cancelled", ar: "ملغى" },
   noInvoicesFound: { en: "No invoices found", ar: "لا توجد فواتير" },
   noMatchingInvoices: { en: "No matching invoices found", ar: "لا توجد فواتير تطابق البحث" },
-  tryAdjustingSearch: { en: "Try adjusting your search terms", ar: "جرّب تغيير كلمات البحث" },
+  // tryAdjustingSearch: { en: "Try adjusting your search terms", ar: "جرّب تغيير كلمات البحث" }, // Duplicate of line 83
   createFirstInvoice: { en: "Create your first invoice to get started", ar: "أنشئ أول فاتورة للبدء" },
   selectCustomer: { en: "Select customer", ar: "اختر العميل" },
   servicePlaceholder: { en: "e.g. Consulting Services", ar: "مثال: خدمات استشارية" },
   invoicePayment: { en: "Invoice Payment", ar: "دفع الفاتورة" },
   invoiceActions: { en: "Actions", ar: "إجراءات" },
-  invoiceNumber: { en: "Invoice #", ar: "فاتورة #" },
+  // invoiceNumber: { en: "Invoice #", ar: "فاتورة #" }, // Duplicate of line 178
   searchInvoices: { en: "Search invoices...", ar: "بحث في الفواتير..." },
 
   // Templates page
@@ -469,20 +488,17 @@ const translations: Translations = {
   templateUpdatedSuccess: { en: "Template updated successfully", ar: "تم تحديث القالب بنجاح" },
   templateCreatedSuccess: { en: "Template created successfully", ar: "تم إنشاء القالب بنجاح" },
   failedToCreateTemplate: { en: "Failed to create template", ar: "فشل إنشاء القالب" },
-  messageTemplates: { en: "Message Templates", ar: "قوالب الرسائل" },
+  // messageTemplates: { en: "Message Templates", ar: "قوالب الرسائل" }, // Duplicate of line 274
   editMessageTemplate: { en: "Edit Message Template", ar: "تعديل قالب الرسالة" },
   createMessageTemplate: { en: "Create Message Template", ar: "إنشاء قالب رسالة" },
   updateExistingTemplate: { en: "Update your existing template", ar: "تحديث القالب الحالي" },
   createReusableTemplate: { en: "Create a reusable message template for quick responses", ar: "إنشاء قالب رسالة قابلة لإعادة الاستخدام للردود السريعة" },
-  templateName: { en: "Template Name", ar: "اسم القالب" },
-  loadingTemplates: { en: "Loading templates...", ar: "جاري تحميل القوالب..." },
-  createTemplate: { en: "Create Template", ar: "إنشاء قالب" },
-  updateTemplate: { en: "Update Template", ar: "تحديث القالب" },
-  templateNamePlaceholder: { en: "e.g., Welcome Message", ar: "مثال: رسالة الترحيب" },
-  messageContent: { en: "Message Content", ar: "محتوى الرسالة" },
+  // templateName: { en: "Template Name", ar: "اسم القالب" }, // Duplicate of line 99
+  // messageContent: { en: "Message Content", ar: "محتوى الرسالة" }, // Duplicate of line 102
   categoryRequired: { en: "Category *", ar: "التصنيف *" },
   languageLabel: { en: "Language", ar: "اللغة" },
-  noTemplatesFound: { en: "No templates found", ar: "لا توجد قوالب" },
+  // noTemplatesFound: { en: "No templates found", ar: "لا توجد قوالب" }, // Duplicate of line 279 (renaming to Short)
+  noTemplatesFoundShort: { en: "No templates found", ar: "لا توجد قوالب" },
 
   // Bot flows page
   botFlowActivatedSuccess: { en: "Bot flow activated successfully", ar: "تم تفعيل السير الآلي بنجاح" },
@@ -541,8 +557,8 @@ const translations: Translations = {
   deactivateUserConfirmDesc: { en: "This will prevent them from logging in without deleting their data.", ar: "سيتم منعهم من تسجيل الدخول دون حذف بياناتهم." },
   userDetails: { en: "User Details", ar: "تفاصيل المستخدم" },
   userDetailsDescription: { en: "Comprehensive information about this user account", ar: "معلومات شاملة عن هذا الحساب" },
-  nameLabel: { en: "Name:", ar: "الاسم:" },
-  emailLabel: { en: "Email:", ar: "البريد:" },
+  // nameLabel: { en: "Name:", ar: "الاسم:" }, // Duplicate of line 302
+  // emailLabel: { en: "Email:", ar: "البريد:" }, // Duplicate of line 201
   activeLabel: { en: "Active:", ar: "نشط:" },
   yes: { en: "Yes", ar: "نعم" },
   no: { en: "No", ar: "لا" },
@@ -555,9 +571,9 @@ const translations: Translations = {
   supervisor: { en: "Supervisor", ar: "مشرف" },
   agentRole: { en: "Agent", ar: "موظف" },
   lastLogin: { en: "Last Login", ar: "آخر دخول" },
-  userCreated: { en: "User created", ar: "تم إنشاء المستخدم" },
-  userUpdated: { en: "User updated", ar: "تم تحديث المستخدم" },
-  userDeactivated: { en: "User deactivated", ar: "تم إلغاء تفعيل المستخدم" },
+  userCreatedShort: { en: "User created", ar: "تم إنشاء المستخدم" },
+  userUpdatedShort: { en: "User updated", ar: "تم تحديث المستخدم" },
+  userDeactivatedShort: { en: "User deactivated", ar: "تم إلغاء تفعيل المستخدم" },
   failedToSaveUser: { en: "Failed to save user", ar: "فشل حفظ المستخدم" },
   confirmPassword: { en: "Confirm Password", ar: "تأكيد كلمة المرور" },
   failedToLoadUsers: { en: "Failed to load users", ar: "فشل تحميل المستخدمين" },
@@ -684,7 +700,7 @@ const translations: Translations = {
 
   // Top bar & user menu
   myAccount: { en: "My Account", ar: "حسابي" },
-  userLabel: { en: "User", ar: "مستخدم" },
+  userRole: { en: "User", ar: "مستخدم" },
 
   // Inbox - empty & selection
   noConversationSelected: { en: "No Conversation Selected", ar: "لم يتم اختيار محادثة" },
@@ -712,7 +728,7 @@ const translations: Translations = {
   // Inbox Sidebar
   newLead: { en: "New Lead", ar: "عميل محتمل" },
   contactInformation: { en: "Contact Information", ar: "معلومات جهة الاتصال" },
-  assignedAgent: { en: "Assigned Agent", ar: "الموظف المعيّن" },
+  // assignedAgent: { en: "Assigned Agent", ar: "الموظف المعيّن" }, // Duplicate of line 374
   loadingNotes: { en: "Loading notes...", ar: "جاري تحميل الملاحظات..." },
   noNotesYet: { en: "No notes yet", ar: "لا توجد ملاحظات بعد" },
   selectPlaceholder: { en: "Select", ar: "اختر" },

@@ -576,20 +576,102 @@ export default function ContactsPage() {
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/50">
-                  <TableHead className="w-[50px]">#</TableHead>
-                  <TableHead>{t("contactLabel")}</TableHead>
-                  <TableHead>{t("phone")}</TableHead>
-                  <TableHead>{t("email")}</TableHead>
-                  <TableHead>{t("tags")}</TableHead>
-                  <TableHead>{t("createdLabel")}</TableHead>
-                  <TableHead className="text-end w-[100px]">{t("actionsLabel")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredContacts.map((contact, index) => {
+            <>
+              {/* Mobile: Card list */}
+              <div className="md:hidden space-y-3 p-4">
+                {filteredContacts.map((contact) => {
+                  const isBlocked = contact.tags
+                    ? (Array.isArray(contact.tags) ? contact.tags : String(contact.tags).split(",").map((t) => t.trim())).includes("blocked")
+                    : false
+                  return (
+                    <div
+                      key={contact.id}
+                      className={`rounded-xl border bg-card p-4 cursor-pointer active:bg-accent/50 ${isBlocked ? "border-red-200 dark:border-red-900/50" : ""}`}
+                      onClick={() => setSelectedContact(contact)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-12 w-12 shrink-0">
+                          <AvatarImage src={contact.avatar || "/placeholder.svg"} />
+                          <AvatarFallback>
+                            {contact.name.split(" ").map((n) => n[0]).join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold truncate">{contact.name}</p>
+                            {isBlocked && (
+                              <Badge variant="destructive" className="text-[10px] h-5">
+                                {t("blockedBadge")}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">{contact.phone}</p>
+                          {contact.email && (
+                            <p className="text-xs text-muted-foreground truncate mt-0.5">{contact.email}</p>
+                          )}
+                        </div>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="outline" size="sm" className="mt-3 w-full min-h-[44px]">
+                            <MoreVertical className="h-4 w-4 me-2" />
+                            {t("actionsLabel")}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-xl">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSelectedContact(contact) }}>
+                            {t("viewDetails")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation()
+                            setEditContact({
+                              id: contact.id,
+                              name: contact.name,
+                              phone: contact.phone,
+                              email: contact.email || "",
+                              tags: Array.isArray(contact.tags) ? contact.tags.join(", ") : (contact.tags || ""),
+                              notes: contact.notes || ""
+                            })
+                            setIsEditDialogOpen(true)
+                          }}>
+                            {t("editContactLabel")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleSendMessage(contact.id) }}>
+                            {t("sendMessageLabel")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleBlock(contact) }}>
+                            {isBlocked ? t("unblockContactLabel") : t("blockContactLabel")}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={(e) => { e.stopPropagation(); setContactToDelete(contact.id); setIsDeleteDialogOpen(true) }}
+                          >
+                            {t("delete")}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Desktop: Table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border/50">
+                      <TableHead className="w-[50px]">#</TableHead>
+                      <TableHead>{t("contactLabel")}</TableHead>
+                      <TableHead>{t("phone")}</TableHead>
+                      <TableHead>{t("email")}</TableHead>
+                      <TableHead>{t("tags")}</TableHead>
+                      <TableHead>{t("createdLabel")}</TableHead>
+                      <TableHead className="text-end w-[100px]">{t("actionsLabel")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredContacts.map((contact, index) => {
                   const isBlocked = contact.tags
                     ? (Array.isArray(contact.tags) ? contact.tags : String(contact.tags).split(',').map(t => t.trim())).includes('blocked')
                     : false;
@@ -717,6 +799,8 @@ export default function ContactsPage() {
                 })}
               </TableBody>
             </Table>
+              </div>
+            </>
           )}
         </div>
       </div>

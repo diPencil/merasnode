@@ -372,60 +372,31 @@ export default function UsersPage() {
               <p>{t("noUsersFound")}</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/50">
-                  <TableHead className="w-16">#</TableHead>
-                  <TableHead>{t("userLabel")}</TableHead>
-                  <TableHead>{t("role")}</TableHead>
-                  <TableHead>{t("status")}</TableHead>
-                  <TableHead>{t("details")}</TableHead>
-                  <TableHead>{t("createdAt")}</TableHead>
-                  <TableHead>{t("activeLabel")}</TableHead>
-                  <TableHead className="w-20">{t("options")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user, index) => (
-                  <TableRow key={user.id} className="border-border/30 hover:bg-accent/50">
-                    <TableCell className="font-medium text-muted-foreground">
-                      {index + 1}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} />
-                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-sm">{user.name}</span>
-                          <span className="text-xs text-muted-foreground">{user.email}</span>
+            <>
+              {/* Mobile: Card list */}
+              <div className="md:hidden space-y-3 p-4">
+                {filteredUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className="rounded-xl border bg-card p-4 space-y-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-12 w-12 shrink-0">
+                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} />
+                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold truncate">{user.name}</p>
+                        <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {getRoleBadge(user.role)}
+                          <Badge variant={user.status === "ONLINE" ? "default" : user.status === "AWAY" ? "secondary" : "outline"} className="rounded-full text-xs">
+                            {user.status}
+                          </Badge>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.status === 'ONLINE' ? 'default' : user.status === 'AWAY' ? 'secondary' : 'outline'} className="rounded-full text-xs">
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                        {user.branches && user.branches.length > 0 && (
-                          <span>{user.branches.length} {t("branches")}</span>
-                        )}
-                        {user.whatsappAccounts && user.whatsappAccounts.length > 0 && (
-                          <span>{user.whatsappAccounts.length} WhatsApp</span>
-                        )}
-                        {(!user.branches?.length && !user.whatsappAccounts?.length) && (
-                          <span>-</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {format(new Date(user.createdAt), "MMM dd, yyyy")}
-                    </TableCell>
-                    <TableCell>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t">
                       <Switch
                         checked={user.isActive !== false}
                         onCheckedChange={() => {
@@ -434,12 +405,10 @@ export default function UsersPage() {
                         }}
                         className="data-[state=checked]:bg-green-600"
                       />
-                    </TableCell>
-                    <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                            <MoreVertical className="h-4 w-4" />
+                          <Button variant="outline" size="sm" className="min-h-[44px] min-w-[44px]">
+                            <MoreVertical className="h-5 w-5" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl">
@@ -454,17 +423,108 @@ export default function UsersPage() {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop: Table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border/50">
+                      <TableHead className="w-16">#</TableHead>
+                      <TableHead>{t("userLabel")}</TableHead>
+                      <TableHead>{t("role")}</TableHead>
+                      <TableHead>{t("status")}</TableHead>
+                      <TableHead>{t("details")}</TableHead>
+                      <TableHead>{t("createdAt")}</TableHead>
+                      <TableHead>{t("activeLabel")}</TableHead>
+                      <TableHead className="w-20">{t("options")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user, index) => (
+                      <TableRow key={user.id} className="border-border/30 hover:bg-accent/50">
+                        <TableCell className="font-medium text-muted-foreground">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                              <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} />
+                              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-sm">{user.name}</span>
+                              <span className="text-xs text-muted-foreground">{user.email}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getRoleBadge(user.role)}</TableCell>
+                        <TableCell>
+                          <Badge variant={user.status === "ONLINE" ? "default" : user.status === "AWAY" ? "secondary" : "outline"} className="rounded-full text-xs">
+                            {user.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                            {user.branches && user.branches.length > 0 && (
+                              <span>{user.branches.length} {t("branches")}</span>
+                            )}
+                            {user.whatsappAccounts && user.whatsappAccounts.length > 0 && (
+                              <span>{user.whatsappAccounts.length} WhatsApp</span>
+                            )}
+                            {(!user.branches?.length && !user.whatsappAccounts?.length) && (
+                              <span>-</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {format(new Date(user.createdAt), "MMM dd, yyyy")}
+                        </TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={user.isActive !== false}
+                            onCheckedChange={() => {
+                              setSelectedUser(user)
+                              setIsDeactivateDialogOpen(true)
+                            }}
+                            className="data-[state=checked]:bg-green-600"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-xl">
+                              <DropdownMenuItem onClick={() => { setSelectedUser(user); setIsDetailsDialogOpen(true); }}>
+                                {t("userDetails")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                {t("editUser")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
+                                {t("delete")} {t("userLabel")}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </div>
 
         {/* Add User Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px]" fullScreenMobile>
             <DialogHeader>
               <DialogTitle>{t("addNewUser")}</DialogTitle>
               <DialogDescription>{t("createNewUserDescription")}</DialogDescription>
@@ -538,7 +598,7 @@ export default function UsersPage() {
                         <p className="text-sm text-muted-foreground">{t("noBranchesAvailable")}</p>
                       ) : (
                         availableBranches.map((branch) => (
-                          <div key={branch.value} className="flex items-center space-x-2">
+                          <div key={branch.value} className="flex items-center gap-2">
                             <Checkbox
                               id={`branch-${branch.value}`}
                               checked={formData.branchIds.includes(branch.value)}
@@ -579,7 +639,7 @@ export default function UsersPage() {
                         <p className="text-sm text-muted-foreground">{t("noWhatsAppAccountsAvailable")}</p>
                       ) : (
                         availableAccounts.map((account) => (
-                          <div key={account.value} className="flex items-center space-x-2">
+                          <div key={account.value} className="flex items-center gap-2">
                             <Checkbox
                               id={`account-${account.value}`}
                               checked={formData.whatsappAccountIds.includes(account.value)}
@@ -612,7 +672,7 @@ export default function UsersPage() {
 
         {/* Edit User Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px]" fullScreenMobile>
             <DialogHeader>
               <DialogTitle>{t("editUser")}</DialogTitle>
               <DialogDescription>{t("updateUserDetailsAndPermissions")}</DialogDescription>
@@ -755,7 +815,7 @@ export default function UsersPage() {
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-[400px]">
+          <DialogContent className="sm:max-w-[400px]" fullScreenMobile>
             <DialogHeader>
               <DialogTitle className="text-red-600 flex items-center gap-2">
                 <AlertCircle className="h-5 w-5" />
@@ -779,7 +839,7 @@ export default function UsersPage() {
 
         {/* Deactivate/Activate Confirmation Dialog */}
         <Dialog open={isDeactivateDialogOpen} onOpenChange={setIsDeactivateDialogOpen}>
-          <DialogContent className="sm:max-w-[400px]">
+          <DialogContent className="sm:max-w-[400px]" fullScreenMobile>
             <DialogHeader>
               <DialogTitle className={`${selectedUser?.isActive === false ? "text-green-600" : "text-orange-600"} flex items-center gap-2`}>
                 <AlertCircle className="h-5 w-5" />
@@ -804,7 +864,7 @@ export default function UsersPage() {
 
         {/* User Details Dialog */}
         <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px]" fullScreenMobile>
             <DialogHeader>
               <DialogTitle>{t("userDetails")}</DialogTitle>
               <DialogDescription>{t("userDetailsDescription")}</DialogDescription>

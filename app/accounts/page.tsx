@@ -64,7 +64,7 @@ export default function AccountsPage() {
   const [createdAccountId, setCreatedAccountId] = useState<string | null>(null)
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null)
   const { toast } = useToast()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
 
   useEffect(() => {
     fetchAccounts()
@@ -339,12 +339,12 @@ export default function AccountsPage() {
 
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="rounded-full shadow-md">
-                <Plus className="mr-2 h-4 w-4" />
+              <Button className="rounded-full shadow-md gap-2">
+                <Plus className="h-4 w-4" />
                 Connect Account
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[600px]" fullScreenMobile>
               <DialogHeader>
                 <DialogTitle>Connect WhatsApp Account</DialogTitle>
                 <DialogDescription>Choose your connection method</DialogDescription>
@@ -404,8 +404,8 @@ export default function AccountsPage() {
                   </div>
 
                   {!qrGenerated ? (
-                    <Button onClick={handleGenerateQR} className="w-full" size="lg">
-                      <QrCode className="mr-2 h-5 w-5" />
+                    <Button onClick={handleGenerateQR} className="w-full gap-2" size="lg">
+                      <QrCode className="h-5 w-5" />
                       Generate QR Code
                     </Button>
                   ) : (
@@ -516,72 +516,129 @@ export default function AccountsPage() {
                 </Button>
               </div>
             ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[200px]">Account Name</TableHead>
-                      <TableHead>Phone Number</TableHead>
-                      <TableHead>Provider</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Connected Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {accounts.map((account) => (
-                      <TableRow key={account.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                              <Smartphone className="h-4 w-4" />
-                            </div>
-                            {account.name}
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">{account.phone}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="rounded-full">
-                            {account.provider === "meta-cloud-api" ? "Meta Cloud API" : "WhatsApp Web"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(account.status)}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {format(new Date(account.createdAt), "MMM dd, yyyy")}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => window.location.href = '/whatsapp'}
-                            >
-                              Manage
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => toast({
-                                title: "Test Message",
-                                description: `Testing connection to ${account.name}`,
-                              })}
-                            >
-                              Test
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeleteClick(account.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+              <>
+                {/* Mobile: Card list */}
+                <div className="md:hidden space-y-3">
+                  {accounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className="rounded-xl border bg-card p-4 space-y-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <Smartphone className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold truncate">{account.name}</p>
+                          <p className="text-sm text-muted-foreground font-mono">{account.phone}</p>
+                          <div className="mt-2">{getStatusBadge(account.status)}</div>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="min-h-[44px] flex-1"
+                          onClick={() => (window.location.href = "/whatsapp")}
+                        >
+                          Manage
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="min-h-[44px] flex-1"
+                          onClick={() =>
+                            toast({
+                              title: "Test Message",
+                              description: `Testing connection to ${account.name}`,
+                            })
+                          }
+                        >
+                          Test
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="min-h-[44px] min-w-[44px]"
+                          onClick={() => handleDeleteClick(account.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop: Table */}
+                <div className="hidden md:block rounded-md border overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[200px]">Account Name</TableHead>
+                        <TableHead>Phone Number</TableHead>
+                        <TableHead>Provider</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Connected Date</TableHead>
+                        <TableHead className="text-end">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {accounts.map((account) => (
+                        <TableRow key={account.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                <Smartphone className="h-4 w-4" />
+                              </div>
+                              {account.name}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">{account.phone}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="rounded-full">
+                              {account.provider === "meta-cloud-api" ? "Meta Cloud API" : "WhatsApp Web"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(account.status)}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {format(new Date(account.createdAt), "MMM dd, yyyy")}
+                          </TableCell>
+                          <TableCell className="text-end">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => (window.location.href = "/whatsapp")}
+                              >
+                                Manage
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  toast({
+                                    title: "Test Message",
+                                    description: `Testing connection to ${account.name}`,
+                                  })
+                                }
+                              >
+                                Test
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeleteClick(account.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

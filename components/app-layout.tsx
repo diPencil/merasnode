@@ -2,8 +2,9 @@
 
 import type React from "react"
 import { NavigationRail } from "./navigation-rail"
+import { MobileBottomNav } from "./mobile-bottom-nav"
 import { TopBar } from "./top-bar"
-import { useI18n } from "@/lib/i18n"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -12,27 +13,40 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children, title, showSearch = false }: AppLayoutProps) {
-  const { dir } = useI18n()
+  const isMobile = useIsMobile()
 
   return (
-    /* dir يُورث من document (يضبطه I18nProvider) لتفادي وميض LTR */
-    <div
-      className={`
-        flex h-screen overflow-hidden bg-background flex-row
-      `}
-    >
-      <NavigationRail />
+    <div className="flex h-dvh overflow-hidden bg-background flex-col md:flex-row">
+      {/* Desktop: Side navigation rail - hidden on mobile via CSS */}
+      <div className="hidden md:block shrink-0">
+        <NavigationRail />
+      </div>
 
-      {/* Main Content Area - المحتوى يورث الاتجاه ويبدأ من اليمين في RTL */}
+      {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0 text-start">
-        <TopBar title={title} showSearch={showSearch} />
+        <TopBar title={title} showSearch={showSearch} isMobile={isMobile} />
 
-        <main className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-[1400px] p-8 text-start">
+        <main className="flex-1 overflow-auto overscroll-contain">
+          <div
+            className={cn(
+              "mx-auto w-full max-w-[1400px] text-start",
+              "p-4 sm:p-6 md:p-8",
+              "pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-8"
+            )}
+          >
             {children}
           </div>
         </main>
       </div>
+
+      {/* Mobile: Bottom navigation - visible only on mobile via CSS */}
+      <div className="md:hidden">
+        <MobileBottomNav />
+      </div>
     </div>
   )
+}
+
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(" ")
 }

@@ -20,11 +20,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ThemeToggle } from "./theme-toggle"
 import { LanguageSwitcher } from "./language-switcher"
 import { useI18n } from "@/lib/i18n"
+import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 
 interface TopBarProps {
   title?: string
   showSearch?: boolean
+  isMobile?: boolean
 }
 
 interface Notification {
@@ -37,7 +39,7 @@ interface Notification {
   link?: string | null
 }
 
-export function TopBar({ title, showSearch = true }: TopBarProps) {
+export function TopBar({ title, showSearch = true, isMobile = false }: TopBarProps) {
   const router = useRouter()
   const { toast } = useToast()
   const { t, language, dir } = useI18n()
@@ -167,38 +169,51 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
   }, [language])
 
   return (
-    <div className={`flex h-16 items-center justify-between bg-transparent px-8 ${dir === "rtl" ? "flex-row-reverse" : "flex-row"}`}>
-      {/* Section 1: Title/Greeting */}
-      <div className="flex items-center gap-4">
-        {title && <h1 className="text-2xl font-semibold text-foreground">{title}</h1>}
+    <header
+      className={cn(
+        "flex h-14 sm:h-16 items-center justify-between bg-transparent shrink-0",
+        "px-4 sm:px-6 md:px-8",
+        "pt-[env(safe-area-inset-top)]",
+        dir === "rtl" ? "flex-row-reverse" : "flex-row"
+      )}
+    >
+      {/* Section 1: Title/Greeting - always visible */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        {title && (
+          <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-foreground truncate">
+            {title}
+          </h1>
+        )}
       </div>
 
-      {/* Section 2: Search, Date, Language, Theme, User */}
-      <div className="flex items-center gap-4">
-        {/* Search */}
-        {showSearch && (
-          <div className="relative">
+      {/* Section 2: Search, Date, Language, Theme, User - condensed on mobile */}
+      <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
+        {/* Search - hidden on mobile, shown on tablet+ */}
+        {showSearch && !isMobile && (
+          <div className="relative hidden md:block">
             <Search className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ${dir === "rtl" ? "right-3" : "left-3"}`} />
             <Input
               type="search"
               placeholder={`${t("search")}...`}
-              className={`h-10 w-80 rounded-xl bg-card/80 backdrop-blur-sm border-border/50 shadow-sm ${dir === "rtl" ? "pr-10 pl-4" : "pl-10 pr-4"}`}
+              className={`h-10 w-48 lg:w-80 rounded-xl bg-card/80 backdrop-blur-sm border-border/50 shadow-sm ${dir === "rtl" ? "pr-10 pl-4" : "pl-10 pr-4"}`}
             />
           </div>
         )}
 
-        {/* Date & Time Badge */}
-        <div className="flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-2 text-sm font-medium text-primary backdrop-blur-sm">
-          <Calendar className="h-4 w-4" />
-          <span>{currentDate}</span>
-          <span className="mx-1">•</span>
-          <span>{currentTime}</span>
-        </div>
+        {/* Date & Time Badge - hidden on small mobile */}
+        {!isMobile && (
+          <div className="hidden lg:flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-2 text-sm font-medium text-primary backdrop-blur-sm">
+            <Calendar className="h-4 w-4" />
+            <span>{currentDate}</span>
+            <span className="mx-1">•</span>
+            <span>{currentTime}</span>
+          </div>
+        )}
 
         {/* Notifications */}
         <Popover open={isNotificationsOpen} onOpenChange={setIsNotificationsOpen}>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl hover:bg-muted">
+            <Button variant="ghost" size="icon" className="relative min-h-[44px] min-w-[44px] h-10 w-10 rounded-xl hover:bg-muted">
               <Bell className="h-5 w-5 text-muted-foreground" />
               {unreadCount > 0 && (
                 <span className={`absolute top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background animate-pulse ${dir === "rtl" ? "left-2" : "right-2"}`} />
@@ -299,7 +314,7 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
         {/* User Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
+            <Avatar className="h-10 w-10 min-h-[44px] min-w-[44px] cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
               <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser?.name || 'User'}`} />
               <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                 {currentUser?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U'}
@@ -331,6 +346,6 @@ export function TopBar({ title, showSearch = true }: TopBarProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </div>
+    </header>
   )
 }

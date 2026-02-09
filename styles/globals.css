@@ -122,4 +122,16 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Prevent horizontal scroll on mobile */
+  html, body {
+    overflow-x: hidden;
+  }
+}
+
+/* Mobile touch target helper */
+@layer utilities {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
