@@ -997,8 +997,11 @@ export default function InboxPage() {
         {/* On Mobile: Show this ONLY if conversation IS selected (covers list) */}
         {selectedConversation ? (
           <div className={cn(
-            "flex-1 flex-col bg-slate-50 relative chat-column w-full h-full md:relative z-20 md:z-0",
-            selectedConversation ? "flex absolute md:flex" : "hidden md:flex"
+            "flex-1 flex-col bg-slate-50 chat-column z-40",
+            // Mobile: Fixed overlay filling the screen
+            "fixed inset-0 bg-background",
+            // Desktop: Relative, natural flow
+            "md:relative md:inset-auto md:flex md:z-0"
           )} dir={dir}>
             {/* Header */}
             <div className="h-16 border-b bg-card px-4 flex items-center justify-between shadow-sm z-30 shrink-0 sticky top-0">
@@ -1221,7 +1224,7 @@ export default function InboxPage() {
             </div>
 
             {/* Messages — RTL: incoming=start (right), outgoing=end (left) */}
-            <div className="chat-messages p-4 md:p-6 pb-24 overflow-y-auto flex-1">
+            <div className="chat-messages p-4 md:p-6 pb-4 overflow-y-auto flex-1 min-h-0 overscroll-contain">
               {messages.map((message) => {
                 const isOutgoing = message.direction === "OUTGOING"
                 return (
@@ -1234,8 +1237,14 @@ export default function InboxPage() {
                         className={cn(
                           "chat-bubble px-4 py-2 rounded-2xl shadow-sm text-sm max-w-[85%] md:max-w-[70%]",
                           isOutgoing
-                            ? "bg-[#dcf8c6] dark:bg-[#005c4b] text-slate-800 dark:text-slate-100 rounded-tr-none"
-                            : "bg-white dark:bg-[#202c33] text-gray-800 dark:text-slate-100 border dark:border-none rounded-tl-none"
+                            ? cn(
+                              "bg-[#dcf8c6] dark:bg-[#005c4b] text-slate-800 dark:text-slate-100",
+                              dir === 'rtl' ? "rounded-tl-none" : "rounded-tr-none"
+                            )
+                            : cn(
+                              "bg-white dark:bg-[#202c33] text-gray-800 dark:text-slate-100 border dark:border-none",
+                              dir === 'rtl' ? "rounded-tr-none" : "rounded-tl-none"
+                            )
                         )}
                       >
                         {message.type === 'IMAGE' && message.mediaUrl ? (
@@ -1314,66 +1323,15 @@ export default function InboxPage() {
             </div>
 
             {/* Input bar — RTL: [Attach|Emoji|Mic] → Input → Send; Send on start (right in RTL) */}
-            <div className="bg-card mt-auto chat-input-bar border-t p-2 md:p-3 sticky bottom-0 z-40 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
-              <div className="flex items-center gap-2 bg-muted/30 p-1.5 md:p-2 rounded-3xl w-full flex-1 min-w-0 border focus-within:ring-2 ring-primary/20 transition-all">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground hover:bg-background shrink-0 rounded-full h-8 w-8 md:h-9 md:w-9"
-                  onClick={() => document.getElementById("file-upload")?.click()}
-                >
-                  <Paperclip className="h-5 w-5" />
-                </Button>
-                <input
-                  type="file"
-                  id="file-upload"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-
-                    setIsSending(true);
-                    try {
-                      // 1. Upload file
-                      const formData = new FormData();
-                      formData.append('file', file);
-
-                      const uploadRes = await fetch('/api/upload', {
-                        method: 'POST',
-                        body: formData
-                      });
-
-                      const uploadData = await uploadRes.json();
-                      if (!uploadData.success) throw new Error(uploadData.error);
-
-                      // 2. Send Media Message
-                      await handleSendMessage(undefined, uploadData.url); // We'll update handleSendMessage to accept mediaUrl
-
-                      toast({
-                        title: t("sent"),
-                        description: t("fileSentSuccessfully"),
-                      });
-                    } catch (error) {
-                      console.error('Error sending file:', error);
-                      toast({
-                        title: t("error"),
-                        description: t("failedToSendFile"),
-                        variant: "destructive"
-                      });
-                    } finally {
-                      setIsSending(false);
-                      // Reset input
-                      e.target.value = '';
-                    }
-                  }}
-                />
-
+            <div className="bg-card mt-auto chat-input-bar border-t p-2 md:p-3 shrink-0 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] flex items-end gap-2">
+              <div className="flex items-center gap-1 md:gap-2 bg-muted/30 p-1 md:p-1.5 rounded-[24px] w-full flex-1 min-w-0 border focus-within:ring-2 ring-primary/20 transition-all min-h-[44px]">
+                {/* Emoji Button */}
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground hover:bg-background h-8 w-8 md:h-9 md:w-9 rounded-full hidden sm:flex"
+                      className="text-muted-foreground hover:bg-background h-8 w-8 md:h-9 md:w-9 rounded-full shrink-0"
                     >
                       <Smile className="h-5 w-5" />
                     </Button>
@@ -1396,27 +1354,77 @@ export default function InboxPage() {
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 />
+
+                {/* Attachments Group */}
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:bg-background shrink-0 rounded-full h-8 w-8 md:h-9 md:w-9"
+                    onClick={() => document.getElementById("file-upload")?.click()}
+                  >
+                    <Paperclip className="h-5 w-5" />
+                  </Button>
+                  <input
+                    type="file"
+                    id="file-upload"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+
+                      setIsSending(true);
+                      try {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+                        const uploadData = await uploadRes.json();
+                        if (!uploadData.success) throw new Error(uploadData.error);
+                        await handleSendMessage(undefined, uploadData.url);
+                        toast({ title: t("sent"), description: t("fileSentSuccessfully") });
+                      } catch (error) {
+                        toast({ title: t("error"), description: t("failedToSendFile"), variant: "destructive" });
+                      } finally {
+                        setIsSending(false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:bg-background shrink-0 rounded-full h-8 w-8 md:h-9 md:w-9"
+                    onClick={handleLocationShare}
+                    title={t("location")}
+                  >
+                    <MapPin className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Floating Action Button (Send / Mic) */}
+              <div className="shrink-0 mb-0.5">
                 {newMessage.trim() ? (
-                  <Button size="icon" onClick={() => handleSendMessage()} disabled={isSending} className="rounded-full h-8 w-8 md:h-9 md:w-9 shrink-0"><Send className="h-4 w-4" /></Button>
+                  <Button
+                    size="icon"
+                    onClick={() => handleSendMessage()}
+                    disabled={isSending}
+                    className="rounded-full h-10 w-10 md:h-11 md:w-11 shadow-sm transition-transform active:scale-95 bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Send className="h-4 w-4 md:h-5 md:w-5 rtl:rotate-180" />
+                  </Button>
                 ) : (
-                  <>
-                    <Button
-                      variant={isRecording ? "destructive" : "ghost"}
-                      size="icon"
-                      className={`shrink-0 rounded-full h-8 w-8 md:h-9 md:w-9 ${isRecording ? "animate-pulse" : "text-muted-foreground hover:bg-background"}`}
-                      onClick={isRecording ? stopRecording : startRecording}
-                    >
-                      {isRecording ? <div className="h-3 w-3 bg-white rounded-sm" /> : <Mic className="h-5 w-5" />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:bg-background shrink-0 rounded-full h-8 w-8 md:h-9 md:w-9 hidden sm:flex"
-                      onClick={handleLocationShare}
-                    >
-                      <MapPin className="h-5 w-5" />
-                    </Button>
-                  </>
+                  <Button
+                    variant={isRecording ? "destructive" : "default"}
+                    size="icon"
+                    className={cn(
+                      "rounded-full h-10 w-10 md:h-11 md:w-11 shadow-sm transition-all active:scale-95",
+                      isRecording ? "animate-pulse ring-4 ring-destructive/30" : "bg-primary text-primary-foreground hover:bg-primary/90"
+                    )}
+                    onClick={isRecording ? stopRecording : startRecording}
+                  >
+                    {isRecording ? <div className="h-3 w-3 bg-white rounded-sm" /> : <Mic className="h-5 w-5" />}
+                  </Button>
                 )}
               </div>
 

@@ -496,44 +496,64 @@ export default function ContactsPage() {
     <AppLayout title={t("contacts")}>
       <div className="space-y-6">
         {/* Header Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight">
-              {viewMode === 'all' ? t("yourContacts") : t("blockedContacts")}
-            </h2>
-            <Badge variant="outline" className="text-sm px-2.5 py-0.5 h-7">
-              {viewMode === 'all' ? t("total") : t("blocked")}: {filteredContacts.length}
-            </Badge>
+        {/* Header Actions */}
+        <div className="flex flex-col gap-4">
+          {/* Top Row: Title + Badge + Mobile Add Button */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl md:text-2xl font-bold tracking-tight">
+                {viewMode === 'all' ? t("yourContacts") : t("blockedContacts")}
+              </h2>
+              <Badge variant="outline" className="text-xs md:text-sm px-2 py-0.5 h-6 md:h-7">
+                {viewMode === 'all' ? t("total") : t("blocked")}: {filteredContacts.length}
+              </Badge>
+            </div>
+            {/* Mobile: Add Contact Button (Icon Only) */}
+            <Button size="icon" className="h-8 w-8 md:hidden shrink-0 rounded-full" onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {/* Controls Row */}
+          <div className="flex flex-col md:flex-row gap-3">
+            {/* Search - Full width on mobile */}
+            <div className="relative flex-1">
+              <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder={t("searchContacts")}
-                className="ps-9 h-9 text-start"
+                className="ps-9 h-10 md:h-9 w-full bg-card"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button
-              variant={viewMode === "blocked" ? "default" : "outline"}
-              size="sm"
-              className={`h-9 gap-2 ${viewMode === "blocked" ? "bg-red-600 hover:bg-red-700 text-white" : ""}`}
-              onClick={() => setViewMode(viewMode === "all" ? "blocked" : "all")}
-            >
-              {viewMode === "all" ? <ShieldOff className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-              <span className="hidden sm:inline">{viewMode === "all" ? t("blockedContactsLabel") : t("allContactsLabel")}</span>
-            </Button>
-            <Button variant="outline" size="sm" className="h-9 gap-2" onClick={handleImport}>
-              <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("importLabel")}</span>
-            </Button>
-            <Button variant="outline" size="sm" className="h-9 gap-2" onClick={handleExport}>
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("exportLabel")}</span>
-            </Button>
+
+            {/* Actions Row */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+              <Button
+                variant={viewMode === "blocked" ? "default" : "outline"}
+                size="sm"
+                className={`h-9 gap-2 shrink-0 ${viewMode === "blocked" ? "bg-red-600 hover:bg-red-700 text-white" : "bg-card"}`}
+                onClick={() => setViewMode(viewMode === "all" ? "blocked" : "all")}
+              >
+                {viewMode === "all" ? <ShieldOff className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                <span className="hidden lg:inline">{viewMode === "all" ? t("blockedContactsLabel") : t("allContactsLabel")}</span>
+              </Button>
+              <Button variant="outline" size="sm" className="h-9 gap-2 shrink-0 bg-card" onClick={handleImport}>
+                <Upload className="h-4 w-4" />
+                <span className="hidden lg:inline">{t("importLabel")}</span>
+              </Button>
+              <Button variant="outline" size="sm" className="h-9 gap-2 shrink-0 bg-card" onClick={handleExport}>
+                <Download className="h-4 w-4" />
+                <span className="hidden lg:inline">{t("exportLabel")}</span>
+              </Button>
+
+              {/* Desktop Add Button */}
+              <Button size="sm" className="h-9 hidden md:flex shrink-0" onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="me-2 h-4 w-4" />
+                {t("addContact")}
+              </Button>
+            </div>
             <input
               type="file"
               ref={fileInputRef}
@@ -541,10 +561,6 @@ export default function ContactsPage() {
               accept=".csv"
               onChange={handleFileChange}
             />
-            <Button size="sm" className="h-9" onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="me-2 h-4 w-4" />
-              {t("addContact")}
-            </Button>
           </div>
         </div>
         {/* Contacts Table */}
@@ -672,133 +688,133 @@ export default function ContactsPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredContacts.map((contact, index) => {
-                  const isBlocked = contact.tags
-                    ? (Array.isArray(contact.tags) ? contact.tags : String(contact.tags).split(',').map(t => t.trim())).includes('blocked')
-                    : false;
+                      const isBlocked = contact.tags
+                        ? (Array.isArray(contact.tags) ? contact.tags : String(contact.tags).split(',').map(t => t.trim())).includes('blocked')
+                        : false;
 
-                  return (
-                    <TableRow
-                      key={contact.id}
-                      className={`cursor-pointer border-border/30 hover:bg-accent/50 ${isBlocked ? 'bg-red-50/50 hover:bg-red-100/50 dark:bg-red-950/20' : ''}`}
-                      onClick={() => setSelectedContact(contact)}
-                    >
-                      <TableCell className="text-muted-foreground font-medium">
-                        {index + 1}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={contact.avatar || "/placeholder.svg"} />
-                            <AvatarFallback>
-                              {contact.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <span className="font-medium">{contact.name}</span>
-                            {isBlocked && <Badge variant="destructive" className="ms-2 text-[10px] h-5">{t("blockedBadge")}</Badge>}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{contact.phone}</TableCell>
-                      <TableCell className="text-muted-foreground">{contact.email || "-"}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1 flex-wrap">
-                          {contact.tags ? (
-                            <>
-                              {(() => {
-                                // Handle both string and array formats
-                                const tagsArray: string[] = Array.isArray(contact.tags)
-                                  ? contact.tags
-                                  : String(contact.tags).split(',').map(t => t.trim());
+                      return (
+                        <TableRow
+                          key={contact.id}
+                          className={`cursor-pointer border-border/30 hover:bg-accent/50 ${isBlocked ? 'bg-red-50/50 hover:bg-red-100/50 dark:bg-red-950/20' : ''}`}
+                          onClick={() => setSelectedContact(contact)}
+                        >
+                          <TableCell className="text-muted-foreground font-medium">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={contact.avatar || "/placeholder.svg"} />
+                                <AvatarFallback>
+                                  {contact.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <span className="font-medium">{contact.name}</span>
+                                {isBlocked && <Badge variant="destructive" className="ms-2 text-[10px] h-5">{t("blockedBadge")}</Badge>}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{contact.phone}</TableCell>
+                          <TableCell className="text-muted-foreground">{contact.email || "-"}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1 flex-wrap">
+                              {contact.tags ? (
+                                <>
+                                  {(() => {
+                                    // Handle both string and array formats
+                                    const tagsArray: string[] = Array.isArray(contact.tags)
+                                      ? contact.tags
+                                      : String(contact.tags).split(',').map(t => t.trim());
 
-                                return (
-                                  <>
-                                    {tagsArray.slice(0, 2).map((tag: string, index: number) => (
-                                      <Badge key={index} variant={tag === 'blocked' ? 'destructive' : 'secondary'} className="rounded-full">
-                                        {tag.trim()}
-                                      </Badge>
-                                    ))}
-                                    {tagsArray.length > 2 && (
-                                      <Badge variant="outline" className="rounded-full">
-                                        +{tagsArray.length - 2}
-                                      </Badge>
-                                    )}
-                                  </>
-                                );
-                              })()}
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{format(new Date(contact.createdAt), "MMM dd, yyyy", { locale: dateLocale })}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-xl shadow-soft-lg">
-                            <DropdownMenuItem onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedContact(contact)
-                            }}>
-                              {t("viewDetails")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => {
-                              e.stopPropagation()
-                              setEditContact({
-                                id: contact.id,
-                                name: contact.name,
-                                phone: contact.phone,
-                                email: contact.email || "",
-                                tags: Array.isArray(contact.tags) ? contact.tags.join(", ") : (contact.tags || ""),
-                                notes: contact.notes || ""
-                              })
-                              setIsEditDialogOpen(true)
-                            }}>
-                              {t("editContactLabel")}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => {
-                              e.stopPropagation()
-                              handleSendMessage(contact.id)
-                            }}>
-                              {t("sendMessageLabel")}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className={isBlocked ? "text-green-600" : "text-amber-600"}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleToggleBlock(contact)
-                              }}
-                            >
-                              {isBlocked ? t("unblockContactLabel") : t("blockContactLabel")}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setContactToDelete(contact.id)
-                                setIsDeleteDialogOpen(true)
-                              }}
-                            >
-                              {t("delete")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+                                    return (
+                                      <>
+                                        {tagsArray.slice(0, 2).map((tag: string, index: number) => (
+                                          <Badge key={index} variant={tag === 'blocked' ? 'destructive' : 'secondary'} className="rounded-full">
+                                            {tag.trim()}
+                                          </Badge>
+                                        ))}
+                                        {tagsArray.length > 2 && (
+                                          <Badge variant="outline" className="rounded-full">
+                                            +{tagsArray.length - 2}
+                                          </Badge>
+                                        )}
+                                      </>
+                                    );
+                                  })()}
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">-</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{format(new Date(contact.createdAt), "MMM dd, yyyy", { locale: dateLocale })}</TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="rounded-xl shadow-soft-lg">
+                                <DropdownMenuItem onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedContact(contact)
+                                }}>
+                                  {t("viewDetails")}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEditContact({
+                                    id: contact.id,
+                                    name: contact.name,
+                                    phone: contact.phone,
+                                    email: contact.email || "",
+                                    tags: Array.isArray(contact.tags) ? contact.tags.join(", ") : (contact.tags || ""),
+                                    notes: contact.notes || ""
+                                  })
+                                  setIsEditDialogOpen(true)
+                                }}>
+                                  {t("editContactLabel")}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleSendMessage(contact.id)
+                                }}>
+                                  {t("sendMessageLabel")}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className={isBlocked ? "text-green-600" : "text-amber-600"}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleToggleBlock(contact)
+                                  }}
+                                >
+                                  {isBlocked ? t("unblockContactLabel") : t("blockContactLabel")}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setContactToDelete(contact.id)
+                                    setIsDeleteDialogOpen(true)
+                                  }}
+                                >
+                                  {t("delete")}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
               </div>
             </>
           )}

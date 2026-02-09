@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
-import { Loader2, X } from "lucide-react"
+import { Loader2, X, Type, Image } from "lucide-react"
 import { getUserRole, getUser, getAuthHeader } from "@/lib/auth"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
@@ -86,12 +86,12 @@ export default function SettingsPage() {
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          companyName, 
+        body: JSON.stringify({
+          companyName,
           companyLogo,
           companyDisplayType,
-          timezone, 
-          language 
+          timezone,
+          language
         })
       })
 
@@ -118,20 +118,20 @@ export default function SettingsPage() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast({ 
-        title: t("error"), 
-        description: t("pleaseUploadImage"), 
-        variant: "destructive" 
+      toast({
+        title: t("error"),
+        description: t("pleaseUploadImage"),
+        variant: "destructive"
       })
       return
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast({ 
-        title: "Error", 
-        description: "Image size must be less than 5MB", 
-        variant: "destructive" 
+      toast({
+        title: "Error",
+        description: "Image size must be less than 5MB",
+        variant: "destructive"
       })
       return
     }
@@ -153,47 +153,47 @@ export default function SettingsPage() {
       if (uploadData.success) {
         setCompanyLogo(uploadData.url)
         setCompanyDisplayType("logo")
-        
+
         // Save logo to settings immediately
         const saveRes = await fetch('/api/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             companyLogo: uploadData.url,
             companyDisplayType: "logo"
           })
         })
-        
+
         const saveData = await saveRes.json()
         if (saveData.success) {
-          toast({ 
-            title: "Success", 
-            description: "Logo uploaded and saved successfully" 
+          toast({
+            title: "Success",
+            description: "Logo uploaded and saved successfully"
           })
           // Reload page to update sidebar
           setTimeout(() => {
             window.location.reload()
           }, 500)
         } else {
-          toast({ 
-            title: "Warning", 
-            description: saveData.error || "Logo uploaded but failed to save. Please try again.", 
+          toast({
+            title: "Warning",
+            description: saveData.error || "Logo uploaded but failed to save. Please try again.",
             variant: "destructive"
           })
         }
       } else {
-        toast({ 
-          title: "Error", 
-          description: uploadData.error || "Failed to upload logo", 
-          variant: "destructive" 
+        toast({
+          title: "Error",
+          description: uploadData.error || "Failed to upload logo",
+          variant: "destructive"
         })
       }
     } catch (error) {
       console.error('Error uploading logo:', error)
-      toast({ 
-        title: "Error", 
-        description: "Failed to upload logo", 
-        variant: "destructive" 
+      toast({
+        title: "Error",
+        description: "Failed to upload logo",
+        variant: "destructive"
       })
     } finally {
       setIsSaving(false)
@@ -284,7 +284,7 @@ export default function SettingsPage() {
   const handleNotificationToggle = async (type: 'newMessages' | 'assignment' | 'template' | 'dailySummary', value: boolean) => {
     try {
       const updateData: any = {}
-      
+
       switch (type) {
         case 'newMessages':
           setNewMessagesNotif(value)
@@ -312,8 +312,8 @@ export default function SettingsPage() {
 
       const data = await response.json()
       if (data.success) {
-        toast({ 
-          title: "Updated", 
+        toast({
+          title: "Updated",
           description: `Notification preference ${value ? 'enabled' : 'disabled'}`,
           duration: 2000
         })
@@ -333,10 +333,10 @@ export default function SettingsPage() {
             setDailySummaryNotif(!value)
             break
         }
-        toast({ 
-          title: "Error", 
-          description: data.error || "Failed to update preference", 
-          variant: "destructive" 
+        toast({
+          title: "Error",
+          description: data.error || "Failed to update preference",
+          variant: "destructive"
         })
       }
     } catch (error) {
@@ -355,10 +355,10 @@ export default function SettingsPage() {
           setDailySummaryNotif(!value)
           break
       }
-      toast({ 
-        title: "Error", 
-        description: "Failed to update preference", 
-        variant: "destructive" 
+      toast({
+        title: "Error",
+        description: "Failed to update preference",
+        variant: "destructive"
       })
     }
   }
@@ -445,11 +445,11 @@ export default function SettingsPage() {
       <div className="mx-auto max-w-4xl space-y-6">
         <Tabs defaultValue={isAgent ? "security" : "general"} className="space-y-6">
           {!isAgent && (
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="general">{t("general")}</TabsTrigger>
-              <TabsTrigger value="notifications">{t("notifications")}</TabsTrigger>
-              <TabsTrigger value="security">{t("security")}</TabsTrigger>
-              <TabsTrigger value="integrations">{t("integrations")}</TabsTrigger>
+            <TabsList className="flex w-full overflow-x-auto justify-start md:grid md:grid-cols-4 bg-muted/50 p-1 h-auto gap-2 scrollbar-hide snap-x">
+              <TabsTrigger value="general" className="rounded-full px-4 py-2.5 shrink-0 snap-start data-[state=active]:bg-background data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-border/50">{t("general")}</TabsTrigger>
+              <TabsTrigger value="notifications" className="rounded-full px-4 py-2.5 shrink-0 snap-start data-[state=active]:bg-background data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-border/50">{t("notifications")}</TabsTrigger>
+              <TabsTrigger value="security" className="rounded-full px-4 py-2.5 shrink-0 snap-start data-[state=active]:bg-background data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-border/50">{t("security")}</TabsTrigger>
+              <TabsTrigger value="integrations" className="rounded-full px-4 py-2.5 shrink-0 snap-start data-[state=active]:bg-background data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-border/50">{t("integrations")}</TabsTrigger>
             </TabsList>
           )}
 
@@ -464,28 +464,31 @@ export default function SettingsPage() {
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
                     <Label>{t("companyDisplayType")}</Label>
-                    <div className="flex flex-wrap gap-4">
-                      <label className="settings-radio-label flex items-center gap-2 cursor-pointer">
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
+                      <label className={`relative flex flex-col items-center justify-between rounded-xl border-2 p-4 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-all ${companyDisplayType === "text" ? "border-primary bg-primary/5" : "border-muted bg-card"}`}>
                         <input
                           type="radio"
                           name="displayType"
                           value="text"
                           checked={companyDisplayType === "text"}
                           onChange={(e) => setCompanyDisplayType("text")}
-                          className="w-4 h-4 shrink-0 text-primary"
+                          className="peer sr-only"
                         />
-                        <span className="text-sm">{t("textCompanyName")}</span>
+                        <Type className="h-8 w-8 mb-2 text-muted-foreground peer-checked:text-primary" />
+                        <span className="text-sm font-medium text-center">{t("textCompanyName")}</span>
                       </label>
-                      <label className="settings-radio-label flex items-center gap-2 cursor-pointer">
+
+                      <label className={`relative flex flex-col items-center justify-between rounded-xl border-2 p-4 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-all ${companyDisplayType === "logo" ? "border-primary bg-primary/5" : "border-muted bg-card"}`}>
                         <input
                           type="radio"
                           name="displayType"
                           value="logo"
                           checked={companyDisplayType === "logo"}
                           onChange={(e) => setCompanyDisplayType("logo")}
-                          className="w-4 h-4 shrink-0 text-primary"
+                          className="peer sr-only"
                         />
-                        <span className="text-sm">{t("logoImage")}</span>
+                        <Image className="h-8 w-8 mb-2 text-muted-foreground peer-checked:text-primary" />
+                        <span className="text-sm font-medium text-center">{t("logoImage")}</span>
                       </label>
                     </div>
                   </div>
@@ -588,14 +591,16 @@ export default function SettingsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button
-                    className="rounded-full"
-                    onClick={handleSaveGeneral}
-                    disabled={isSaving}
-                  >
-                    {isSaving && <Loader2 className="me-2 h-4 w-4 animate-spin shrink-0" />}
-                    {t("saveChanges")}
-                  </Button>
+                  <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t md:static md:p-0 md:bg-transparent md:border-none z-10">
+                    <Button
+                      className="w-full md:w-auto md:rounded-full rounded-xl h-12 md:h-10 text-base shadow-lg md:shadow-none"
+                      onClick={handleSaveGeneral}
+                      disabled={isSaving}
+                    >
+                      {isSaving && <Loader2 className="me-2 h-5 w-5 animate-spin shrink-0" />}
+                      {t("saveChanges")}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -654,6 +659,8 @@ export default function SettingsPage() {
                       disabled={isSaving}
                     />
                   </div>
+                  {/* Spacer for bottom bar if needed */}
+                  <div className="h-12 md:hidden"></div>
                   <div className="settings-note pt-2 text-xs text-muted-foreground text-center">
                     {t("changesSavedAutomatically")}
                   </div>
@@ -693,14 +700,16 @@ export default function SettingsPage() {
                           />
                         </div>
                       </div>
-                      <Button
-                        className="rounded-full"
-                        onClick={handleSaveProfile}
-                        disabled={isSaving}
-                      >
-                        {isSaving && <Loader2 className="me-2 h-4 w-4 animate-spin shrink-0" />}
-                        {t("saveProfile")}
-                      </Button>
+                      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t md:static md:p-0 md:bg-transparent md:border-none z-10">
+                        <Button
+                          className="w-full md:w-auto md:rounded-full rounded-xl h-12 md:h-10 text-base shadow-lg md:shadow-none"
+                          onClick={handleSaveProfile}
+                          disabled={isSaving}
+                        >
+                          {isSaving && <Loader2 className="me-2 h-5 w-5 animate-spin shrink-0" />}
+                          {t("saveProfile")}
+                        </Button>
+                      </div>
                     </div>
                   </>
                 )}
