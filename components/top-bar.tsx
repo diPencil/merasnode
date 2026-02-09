@@ -174,7 +174,7 @@ export function TopBar({ title, showSearch = true, isMobile = false }: TopBarPro
         "flex h-14 sm:h-16 items-center justify-between bg-transparent shrink-0",
         "px-4 sm:px-6 md:px-8",
         "pt-[env(safe-area-inset-top)]",
-        dir === "rtl" ? "flex-row-reverse" : "flex-row"
+        "flex-row"
       )}
     >
       {/* Section 1: Title/Greeting - always visible */}

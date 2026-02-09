@@ -855,7 +855,7 @@ export default function InboxPage() {
 
   return (
     <AppLayout title={t("inbox")}>
-      <div className="flex h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] h-[calc(100dvh-4rem)] flex-col md:flex-row bg-background border md:rounded-xl overflow-hidden shadow-sm relative">
+      <div className="flex h-[calc(100dvh-4rem)] md:h-[calc(100vh-8rem)] flex-col md:flex-row bg-background border md:rounded-xl overflow-hidden shadow-sm relative">
 
         {/* LEFT COLUMN: Conversations List */}
         {/* On Mobile: Show this ONLY if no conversation is selected */}
@@ -997,8 +997,8 @@ export default function InboxPage() {
         {/* On Mobile: Show this ONLY if conversation IS selected (covers list) */}
         {selectedConversation ? (
           <div className={cn(
-            "flex-1 flex flex-col bg-slate-50 relative chat-column w-full h-full absolute md:relative z-20 md:z-0",
-            selectedConversation ? "flex" : "hidden md:flex"
+            "flex-1 flex-col bg-slate-50 relative chat-column w-full h-full md:relative z-20 md:z-0",
+            selectedConversation ? "flex absolute md:flex" : "hidden md:flex"
           )} dir={dir}>
             {/* Header */}
             <div className="h-16 border-b bg-card px-4 flex items-center justify-between shadow-sm z-30 shrink-0 sticky top-0">

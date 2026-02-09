@@ -211,29 +211,29 @@ export default function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-3">
               {/* Card 1: Total Conversations */}
               <Card className="rounded-2xl bg-linear-to-br from-blue-500 to-blue-500/90 border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between mb-4">
+                <CardContent className="p-4 md:p-5">
+                  <div className="flex items-start justify-between mb-2 md:mb-4">
                     <h3 className="text-sm font-medium text-white/90">{t("whatsappMessages")}</h3>
-                    <div className="p-2 rounded-full bg-white/20">
-                      <MessageSquare className="h-4 w-4 text-white" />
+                    <div className="p-1.5 md:p-2 rounded-full bg-white/20">
+                      <MessageSquare className="h-3.5 w-3.5 md:h-4 md:w-4 text-white" />
                     </div>
                   </div>
                   <div className="flex items-end justify-between">
                     <div className="flex-1">
-                      <p className="text-5xl font-bold mb-3 text-white">{stats.totalMessages.toLocaleString()}</p>
+                      <p className="text-3xl md:text-5xl font-bold mb-2 md:mb-3 text-white">{stats.totalMessages.toLocaleString()}</p>
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-1 rounded-md bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">{t("activeNow")}</span>
-                        <p className="text-xs text-white/80">
+                        <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-md bg-white/20 backdrop-blur-sm text-white text-[10px] md:text-xs font-semibold">{t("activeNow")}</span>
+                        <p className="text-[10px] md:text-xs text-white/80">
                           {t("messagesSentThisMonth")}{' '}
                           <span className="text-green-300 font-medium">+24%</span>
                         </p>
                       </div>
                     </div>
-                    <div className="h-16 w-20 flex items-end justify-between gap-0.5">
-                      <div className="w-2.5 bg-white/30 rounded-t" style={{ height: '40%' }}></div>
-                      <div className="w-2.5 bg-white/45 rounded-t" style={{ height: '55%' }}></div>
-                      <div className="w-2.5 bg-white/60 rounded-t" style={{ height: '70%' }}></div>
-                      <div className="w-2.5 bg-white rounded-t" style={{ height: '100%' }}></div>
+                    <div className="h-10 w-14 md:h-16 md:w-20 flex items-end justify-between gap-0.5">
+                      <div className="w-1.5 md:w-2.5 bg-white/30 rounded-t" style={{ height: '40%' }}></div>
+                      <div className="w-1.5 md:w-2.5 bg-white/45 rounded-t" style={{ height: '55%' }}></div>
+                      <div className="w-1.5 md:w-2.5 bg-white/60 rounded-t" style={{ height: '70%' }}></div>
+                      <div className="w-1.5 md:w-2.5 bg-white rounded-t" style={{ height: '100%' }}></div>
                     </div>
                   </div>
                 </CardContent>
@@ -241,33 +241,33 @@ export default function DashboardPage() {
 
               {/* Card 2: Active Contacts */}
               <Card className="rounded-2xl bg-linear-to-br from-violet-500 to-violet-500/90 border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between mb-4">
+                <CardContent className="p-4 md:p-5">
+                  <div className="flex items-start justify-between mb-2 md:mb-4">
                     <h3 className="text-sm font-medium text-white/90">{t("activeContacts")}</h3>
-                    <div className="p-2 rounded-full bg-white/20">
-                      <Users className="h-4 w-4 text-white" />
+                    <div className="p-1.5 md:p-2 rounded-full bg-white/20">
+                      <Users className="h-3.5 w-3.5 md:h-4 md:w-4 text-white" />
                     </div>
                   </div>
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-2 md:mb-3">
                     <div>
-                      <div className="flex items-baseline gap-3 mb-2">
+                      <div className="flex items-baseline gap-3 mb-1 md:mb-2">
                         <div>
-                          <p className="text-3xl font-bold text-white">{stats.activeContacts}</p>
-                          <p className="text-xs text-white/80 font-medium flex items-center gap-1 mt-0.5">
+                          <p className="text-2xl md:text-3xl font-bold text-white">{stats.activeContacts}</p>
+                          <p className="text-[10px] md:text-xs text-white/80 font-medium flex items-center gap-1 mt-0.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-white/40"></span>
                             {t("today")}
                           </p>
                         </div>
                         <div>
-                          <p className="text-3xl font-bold text-white/60">{stats.totalConversations}</p>
-                          <p className="text-xs text-white/80 font-medium flex items-center gap-1 mt-0.5">
+                          <p className="text-2xl md:text-3xl font-bold text-white/60">{stats.totalConversations}</p>
+                          <p className="text-[10px] md:text-xs text-white/80 font-medium flex items-center gap-1 mt-0.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-white/20"></span>
                             {t("total")}
                           </p>
                         </div>
                       </div>
                     </div>
-                    <div className="h-16 w-24">
+                    <div className="h-10 w-16 md:h-16 md:w-24">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={[
                           { value: 30 }, { value: 50 }, { value: 65 }, { value: 45 }, { value: 70 }, { value: 55 }, { value: 60 }
@@ -285,39 +285,39 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-1 rounded-md bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">{t("activeNow")}</span>
-                    <p className="text-xs text-green-300 font-medium">+18% {t("fromLastWeek")}</p>
+                    <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-md bg-white/20 backdrop-blur-sm text-white text-[10px] md:text-xs font-semibold">{t("activeNow")}</span>
+                    <p className="text-[10px] md:text-xs text-green-300 font-medium">+18% {t("fromLastWeek")}</p>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Card 3: Response Time */}
               <Card className="rounded-2xl bg-linear-to-br from-primary via-primary to-primary/90 border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between mb-4">
+                <CardContent className="p-4 md:p-5">
+                  <div className="flex items-start justify-between mb-2 md:mb-4">
                     <h3 className="text-sm font-medium text-white/90">{t("averageResponseTime")}</h3>
-                    <div className="p-2 rounded-full bg-white/20">
-                      <Clock className="h-4 w-4 text-white" />
+                    <div className="p-1.5 md:p-2 rounded-full bg-white/20">
+                      <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-white" />
                     </div>
                   </div>
-                  <div className="flex items-baseline gap-4 mb-3">
+                  <div className="flex items-baseline gap-4 mb-2 md:mb-3">
                     <div>
-                      <p className="text-4xl font-bold text-white">{stats.avgResponseTime}</p>
-                      <p className="text-xs text-white/70 mt-1">
+                      <p className="text-2xl md:text-3xl font-bold text-white">{stats.avgResponseTime}</p>
+                      <p className="text-[10px] md:text-xs text-white/70 mt-1">
                         {t("currentAverage")}{' '}
                         <span className="text-green-300 font-medium">-15%</span>
                       </p>
                     </div>
                     <div>
-                      <p className="text-4xl font-bold text-white/80">1.5m</p>
-                      <p className="text-xs text-white/70 mt-1">
+                      <p className="text-2xl md:text-3xl font-bold text-white/80">1.5m</p>
+                      <p className="text-[10px] md:text-xs text-white/70 mt-1">
                         {t("targetTimeGoal")}
                       </p>
                     </div>
                   </div>
-                  <button onClick={handleViewAnalytics} className="w-full px-4 py-2.5 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-sm font-semibold transition-all flex items-center justify-center gap-2 border border-white/20">
+                  <button onClick={handleViewAnalytics} className="w-full px-4 py-2 md:py-2.5 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-xs md:text-sm font-semibold transition-all flex items-center justify-center gap-2 border border-white/20">
                     {t("viewResponseAnalytics")}
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
