@@ -1188,9 +1188,9 @@ export default function InboxPage() {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.direction === 'OUTGOING' ? 'justify-end' : 'justify-start'}`}
+                  className="flex w-full"
                 >
-                  <div className={`max-w-[70%] group relative ${message.direction === 'OUTGOING' ? 'items-end' : 'items-start'} flex flex-col`}>
+                  <div className={`max-w-[85%] sm:max-w-[70%] group relative flex flex-col ${message.direction === 'OUTGOING' ? 'ms-auto items-end' : 'me-auto items-start'}`}>
                     <div
                       className={`px-4 py-3 rounded-2xl shadow-sm text-sm ${message.direction === 'OUTGOING'
                         ? 'bg-primary text-primary-foreground rounded-br-none'
@@ -1445,22 +1445,22 @@ export default function InboxPage() {
 
       {/* Image Preview Modal */}
       <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent shadow-none">
-          <div className="relative w-full h-full flex items-center justify-center p-4">
+        <DialogContent className="sm:max-w-[85vw] max-w-[95vw] h-fit p-0 border-none bg-transparent shadow-none outline-none">
+          <div className="relative w-full flex items-center justify-center p-0">
             {previewImage && (
               <img
                 src={previewImage}
                 alt="Preview"
-                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                className="w-full h-auto max-h-[90vh] object-contain rounded-xl shadow-2xl"
               />
             )}
             <Button
               variant="secondary"
               size="icon"
-              className="absolute top-2 right-2 rounded-full bg-black/50 text-white hover:bg-black/70 border-none h-8 w-8"
+              className="absolute -top-4 -right-4 rounded-full bg-black/60 text-white hover:bg-black/80 border-2 border-white/20 h-10 w-10 shadow-xl z-50"
               onClick={() => setPreviewImage(null)}
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </Button>
           </div>
         </DialogContent>
