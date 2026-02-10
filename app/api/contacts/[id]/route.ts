@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { logActivity } from "@/lib/logger"
+import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
 
-// GET - جلب جهة اتصال واحدة
+// GET - Fetch single contact (any authenticated user with contact access)
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -45,12 +46,16 @@ export async function GET(
     }
 }
 
-// PUT - تحديث جهة اتصال
+// PUT - Update contact (Admin only)
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const scope = await requireAuthWithScope(request)
+        if (scope.role !== "ADMIN") {
+            return forbiddenResponse("Only Admin can edit or block contacts")
+        }
         const { id } = await params
         const body = await request.json()
 
@@ -94,8 +99,12 @@ export async function PUT(
             success: true,
             data: contact
         })
-    } catch (error: any) {
-        console.error('Error updating contact:', error)
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return unauthorizedResponse()
+            if (error.message === "Forbidden") return forbiddenResponse()
+        }
+        console.error("Error updating contact:", error)
 
         if (error.code === 'P2025') {
             return NextResponse.json(
@@ -127,12 +136,16 @@ export async function PUT(
     }
 }
 
-// DELETE - حذف جهة اتصال
+// DELETE - Delete contact (Admin only)
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const scope = await requireAuthWithScope(request)
+        if (scope.role !== "ADMIN") {
+            return forbiddenResponse("Only Admin can delete contacts")
+        }
         const { id } = await params
         // Get contact before delete
         const contact = await prisma.contact.findUnique({
@@ -160,8 +173,12 @@ export async function DELETE(
             success: true,
             message: "Contact deleted successfully"
         })
-    } catch (error: any) {
-        console.error('Error deleting contact:', error)
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return unauthorizedResponse()
+            if (error.message === "Forbidden") return forbiddenResponse()
+        }
+        console.error("Error deleting contact:", error)
 
         if (error.code === 'P2025') {
             return NextResponse.json(
