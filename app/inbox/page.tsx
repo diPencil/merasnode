@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -151,6 +152,7 @@ export default function InboxPage() {
   const { toast } = useToast()
   const { t, language, dir } = useI18n()
   const dateLocale = language === "ar" ? ar : undefined
+  const isMobile = useIsMobile()
 
   // ... existing refs ...
   const searchParams = useSearchParams()
@@ -431,15 +433,25 @@ export default function InboxPage() {
 
         setConversations(enrichedConversations)
 
-        // Selection is driven only by the URL (id query param).
-        // /inbox       → no selection (list-only)
-        // /inbox?id=.. → open that specific conversation
+        // Selection logic differs for mobile vs desktop:
+        // - Mobile: URL id drives selection; /inbox (no id) = list-only
+        // - Desktop: always keep a conversation selected (first or previous)
         if (conversationIdParam) {
           const target = enrichedConversations.find(
-            (c: Conversation) => c.id === conversationIdParam
+            (c: Conversation) => c.id === conversationIdParam,
           )
           setSelectedConversation(target ?? null)
+        } else if (!isMobile) {
+          if (selectedConversation) {
+            const existing = enrichedConversations.find(
+              (c: Conversation) => c.id === selectedConversation.id,
+            )
+            setSelectedConversation(existing ?? enrichedConversations[0] ?? null)
+          } else {
+            setSelectedConversation(enrichedConversations[0] ?? null)
+          }
         } else {
+          // Mobile + no id: list-only, no auto-open
           setSelectedConversation(null)
         }
       } else {
