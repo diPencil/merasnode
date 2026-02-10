@@ -51,7 +51,7 @@ export function AppLayout({
   }, [isMobile])
 
   return (
-    <div className="app-shell flex overflow-hidden bg-background flex-col md:flex-row">
+    <div className="app-shell flex h-full min-h-0 overflow-hidden bg-background flex-col md:flex-row">
       {/* Desktop sidebar: fixed width, no scroll; only inner nav scrolls */}
       <div className="hidden md:flex shrink-0 h-full overflow-hidden">
         <NavigationRail />

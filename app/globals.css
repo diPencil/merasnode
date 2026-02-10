@@ -195,6 +195,28 @@
   }
 }
 
+/* Desktop: fixed viewport so only main content and sidebar menu scroll (ChatGPT-style) */
+html {
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+}
+.app-shell {
+  height: 100vh;
+  min-height: 0;
+}
+/* Sidebar: only the nav menu scrolls */
+.sidebar-nav-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Custom shadow utilities for soft, diffused, layered shadows */
 @layer utilities {
   .shadow-soft {
@@ -210,39 +232,27 @@
   }
 }
 
-/* Finly-style gradient background */
+/* Finly-style gradient background (body height/overflow set above for layout) */
 body {
   background: linear-gradient(135deg,
       oklch(0.85 0.08 280) 0%,
-      /* Light purple */
       oklch(0.88 0.06 300) 25%,
-      /* Lavender */
       oklch(0.90 0.05 320) 50%,
-      /* Light pink-purple */
       oklch(0.88 0.06 340) 75%,
-      /* Pink */
       oklch(0.85 0.08 280) 100%
-      /* Back to purple */
     );
   background-attachment: fixed;
-  min-height: 100vh;
 }
 
 .dark body {
   background: linear-gradient(135deg,
       oklch(0.20 0.08 280) 0%,
-      /* Deep purple */
       oklch(0.18 0.06 300) 25%,
-      /* Dark violet */
       oklch(0.16 0.05 320) 50%,
-      /* Dark pink-purple */
       oklch(0.18 0.06 340) 75%,
-      /* Dark pink */
       oklch(0.20 0.08 280) 100%
-      /* Back to deep purple */
     );
   background-attachment: fixed;
-  min-height: 100vh;
 }
 
 /* Enhanced glassmorphism for cards on gradient background */
