@@ -141,8 +141,8 @@ export default function AccountsPage() {
         fetchAccounts()
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Failed to create account",
+          title: t("error"),
+          description: data.error || t("failedToCreateAccount"),
           variant: "destructive"
         })
       }
@@ -181,7 +181,7 @@ export default function AccountsPage() {
             if (data.status === 'CONNECTED') {
               setQrGenerated(false)
               setIsCreateOpen(false)
-              toast({ title: "Connected", description: "WhatsApp Web Connected Successfully" })
+              toast({ title: t("success"), description: t("whatsAppWebConnectedSuccess") })
               fetchAccounts() // Refresh list
             }
           }

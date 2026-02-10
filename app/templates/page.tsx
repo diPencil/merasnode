@@ -213,7 +213,7 @@ export default function TemplatesPage() {
               <Search className="absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search templates..."
+                placeholder={t("searchTemplates")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="ps-9 h-9"
@@ -252,10 +252,10 @@ export default function TemplatesPage() {
                             <SelectValue placeholder={t("selectCategory")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="onboarding">Onboarding</SelectItem>
-                            <SelectItem value="sales">Sales</SelectItem>
-                            <SelectItem value="support">Support</SelectItem>
-                            <SelectItem value="marketing">Marketing</SelectItem>
+                            <SelectItem value="onboarding">{t("templateCategoryOnboarding")}</SelectItem>
+                            <SelectItem value="sales">{t("templateCategorySales")}</SelectItem>
+                            <SelectItem value="support">{t("templateCategorySupport")}</SelectItem>
+                            <SelectItem value="marketing">{t("templateCategoryMarketing")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

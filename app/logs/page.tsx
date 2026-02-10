@@ -143,11 +143,11 @@ export default function LogsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("allActions")}</SelectItem>
-                      <SelectItem value="CREATE">Create</SelectItem>
-                      <SelectItem value="UPDATE">Update</SelectItem>
-                      <SelectItem value="DELETE">Delete</SelectItem>
-                      <SelectItem value="LOGIN">Login</SelectItem>
-                      <SelectItem value="LOGOUT">Logout</SelectItem>
+                      <SelectItem value="CREATE">{t("logActionCreate")}</SelectItem>
+                      <SelectItem value="UPDATE">{t("logActionUpdate")}</SelectItem>
+                      <SelectItem value="DELETE">{t("logActionDelete")}</SelectItem>
+                      <SelectItem value="LOGIN">{t("logActionLogin")}</SelectItem>
+                      <SelectItem value="LOGOUT">{t("logActionLogout")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -159,11 +159,11 @@ export default function LogsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("allEntities")}</SelectItem>
-                      <SelectItem value="Contact">Contact</SelectItem>
-                      <SelectItem value="Conversation">Conversation</SelectItem>
-                      <SelectItem value="Message">Message</SelectItem>
-                      <SelectItem value="Template">Template</SelectItem>
-                      <SelectItem value="User">User</SelectItem>
+                      <SelectItem value="Contact">{t("entityContact")}</SelectItem>
+                      <SelectItem value="Conversation">{t("entityConversation")}</SelectItem>
+                      <SelectItem value="Message">{t("entityMessage")}</SelectItem>
+                      <SelectItem value="Template">{t("entityTemplate")}</SelectItem>
+                      <SelectItem value="User">{t("entityUser")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

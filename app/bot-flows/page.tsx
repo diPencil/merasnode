@@ -218,7 +218,9 @@ export default function BotFlowsPage() {
                     </Badge>
                   </div>
 
-                  <div className="text-xs text-muted-foreground">Updated {format(flow.updatedAt, "MMM dd, yyyy")}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {t("updatedLabel")} {format(flow.updatedAt, "MMM dd, yyyy")}
+                  </div>
 
                   <div className="flex gap-2 pt-2">
                     <Button
@@ -226,7 +228,7 @@ export default function BotFlowsPage() {
                       className="flex-1 rounded-full"
                       onClick={() => router.push(`/bot-flows/builder?id=${flow.id}`)}
                     >
-                      Edit Flow
+                      {t("editFlow")}
                     </Button>
                     <Button
                       size="sm"
@@ -234,7 +236,7 @@ export default function BotFlowsPage() {
                       className="flex-1 rounded-full bg-transparent"
                       onClick={() => router.push(`/bot-flows/stats?id=${flow.id}`)}
                     >
-                      View Stats
+                      {t("viewStats")}
                     </Button>
                   </div>
                 </CardContent>
@@ -244,13 +246,13 @@ export default function BotFlowsPage() {
         </div>
 
         {/* Flow Builder */}
-        <Card className="rounded-2xl shadow-soft">
+          <Card className="rounded-2xl shadow-soft">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Workflow className="h-5 w-5" />
-              Visual Flow Builder
+              {t("flowBuilder")}
             </CardTitle>
-            <CardDescription>Build automated workflows with drag-and-drop</CardDescription>
+            <CardDescription>{t("flowBuilderDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
