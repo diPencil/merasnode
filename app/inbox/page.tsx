@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { AppLayout } from "@/components/app-layout"
@@ -41,7 +41,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
-import { format } from "date-fns"
+import { format, differenceInMinutes, isYesterday } from "date-fns"
 import { ar } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { getUserRole, getUser, authenticatedFetch, getAuthHeader } from "@/lib/auth"
@@ -209,6 +209,81 @@ export default function InboxPage() {
       setLastOrderId("N/A")
     }
   }
+
+  // Tick every 60s so relative "last active" label updates even without new messages
+  const [nowTs, setNowTs] = useState<number>(() => Date.now())
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNowTs(Date.now())
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const lastActiveState = useMemo(() => {
+    if (!selectedConversation) return { label: "", isOnline: false }
+
+    // Prefer messages state (keeps up with live polling); fall back to conversation snapshot
+    const sourceMessages = (messages && messages.length > 0
+      ? messages
+      : (selectedConversation.messages || [])) as Message[]
+
+    let lastInbound: Message | null = null
+    for (let i = sourceMessages.length - 1; i >= 0; i--) {
+      if (sourceMessages[i].direction === "INCOMING") {
+        lastInbound = sourceMessages[i]
+        break
+      }
+    }
+
+    const fallbackDate = selectedConversation.lastMessageAt
+      ? new Date(selectedConversation.lastMessageAt)
+      : null
+
+    const lastDate = lastInbound
+      ? new Date(lastInbound.createdAt)
+      : fallbackDate
+
+    if (!lastDate || Number.isNaN(lastDate.getTime())) {
+      return { label: "", isOnline: false }
+    }
+
+    const now = new Date(nowTs)
+    const diffMin = Math.max(0, differenceInMinutes(now, lastDate))
+
+    // Consider contact "online" if last inbound message within last 2 minutes
+    if (diffMin <= 2) {
+      const onlineLabel = t("online") || "Online"
+      return { label: onlineLabel, isOnline: true }
+    }
+
+    // Last active within same day: show "Last active X min ago"
+    if (diffMin < 60 * 24) {
+      const minutes = Math.max(1, diffMin)
+      const minutesText = t("minutesAgo")
+        ? t("minutesAgo").replace("{n}", String(minutes))
+        : `${minutes} min ago`
+      const prefix = t("lastActiveAgo") || "Last active"
+      return {
+        label: `${prefix} ${minutesText}`,
+        isOnline: false,
+      }
+    }
+
+    // Yesterday
+    if (isYesterday(lastDate)) {
+      const yesterdayLabel = t("lastActiveYesterday") || "Last active yesterday"
+      return { label: yesterdayLabel, isOnline: false }
+    }
+
+    // Older: show date
+    const formattedDate = format(lastDate, "MMM dd, yyyy", { locale: dateLocale })
+    const onLabel = t("lastActiveOn") || "Last active on"
+    return {
+      label: `${onLabel} ${formattedDate}`,
+      isOnline: false,
+    }
+  }, [selectedConversation, messages, nowTs, dateLocale, t])
 
   useEffect(() => {
     if (selectedConversation) {
@@ -861,10 +936,12 @@ export default function InboxPage() {
 
         {/* LEFT COLUMN: Conversations List */}
         {/* On Mobile: Show this ONLY if no conversation is selected */}
-        <div className={cn(
-          "flex flex-col border-e bg-muted/10 w-full md:w-[350px] shrink-0 h-full md:relative z-0",
-          selectedConversation ? "hidden md:flex" : "flex"
-        )}>
+        <div
+          className={cn(
+            "flex flex-col border-e bg-muted/10 w-full md:w-[340px] lg:w-[360px] shrink-0 h-full min-h-0 md:relative z-0 overflow-hidden",
+            selectedConversation ? "hidden md:flex" : "flex"
+          )}
+        >
           {/* List Header */}
           <div className="p-4 space-y-3 border-b bg-card sticky top-0 z-10">
             {/* Branch Selector */}
@@ -939,7 +1016,7 @@ export default function InboxPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto">
               {isLoading ? (
               <div className="flex items-center justify-center h-32 text-muted-foreground">{t("loading")}</div>
             ) : filteredConversations.length === 0 ? (
@@ -1006,7 +1083,7 @@ export default function InboxPage() {
         {selectedConversation ? (
           <div
             className={cn(
-              "flex-1 flex-col bg-slate-50 dark:bg-background chat-column z-40",
+              "flex flex-col flex-1 bg-slate-50 dark:bg-background chat-column z-40",
               /* Mobile: absolute overlay inside the inbox container, sitting above
                  conversation list. Leaves space at bottom for mobile bottom nav. */
               "absolute inset-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] bg-background",
@@ -1039,13 +1116,26 @@ export default function InboxPage() {
                     <span className="truncate">{selectedConversation.contact.name}</span>
                     <span className="shrink-0">{getPlatformIcon(selectedConversation.platform)}</span>
                   </h3>
-                  <p className="text-xs text-green-600 flex items-center gap-1 truncate">
-                    <span className="relative flex h-2 w-2 shrink-0">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </span>
-                    <span className="truncate">{t("lastActiveAgo")} {t("minutesAgo").replace("{n}", "2")}</span>
-                  </p>
+                  {lastActiveState.label && (
+                    <p
+                      className={cn(
+                        "text-xs flex items-center gap-1 truncate",
+                        lastActiveState.isOnline ? "text-green-600" : "text-muted-foreground"
+                      )}
+                    >
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        {lastActiveState.isOnline ? (
+                          <>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                          </>
+                        ) : (
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-muted-foreground/50"></span>
+                        )}
+                      </span>
+                      <span className="truncate">{lastActiveState.label}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1495,13 +1585,11 @@ export default function InboxPage() {
         }
 
         {/* RIGHT COLUMN: CRM Sidebar (Desktop) */}
-        {
-          selectedConversation && (
-            <div className="hidden xl:flex border-s h-full">
-              <SidebarContent conversation={selectedConversation} onUpdate={() => fetchConversations()} />
-            </div>
-          )
-        }
+        {selectedConversation && (
+          <div className="hidden xl:flex border-s h-full min-h-0 overflow-hidden">
+            <SidebarContent conversation={selectedConversation} onUpdate={() => fetchConversations()} />
+          </div>
+        )}
       </div >
 
       {/* Image Preview Modal */}
