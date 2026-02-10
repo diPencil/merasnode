@@ -128,11 +128,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
   body {
     @apply bg-background text-foreground;
-  }
-  /* Prevent horizontal scroll on mobile */
-  html, body {
+    height: 100%;
+    overflow: hidden;
+    /* Prevent horizontal scroll on mobile; vertical scroll only inside app main */
     overflow-x: hidden;
   }
 }
@@ -145,17 +149,40 @@
     min-width: 44px;
   }
 
-  /* App shell height
-     - Desktop/tablet: regular viewport height
-     - Mobile: dynamic, JS-updated --app-vh for keyboard-safe layout
-  */
+  /* App shell: single scroll context; body never scrolls. */
   .app-shell {
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
+    min-height: 0;
+    position: relative;
   }
 
   @media (max-width: 767px) {
     .app-shell {
-      min-height: var(--app-vh);
+      height: var(--app-vh);
+      max-height: var(--app-vh);
+    }
+  }
+
+  /* Sidebar: only the middle nav scrolls; top/bottom stay fixed */
+  .sidebar-nav-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Desktop table scroll wrapper */
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Sidebar scroll isolation – prevents scroll chaining */
+  @media (min-width: 768px) {
+    .app-shell > *:first-child {
+      contain: layout paint;
+      isolation: isolate;
     }
   }
 }

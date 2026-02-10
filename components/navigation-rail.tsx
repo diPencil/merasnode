@@ -16,19 +16,16 @@ import {
     Tag,
     BarChart3,
     Receipt,
-    Bell,
-    TrendingUp,
-    TrendingDown,
     Calendar,
     UserPlus,
     Bot
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Separator } from "@/components/ui/separator"
 import { useI18n } from "@/lib/i18n"
-import { getUserRole, logout } from "@/lib/auth"
+import { getUserRole, logout, getUser, authenticatedFetch } from "@/lib/auth"
 import { canAccessPage, type PageRoute } from "@/lib/permissions"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 const menuItems = [
     { icon: LayoutDashboard, label: "dashboard", href: "/dashboard" },
@@ -54,6 +51,11 @@ export function NavigationRail() {
     const [companyName, setCompanyName] = useState("")
     const [companyLogo, setCompanyLogo] = useState("")
     const [companyDisplayType, setCompanyDisplayType] = useState<"text" | "logo">("text")
+    const [currentUser, setCurrentUser] = useState<{ name?: string; role?: string } | null>(null)
+
+    useEffect(() => {
+        setCurrentUser(getUser())
+    }, [])
 
     useEffect(() => {
         const userRole = getUserRole()
@@ -66,8 +68,7 @@ export function NavigationRail() {
     }, [])
 
     useEffect(() => {
-        // Fetch settings to display company name or logo
-        fetch('/api/settings')
+        authenticatedFetch('/api/settings')
             .then(res => res.json())
             .then(data => {
                 if (data.success && data.settings) {
@@ -79,16 +80,19 @@ export function NavigationRail() {
             .catch(err => console.error('Error fetching settings:', err))
     }, [])
 
+    const userInitials = currentUser?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "U"
+    const roleLabel = currentUser?.role ? currentUser.role.charAt(0) + currentUser.role.slice(1).toLowerCase() : ""
+
     return (
         <aside
             className={cn(
-                "flex w-56 flex-col bg-sidebar border-border/40",
-                // في RTL نريد أن يكون الحد من الجهة اليسار (start في RTL)
-                dir === "rtl" ? "border-s" : "border-e",
+                "flex w-[240px] h-full min-h-0 flex-col bg-sidebar overflow-hidden",
+                "overscroll-contain",
+                dir === "rtl" ? "border-s border-border/40" : "border-e border-border/40",
             )}
         >
-            {/* Logo Section */}
-            <div className="flex h-16 items-center gap-2 border-b border-border/40 px-4">
+            {/* Logo / Brand (FIXED — never scrolls) */}
+            <div className="flex h-16 items-center gap-2.5 border-b border-border/40 px-4 shrink-0">
                 {companyDisplayType === "logo" && companyLogo ? (
                     <>
                         <img
@@ -114,30 +118,30 @@ export function NavigationRail() {
                 )}
             </div>
 
-            {/* Quick Actions */}
-            <div className="flex flex-col gap-2 p-4 border-b border-border/40">
+            {/* Quick Actions (FIXED — never scrolls) */}
+            <div className="flex flex-col gap-1.5 p-3 border-b border-border/40 shrink-0">
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-muted text-muted-foreground hover:text-foreground h-9 text-start"
+                    className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-primary/10 hover:text-primary text-muted-foreground h-9 text-start transition-colors"
                     onClick={() => router.push('/templates')}
                 >
-                    <TrendingUp className="h-4 w-4 shrink-0" />
+                    <FileText className="h-4 w-4 shrink-0 order-first" />
                     {t("createTemplate")}
                 </Button>
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-muted text-muted-foreground hover:text-foreground h-9 text-start"
+                    className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-primary/10 hover:text-primary text-muted-foreground h-9 text-start transition-colors"
                     onClick={() => router.push('/bot-flows/create')}
                 >
-                    <TrendingDown className="h-4 w-4 shrink-0" />
+                    <Bot className="h-4 w-4 shrink-0 order-first" />
                     {t("createBotFlow")}
                 </Button>
             </div>
 
-            {/* Menu Items */}
-            <nav className="flex-1 space-y-1 p-3 overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+            {/* Navigation Menu (SCROLLABLE — only this section scrolls) */}
+            <nav className="flex-1 min-h-0 py-2 px-3 sidebar-nav-scroll">
                 {filteredMenuItems.map((item) => {
                     const Icon = item.icon
                     const isActive = pathname === item.href || pathname?.startsWith(item.href + "/")
@@ -162,30 +166,54 @@ export function NavigationRail() {
                 })}
             </nav>
 
-            {/* Bottom Section */}
-            <div className="space-y-1 p-3 border-t border-border/40">
-                <Link href="/settings">
+            {/* Bottom: User profile + Settings + Logout (FIXED — never scrolls) */}
+            <div className="border-t border-border/40 shrink-0">
+                {currentUser && (
+                    <div
+                        className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => router.push('/settings')}
+                    >
+                        <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                                {userInitials}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-sidebar-foreground truncate leading-tight">
+                                {currentUser.name || t("userLabel")}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground leading-tight">
+                                {roleLabel}
+                            </p>
+                        </div>
+                    </div>
+                )}
+                <div className="space-y-0.5 px-3 pb-3 pt-1">
+                    <Link href="/settings">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className={cn(
+                                "w-full flex flex-row justify-start gap-3 rounded-lg h-9 font-medium text-start",
+                                pathname === "/settings"
+                                    ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground"
+                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                            )}
+                        >
+                            <Settings className="h-[18px] w-[18px] shrink-0 order-first" />
+                            <span className="text-[13px]">{t("settings")}</span>
+                        </Button>
+                    </Link>
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full flex flex-row justify-start gap-3 rounded-xl h-11 text-muted-foreground hover:bg-muted hover:text-foreground font-medium text-start"
+                        onClick={logout}
+                        className="w-full flex flex-row justify-start gap-3 rounded-lg h-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive font-medium text-start"
                     >
-                        <Settings className="h-5 w-5 shrink-0 order-first" />
-                        <span className="text-sm">{t("settings")}</span>
+                        <LogOut className="h-[18px] w-[18px] shrink-0 order-first" />
+                        <span className="text-[13px]">{t("logout")}</span>
                     </Button>
-                </Link>
-
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={logout}
-                    className="w-full flex flex-row justify-start gap-3 rounded-xl h-11 text-muted-foreground hover:bg-muted hover:text-foreground font-medium text-start"
-                >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0 order-first">
-                        <LogOut className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm">{t("logout")}</span>
-                </Button>
+                </div>
             </div>
         </aside>
     )
