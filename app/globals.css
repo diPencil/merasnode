@@ -448,6 +448,7 @@ body {
   min-inline-size: min(8rem, 50%);
   word-break: normal;
   overflow-wrap: break-word;
+  line-height: 1.5;
 }
 @media (min-width: 768px) {
   .chat-bubble {

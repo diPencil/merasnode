@@ -920,7 +920,7 @@ export default function InboxPage() {
                 <SelectValue placeholder={t("selectBranch")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t("allBranches")}</SelectItem>
+                <SelectItem value="all">{getUserRole() === "ADMIN" ? t("allBranches") : t("myConversations")}</SelectItem>
                 {branches.map((branch) => (
                   <SelectItem key={branch.id} value={branch.id}>
                     {branch.name}
