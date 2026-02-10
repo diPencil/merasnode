@@ -132,6 +132,63 @@ export async function POST(request: NextRequest) {
     }
 }
 
+// PUT - Update WhatsApp account (ADMIN only)
+export async function PUT(request: NextRequest) {
+    try {
+        const scope = await requireRoleWithScope(request, ['ADMIN'])
+
+        const body = await request.json()
+        const { id, name, branchId, userIds } = body
+
+        if (!id) {
+            return NextResponse.json(
+                { success: false, error: 'Account ID is required' },
+                { status: 400 }
+            )
+        }
+
+        const existing = await prisma.whatsAppAccount.findUnique({ where: { id } })
+        if (!existing) {
+            return NextResponse.json(
+                { success: false, error: 'Account not found' },
+                { status: 404 }
+            )
+        }
+
+        const updateData: Record<string, any> = {}
+        if ('name' in body) updateData.name = name
+        if ('branchId' in body) updateData.branchId = branchId || null
+
+        // Handle user assignment (many-to-many)
+        if ('userIds' in body && Array.isArray(userIds)) {
+            updateData.users = {
+                set: userIds.map((uid: string) => ({ id: uid })),
+            }
+        }
+
+        const account = await prisma.whatsAppAccount.update({
+            where: { id },
+            data: updateData,
+            include: {
+                branch: true,
+                users: { select: { id: true, name: true, email: true } },
+            },
+        })
+
+        return NextResponse.json({ success: true, account })
+    } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === 'Unauthorized') return unauthorizedResponse()
+            if (error.message === 'Forbidden') return forbiddenResponse('Only admins can update WhatsApp accounts')
+        }
+        console.error('Error updating WhatsApp account:', error)
+        return NextResponse.json(
+            { success: false, error: 'Failed to update WhatsApp account' },
+            { status: 500 }
+        )
+    }
+}
+
 // DELETE - Remove WhatsApp account (ADMIN only)
 export async function DELETE(request: NextRequest) {
     try {

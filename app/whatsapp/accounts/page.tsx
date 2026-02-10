@@ -37,10 +37,22 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Smartphone, CheckCircle2, XCircle, Clock, Copy, QrCode, RefreshCw, Trash2 } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Plus, Smartphone, CheckCircle2, XCircle, Clock, Copy, QrCode, RefreshCw, Trash2, Building2 } from "lucide-react"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { authenticatedFetch } from "@/lib/auth"
+
+interface Branch {
+  id: string
+  name: string
+}
 
 interface WhatsAppAccount {
   id: string
@@ -48,6 +60,8 @@ interface WhatsAppAccount {
   phone: string
   provider: string
   status: "CONNECTED" | "DISCONNECTED" | "WAITING"
+  branchId: string | null
+  branch: Branch | null
   createdAt: string
   updatedAt: string
 }
@@ -67,12 +81,59 @@ export default function AccountsPage() {
   const [linkingAccountId, setLinkingAccountId] = useState<string | null>(null)
   const [linkingQrCode, setLinkingQrCode] = useState<string | null>(null)
   const [linkingStatus, setLinkingStatus] = useState<string>("INITIALIZING")
+  const [branches, setBranches] = useState<Branch[]>([])
   const { toast } = useToast()
   const { t, language } = useI18n()
 
   useEffect(() => {
     fetchAccounts()
+    fetchBranches()
   }, [])
+
+  const fetchBranches = async () => {
+    try {
+      const res = await authenticatedFetch('/api/branches')
+      const data = await res.json()
+      if (data.success) {
+        setBranches(data.branches.filter((b: any) => b.isActive))
+      }
+    } catch (error) {
+      console.error('Error fetching branches:', error)
+    }
+  }
+
+  const handleUpdateBranch = async (accountId: string, branchId: string) => {
+    try {
+      const res = await authenticatedFetch('/api/whatsapp/accounts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: accountId,
+          branchId: branchId === 'none' ? null : branchId,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast({
+          title: language === 'ar' ? 'تم التحديث' : 'Updated',
+          description: language === 'ar' ? 'تم تحديث الفرع بنجاح' : 'Branch updated successfully',
+        })
+        fetchAccounts()
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to update branch',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update branch',
+        variant: 'destructive',
+      })
+    }
+  }
 
   const fetchAccounts = async () => {
     try {
@@ -535,6 +596,7 @@ export default function AccountsPage() {
                     <TableRow>
                       <TableHead className="w-[200px]">{t("accountName")}</TableHead>
                       <TableHead>{t("phoneNumber")}</TableHead>
+                      <TableHead>{language === 'ar' ? 'الفرع' : 'Branch'}</TableHead>
                       <TableHead>{t("provider")}</TableHead>
                       <TableHead>{t("status")}</TableHead>
                       <TableHead>{t("connectedDate")}</TableHead>
@@ -553,6 +615,23 @@ export default function AccountsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="font-mono text-sm">{account.phone}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={account.branchId || 'none'}
+                            onValueChange={(val) => handleUpdateBranch(account.id, val)}
+                          >
+                            <SelectTrigger className="h-8 w-[160px] text-xs">
+                              <Building2 className="h-3 w-3 me-1 text-muted-foreground shrink-0" />
+                              <SelectValue placeholder={language === 'ar' ? 'اختر فرع' : 'Select branch'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">{language === 'ar' ? '-- بدون فرع --' : '-- No branch --'}</SelectItem>
+                              {branches.map((branch) => (
+                                <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="rounded-full">
                             {account.provider === "meta-cloud-api" ? "Meta Cloud API" : "WhatsApp Web"}
