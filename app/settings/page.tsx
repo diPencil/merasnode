@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
 import { Loader2, X, Type, Image } from "lucide-react"
-import { getUserRole, getUser, getAuthHeader } from "@/lib/auth"
+import { getUserRole, getUser, getAuthHeader, authenticatedFetch } from "@/lib/auth"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 export default function SettingsPage() {
@@ -56,7 +56,7 @@ export default function SettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch('/api/settings')
+      const response = await authenticatedFetch('/api/settings')
       const data = await response.json()
       if (data.success && data.settings) {
         const s = data.settings
@@ -83,7 +83,7 @@ export default function SettingsPage() {
   const handleSaveGeneral = async () => {
     try {
       setIsSaving(true)
-      const response = await fetch('/api/settings', {
+      const response = await authenticatedFetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -155,7 +155,7 @@ export default function SettingsPage() {
         setCompanyDisplayType("logo")
 
         // Save logo to settings immediately
-        const saveRes = await fetch('/api/settings', {
+        const saveRes = await authenticatedFetch('/api/settings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -222,7 +222,7 @@ export default function SettingsPage() {
       }
 
       // Update user name in database
-      const response = await fetch(`/api/users/${currentUser.id}`, {
+      const response = await authenticatedFetch(`/api/users/${currentUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -257,7 +257,7 @@ export default function SettingsPage() {
   const handleSaveNotifications = async () => {
     try {
       setIsSaving(true)
-      const response = await fetch('/api/settings', {
+      const response = await authenticatedFetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -304,7 +304,7 @@ export default function SettingsPage() {
           break
       }
 
-      const response = await fetch('/api/settings', {
+      const response = await authenticatedFetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData)
@@ -378,7 +378,7 @@ export default function SettingsPage() {
         return
       }
 
-      const response = await fetch('/api/security/password', {
+      const response = await authenticatedFetch('/api/security/password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -406,7 +406,7 @@ export default function SettingsPage() {
 
   const handleToggle2FA = async (enabled: boolean) => {
     try {
-      const response = await fetch('/api/settings', {
+      const response = await authenticatedFetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ twoFactorEnabled: enabled })

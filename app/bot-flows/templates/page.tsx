@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
+import { authenticatedFetch } from "@/lib/auth"
 
 interface FlowTemplate {
   id: string
@@ -263,7 +264,7 @@ export default function FlowTemplatesPage() {
         isActive: false // Let user activate it manually
       }
 
-      const response = await fetch('/api/bot-flows', {
+      const response = await authenticatedFetch('/api/bot-flows', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(flowData)

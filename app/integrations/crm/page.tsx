@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
+import { authenticatedFetch } from "@/lib/auth"
 import { Loader2, Plus, Link as LinkIcon, Trash2 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { formatDistanceToNow } from "date-fns"
@@ -51,7 +52,7 @@ export default function CrmIntegrationPage() {
 
     const fetchIntegrations = async () => {
         try {
-            const response = await fetch('/api/integrations/crm')
+            const response = await authenticatedFetch('/api/integrations/crm')
             const data = await response.json()
             if (data.success) {
                 setIntegrations(data.integrations)
@@ -76,7 +77,7 @@ export default function CrmIntegrationPage() {
         try {
             setIsCreating(true)
 
-            const response = await fetch('/api/integrations/crm', {
+            const response = await authenticatedFetch('/api/integrations/crm', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -118,7 +119,7 @@ export default function CrmIntegrationPage() {
 
     const handleToggleActive = async (id: string, isActive: boolean) => {
         try {
-            const response = await fetch('/api/integrations/crm', {
+            const response = await authenticatedFetch('/api/integrations/crm', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id, isActive })
@@ -152,7 +153,7 @@ export default function CrmIntegrationPage() {
         if (!confirm('Are you sure you want to delete this integration?')) return
 
         try {
-            const response = await fetch(`/api/integrations/crm?id=${id}`, {
+            const response = await authenticatedFetch(`/api/integrations/crm?id=${id}`, {
                 method: 'DELETE'
             })
 

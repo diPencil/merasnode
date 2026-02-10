@@ -145,8 +145,17 @@
     min-width: 44px;
   }
 
-  /* App shell that uses real viewport height (iOS-safe) */
+  /* App shell height
+     - Desktop/tablet: regular viewport height
+     - Mobile: dynamic, JS-updated --app-vh for keyboard-safe layout
+  */
   .app-shell {
-    min-height: var(--app-vh);
+    min-height: 100vh;
+  }
+
+  @media (max-width: 767px) {
+    .app-shell {
+      min-height: var(--app-vh);
+    }
   }
 }

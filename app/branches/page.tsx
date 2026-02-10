@@ -26,6 +26,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { authenticatedFetch } from "@/lib/auth"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -91,7 +92,7 @@ export default function BranchesPage() {
 
     const fetchRegisteredAccounts = async () => {
         try {
-            const response = await fetch('/api/whatsapp/accounts')
+            const response = await authenticatedFetch('/api/whatsapp/accounts')
             const data = await response.json()
             if (data.success) {
                 setRegisteredAccounts(data.accounts)
@@ -104,7 +105,7 @@ export default function BranchesPage() {
     const fetchBranches = async () => {
         try {
             setIsLoading(true)
-            const response = await fetch("/api/branches")
+            const response = await authenticatedFetch("/api/branches")
             const data = await response.json()
             if (data.success) {
                 setBranches(data.branches)
@@ -127,7 +128,7 @@ export default function BranchesPage() {
             const url = editingBranch ? `/api/branches/${editingBranch.id}` : "/api/branches"
             const method = editingBranch ? "PUT" : "POST"
 
-            const response = await fetch(url, {
+            const response = await authenticatedFetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),
@@ -164,7 +165,7 @@ export default function BranchesPage() {
 
         try {
             console.log('Attempting to delete branch:', branchToDelete)
-            const response = await fetch(`/api/branches/${branchToDelete}`, { method: "DELETE" })
+            const response = await authenticatedFetch(`/api/branches/${branchToDelete}`, { method: "DELETE" })
             const data = await response.json()
 
             console.log('Delete response:', data)

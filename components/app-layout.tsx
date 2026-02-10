@@ -17,7 +17,10 @@ export function AppLayout({ children, title, showSearch = false }: AppLayoutProp
   const isMobile = useIsMobile()
 
   // iOS-safe viewport height: keep --app-vh in sync with real innerHeight.
+  // Only needed on mobile; desktop uses regular viewport behavior.
   useEffect(() => {
+    if (!isMobile) return
+
     const setAppVh = () => {
       if (typeof window === "undefined") return
       const vh = window.innerHeight
@@ -31,7 +34,7 @@ export function AppLayout({ children, title, showSearch = false }: AppLayoutProp
       window.removeEventListener("resize", setAppVh)
       window.removeEventListener("orientationchange", setAppVh)
     }
-  }, [])
+  }, [isMobile])
 
   return (
     <div className="app-shell flex overflow-hidden bg-background flex-col md:flex-row">

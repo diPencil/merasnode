@@ -5,6 +5,7 @@ import { AppLayout } from "@/components/app-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart3, MessageSquare, Users, Clock, TrendingUp } from "lucide-react"
 import { useI18n } from "@/lib/i18n"
+import { authenticatedFetch } from "@/lib/auth"
 
 export default function AnalyticsPage() {
     const { t } = useI18n()
@@ -24,7 +25,7 @@ export default function AnalyticsPage() {
     const fetchAnalytics = async () => {
         try {
             setIsLoading(true)
-            const response = await fetch("/api/analytics/overview")
+            const response = await authenticatedFetch("/api/analytics/overview")
             const data = await response.json()
 
             if (data.success) {

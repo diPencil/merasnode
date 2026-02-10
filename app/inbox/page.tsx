@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,7 +44,7 @@ import { useI18n } from "@/lib/i18n"
 import { format } from "date-fns"
 import { ar } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { getUserRole, getUser } from "@/lib/auth"
+import { getUserRole, getUser, authenticatedFetch, getAuthHeader } from "@/lib/auth"
 import { Sidebar } from "./Sidebar"
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import {
@@ -151,6 +152,7 @@ export default function InboxPage() {
   const { toast } = useToast()
   const { t, language, dir } = useI18n()
   const dateLocale = language === "ar" ? ar : undefined
+  const isMobile = useIsMobile()
 
   // ... existing refs ...
   const searchParams = useSearchParams()
@@ -177,7 +179,7 @@ export default function InboxPage() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch('/api/settings')
+      const response = await authenticatedFetch('/api/settings')
       const data = await response.json()
       if (data.success) {
         setSettings(data.settings)
@@ -190,7 +192,7 @@ export default function InboxPage() {
   const fetchLastOrderId = async (contactId: string) => {
     try {
       // Try fetching bookings first
-      const response = await fetch(`/api/bookings?contactId=${contactId}`)
+      const response = await authenticatedFetch(`/api/bookings?contactId=${contactId}`)
       const data = await response.json()
       if (data.success && data.data && data.data.length > 0) {
         // Find latest booking for THIS contact (API might return all, filter just in case)
@@ -260,7 +262,7 @@ export default function InboxPage() {
 
   const fetchBotFlows = async () => {
     try {
-      const response = await fetch('/api/bot-flows')
+      const response = await authenticatedFetch('/api/bot-flows')
       const data = await response.json()
       if (data.success) {
         setBotFlows(data.data)
@@ -278,7 +280,7 @@ export default function InboxPage() {
 
     // 2. Track Interaction
     try {
-      await fetch('/api/bot-flows/track', {
+      await authenticatedFetch('/api/bot-flows/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -313,7 +315,7 @@ export default function InboxPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       // Don't show loading spinner on background refresh
-      fetch('/api/conversations')
+      authenticatedFetch('/api/conversations')
         .then(res => res.json())
         .then(data => {
           if (data.success && data.conversations) {
@@ -343,7 +345,7 @@ export default function InboxPage() {
     if (!selectedConversation) return;
 
     const interval = setInterval(() => {
-      fetch(`/api/messages?conversationId=${selectedConversation.id}`)
+      authenticatedFetch(`/api/messages?conversationId=${selectedConversation.id}`)
         .then(res => res.json())
         .then(data => {
           if (data.success && data.messages) {
@@ -369,7 +371,7 @@ export default function InboxPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/users')
+      const response = await authenticatedFetch('/api/users')
       const data = await response.json()
       if (data.success) {
         setUsers(data.data)
@@ -384,26 +386,11 @@ export default function InboxPage() {
       const userRole = getUserRole()
       const currentUser = getUser()
 
-      const response = await fetch('/api/branches')
+      // Backend now returns only branches the user has access to (role-scoped)
+      const response = await authenticatedFetch('/api/branches')
       const data = await response.json()
       if (data.success) {
-        let filteredBranches = data.branches.filter((b: Branch) => b.isActive)
-
-        // For AGENT: only show assigned branches
-        // For ADMIN/SUPERVISOR: show all branches
-        if (userRole === 'AGENT' && currentUser) {
-          // Fetch user's assigned branches
-          const userResponse = await fetch(`/api/users/${currentUser.id}`)
-          const userData = await userResponse.json()
-
-          if (userData.success && userData.data.branches) {
-            const assignedBranchIds = userData.data.branches.map((b: Branch) => b.id)
-            filteredBranches = filteredBranches.filter((b: Branch) =>
-              assignedBranchIds.includes(b.id)
-            )
-          }
-        }
-
+        const filteredBranches = data.branches.filter((b: Branch) => b.isActive)
         setBranches(filteredBranches)
       }
     } catch (error) {
@@ -414,7 +401,7 @@ export default function InboxPage() {
   const fetchConversations = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/conversations')
+      const response = await authenticatedFetch('/api/conversations')
       const data = await response.json()
 
       if (data.success && data.conversations) {
@@ -431,15 +418,25 @@ export default function InboxPage() {
 
         setConversations(enrichedConversations)
 
-        // Selection is driven only by the URL (id query param).
-        // /inbox       → no selection (list-only)
-        // /inbox?id=.. → open that specific conversation
+        // Selection logic differs for mobile vs desktop:
+        // - Mobile: URL id drives selection; /inbox (no id) = list-only
+        // - Desktop: always keep a conversation selected (first or previous)
         if (conversationIdParam) {
           const target = enrichedConversations.find(
-            (c: Conversation) => c.id === conversationIdParam
+            (c: Conversation) => c.id === conversationIdParam,
           )
           setSelectedConversation(target ?? null)
+        } else if (!isMobile) {
+          if (selectedConversation) {
+            const existing = enrichedConversations.find(
+              (c: Conversation) => c.id === selectedConversation.id,
+            )
+            setSelectedConversation(existing ?? enrichedConversations[0] ?? null)
+          } else {
+            setSelectedConversation(enrichedConversations[0] ?? null)
+          }
         } else {
+          // Mobile + no id: list-only, no auto-open
           setSelectedConversation(null)
         }
       } else {
@@ -455,7 +452,7 @@ export default function InboxPage() {
 
   const fetchMessages = async (conversationId: string) => {
     try {
-      const response = await fetch(`/api/messages?conversationId=${conversationId}`)
+      const response = await authenticatedFetch(`/api/messages?conversationId=${conversationId}`)
       const data = await response.json()
 
       if (data.success) {
@@ -476,7 +473,7 @@ export default function InboxPage() {
       // Get the first connected WhatsApp account
       let whatsappAccountId = null
       try {
-        const accountsRes = await fetch('/api/whatsapp/accounts')
+        const accountsRes = await authenticatedFetch('/api/whatsapp/accounts')
         const accountsData = await accountsRes.json()
         if (accountsData.success && accountsData.accounts && accountsData.accounts.length > 0) {
           const connectedAccount = accountsData.accounts.find((acc: any) => acc.status === 'CONNECTED')
@@ -488,7 +485,7 @@ export default function InboxPage() {
         console.error('Error fetching WhatsApp accounts:', err)
       }
 
-      const response = await fetch('/api/messages', {
+      const response = await authenticatedFetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -555,7 +552,7 @@ export default function InboxPage() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch('/api/templates?status=APPROVED')
+      const response = await authenticatedFetch('/api/templates?status=APPROVED')
       const data = await response.json()
       if (data.success) {
         setTemplates(data.data)
@@ -602,7 +599,7 @@ export default function InboxPage() {
 
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/conversations/${selectedConversation.id}`, {
+      const response = await authenticatedFetch(`/api/conversations/${selectedConversation.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'RESOLVED' })
@@ -676,7 +673,7 @@ export default function InboxPage() {
         if (!currentTags.includes('blocked')) {
           const updatedTags = [...currentTags, 'blocked']
 
-          await fetch(`/api/contacts/${selectedConversation.contactId}`, {
+          await authenticatedFetch(`/api/contacts/${selectedConversation.contactId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -690,7 +687,7 @@ export default function InboxPage() {
         }
 
         // 2. Block Conversation
-        await fetch(`/api/conversations/${selectedConversation.id}`, {
+        await authenticatedFetch(`/api/conversations/${selectedConversation.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -740,6 +737,7 @@ export default function InboxPage() {
 
           const uploadRes = await fetch('/api/upload', {
             method: 'POST',
+            headers: { ...getAuthHeader() },
             body: formData
           });
 
@@ -808,7 +806,7 @@ export default function InboxPage() {
     }
 
     try {
-      const response = await fetch('/api/bookings', {
+      const response = await authenticatedFetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1396,7 +1394,7 @@ export default function InboxPage() {
                       try {
                         const formData = new FormData();
                         formData.append('file', file);
-                        const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+                        const uploadRes = await fetch('/api/upload', { method: 'POST', headers: { ...getAuthHeader() }, body: formData });
                         const uploadData = await uploadRes.json();
                         if (!uploadData.success) throw new Error(uploadData.error);
                         await handleSendMessage(undefined, uploadData.url);

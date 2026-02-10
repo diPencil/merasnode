@@ -24,6 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { authenticatedFetch } from "@/lib/auth"
 
 interface ApiKey {
     id: string
@@ -50,7 +51,7 @@ export default function ApiKeysPage() {
 
     const fetchApiKeys = async () => {
         try {
-            const response = await fetch('/api/integrations/api-keys')
+            const response = await authenticatedFetch('/api/integrations/api-keys')
             const data = await response.json()
             if (data.success) {
                 setApiKeys(data.apiKeys)
@@ -76,7 +77,7 @@ export default function ApiKeysPage() {
             setIsCreating(true)
             const expiresInDays = expiresIn === "never" ? null : parseInt(expiresIn)
 
-            const response = await fetch('/api/integrations/api-keys', {
+            const response = await authenticatedFetch('/api/integrations/api-keys', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -126,7 +127,7 @@ export default function ApiKeysPage() {
         if (!confirm('Are you sure you want to delete this API key?')) return
 
         try {
-            const response = await fetch(`/api/integrations/api-keys?id=${id}`, {
+            const response = await authenticatedFetch(`/api/integrations/api-keys?id=${id}`, {
                 method: 'DELETE'
             })
 

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
 import { QrCode, CheckCircle2, Loader2, RefreshCw } from "lucide-react"
+import { authenticatedFetch } from "@/lib/auth"
 
 export default function WhatsAppPage() {
     const { toast } = useToast()
@@ -32,7 +33,7 @@ export default function WhatsAppPage() {
 
     const fetchAccountInfo = async () => {
         try {
-            const response = await fetch('/api/whatsapp/accounts')
+            const response = await authenticatedFetch('/api/whatsapp/accounts')
             const data = await response.json()
             if (data.success && data.accounts && data.accounts.length > 0) {
                 // Get the first account (assuming single account for now) or the connected one
@@ -52,7 +53,7 @@ export default function WhatsAppPage() {
 
     const checkStatus = async () => {
         try {
-            const response = await fetch('/api/whatsapp')
+            const response = await authenticatedFetch('/api/whatsapp')
             const data = await response.json()
 
             if (data.success) {
@@ -87,7 +88,7 @@ export default function WhatsAppPage() {
     const handleInitialize = async () => {
         try {
             setIsInitializing(true)
-            const response = await fetch('/api/whatsapp', {
+            const response = await authenticatedFetch('/api/whatsapp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'init' })
@@ -133,7 +134,7 @@ export default function WhatsAppPage() {
 
         try {
             setIsSyncing(true)
-            const response = await fetch('/api/whatsapp/sync', {
+            const response = await authenticatedFetch('/api/whatsapp/sync', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

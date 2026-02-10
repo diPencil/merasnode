@@ -1,108 +1,180 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
+import {
+    requireAuthWithScope,
+    buildConversationScopeFilter,
+    unauthorizedResponse,
+    UserScope,
+} from '@/lib/api-auth'
 
-export async function GET(request: Request) {
+// ─── Scope helpers ──────────────────────────────────────────────────
+// Build a Prisma `where` for messages that respects the user's scope.
+function messageWhere(scope: UserScope, extra: Record<string, any> = {}): Record<string, any> {
+    if (scope.role === 'ADMIN') return { ...extra }
+    if (scope.role === 'SUPERVISOR') {
+        return {
+            ...extra,
+            conversation: {
+                contact: { branchId: { in: scope.branchIds } },
+            },
+        }
+    }
+    // AGENT: personal messages only (sent by them or on their assigned conversations)
+    return {
+        ...extra,
+        OR: [
+            { senderId: scope.userId },
+            { conversation: { assignedToId: scope.userId } },
+        ],
+    }
+}
+
+// Build a Prisma `where` for conversations that respects the user's scope.
+function conversationWhere(scope: UserScope, extra: Record<string, any> = {}): Record<string, any> {
+    return { ...buildConversationScopeFilter(scope), ...extra }
+}
+
+// Build a Prisma `where` for WhatsApp accounts.
+function waAccountWhere(scope: UserScope): Record<string, any> {
+    if (scope.role === 'ADMIN') return {}
+    if (scope.role === 'SUPERVISOR') {
+        return { branchId: { in: scope.branchIds } }
+    }
+    return { id: { in: scope.whatsappAccountIds } }
+}
+
+// Build a Prisma `where` for contacts.
+function contactWhere(scope: UserScope): Record<string, any> {
+    if (scope.role === 'ADMIN') return {}
+    return { branchId: { in: scope.branchIds } }
+}
+
+// ─── Raw-SQL filter fragments (for $queryRaw) ───────────────────────
+function messageRawJoinFilter(scope: UserScope, messageAlias: string = 'm'): string {
+    if (scope.role === 'ADMIN') return ''
+    if (scope.role === 'SUPERVISOR') {
+        // Join through conversation -> contact to filter by branch
+        return `
+            JOIN Conversation conv ON ${messageAlias}.conversationId = conv.id
+            JOIN Contact ct ON conv.contactId = ct.id
+        `
+    }
+    // AGENT
+    return `
+        JOIN Conversation conv ON ${messageAlias}.conversationId = conv.id
+    `
+}
+
+function messageRawWhereFilter(scope: UserScope, messageAlias: string = 'm'): string {
+    if (scope.role === 'ADMIN') return ''
+    if (scope.role === 'SUPERVISOR') {
+        const ids = scope.branchIds.map(id => `'${id}'`).join(',')
+        return ids.length > 0 ? `AND ct.branchId IN (${ids})` : 'AND 1=0'
+    }
+    // AGENT: only their own messages or assigned conversations
+    return `AND (${messageAlias}.senderId = '${scope.userId}' OR conv.assignedToId = '${scope.userId}')`
+}
+
+export async function GET(request: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url)
-        const range = searchParams.get('range') || 'week' // week | month
+        const scope = await requireAuthWithScope(request)
 
-        // Get date ranges
+        const { searchParams } = new URL(request.url)
+        const range = searchParams.get('range') || 'week'
+
         const now = new Date()
         const daysToSubtract = range === 'month' ? 30 : 7
         const startDate = new Date(now.getTime() - daysToSubtract * 24 * 60 * 60 * 1000)
 
-        // 1. Total Messages Count
-        const totalMessages = await prisma.message.count()
+        // ── 1. Total Messages ───────────────────────────────────────
+        const totalMessages = await prisma.message.count({
+            where: messageWhere(scope),
+        })
 
-        // 2. Total Conversations Count
-        const totalConversations = await prisma.conversation.count()
+        // ── 2. Total Conversations ──────────────────────────────────
+        const totalConversations = await prisma.conversation.count({
+            where: conversationWhere(scope),
+        })
 
-        // 3. Active Contacts (contacts with activity in last 7 days)
+        // ── 3. Active Contacts ──────────────────────────────────────
         const activeContactsData = await prisma.conversation.findMany({
-            where: {
-                lastMessageAt: {
-                    gte: startDate
-                }
-            },
+            where: conversationWhere(scope, { lastMessageAt: { gte: startDate } }),
             distinct: ['contactId'],
-            select: {
-                contactId: true
-            }
+            select: { contactId: true },
         })
         const activeContacts = activeContactsData.length
 
-        // 4. Calculate Average Response Time
-        const responseTimeData = await prisma.$queryRaw<Array<{ avgMinutes: number }>>`
-      SELECT AVG(TIMESTAMPDIFF(MINUTE, incoming.createdAt, outgoing.createdAt)) as avgMinutes
-      FROM Message incoming
-      JOIN Message outgoing ON incoming.conversationId = outgoing.conversationId
-      WHERE incoming.direction = 'INCOMING'
-        AND outgoing.direction = 'OUTGOING'
-        AND outgoing.createdAt > incoming.createdAt
-        AND incoming.createdAt >= ${startDate}
-        AND TIMESTAMPDIFF(MINUTE, incoming.createdAt, outgoing.createdAt) <= 60
-    `
+        // ── 4. Average Response Time ────────────────────────────────
+        const joinFrag = messageRawJoinFilter(scope, 'incoming')
+        const whereFrag = messageRawWhereFilter(scope, 'incoming')
+
+        const responseTimeData = await prisma.$queryRawUnsafe<Array<{ avgMinutes: number }>>(
+            `SELECT AVG(TIMESTAMPDIFF(MINUTE, incoming.createdAt, outgoing.createdAt)) as avgMinutes
+             FROM Message incoming
+             JOIN Message outgoing ON incoming.conversationId = outgoing.conversationId
+             ${joinFrag}
+             WHERE incoming.direction = 'INCOMING'
+               AND outgoing.direction = 'OUTGOING'
+               AND outgoing.createdAt > incoming.createdAt
+               AND incoming.createdAt >= ?
+               AND TIMESTAMPDIFF(MINUTE, incoming.createdAt, outgoing.createdAt) <= 60
+               ${whereFrag}`,
+            startDate,
+        )
 
         const avgMinutes = responseTimeData[0]?.avgMinutes || 2.5
         const avgResponseTime = `${avgMinutes.toFixed(1)}m`
 
-        // 5. Messages by Day
-        const messagesByDay = await prisma.$queryRaw<Array<{
-            day: string
-            incoming: number
-            outgoing: number
-        }>>`
-      SELECT 
-        DATE_FORMAT(createdAt, '%a') as day,
-        SUM(CASE WHEN direction = 'INCOMING' THEN 1 ELSE 0 END) as incoming,
-        SUM(CASE WHEN direction = 'OUTGOING' THEN 1 ELSE 0 END) as outgoing
-      FROM Message
-      WHERE createdAt >= ${startDate}
-      GROUP BY DATE(createdAt), day
-      ORDER BY DATE(createdAt)
-    `
+        // ── 5. Messages by Day ──────────────────────────────────────
+        const msgJoin = messageRawJoinFilter(scope, 'Message')
+        const msgWhere = messageRawWhereFilter(scope, 'Message')
 
-        // 6. Message Types Distribution
+        const messagesByDay = await prisma.$queryRawUnsafe<Array<{
+            day: string; incoming: number; outgoing: number
+        }>>(
+            `SELECT 
+                DATE_FORMAT(Message.createdAt, '%a') as day,
+                SUM(CASE WHEN Message.direction = 'INCOMING' THEN 1 ELSE 0 END) as incoming,
+                SUM(CASE WHEN Message.direction = 'OUTGOING' THEN 1 ELSE 0 END) as outgoing
+             FROM Message
+             ${msgJoin}
+             WHERE Message.createdAt >= ?
+             ${msgWhere}
+             GROUP BY DATE(Message.createdAt), day
+             ORDER BY DATE(Message.createdAt)`,
+            startDate,
+        )
+
+        // ── 6. Message Types Distribution ───────────────────────────
         const messageTypesRaw = await prisma.message.groupBy({
             by: ['type'],
-            _count: {
-                type: true
-            }
+            where: messageWhere(scope),
+            _count: { type: true },
         })
 
         const messageTypes = messageTypesRaw.map(item => ({
             name: item.type.charAt(0) + item.type.slice(1).toLowerCase(),
             value: item._count.type,
-            color: getColorForType(item.type)
+            color: getColorForType(item.type),
         }))
 
-        // 7. Recent Conversations (last 10)
+        // ── 7. Recent Conversations (last 10) ──────────────────────
         const recentConversationsRaw = await prisma.conversation.findMany({
+            where: conversationWhere(scope),
             take: 10,
-            orderBy: {
-                lastMessageAt: 'desc'
-            },
+            orderBy: { lastMessageAt: 'desc' },
             include: {
                 contact: true,
-                messages: {
-                    take: 1,
-                    orderBy: {
-                        createdAt: 'desc'
-                    }
-                },
+                messages: { take: 1, orderBy: { createdAt: 'desc' } },
                 _count: {
                     select: {
                         messages: {
-                            where: {
-                                direction: 'INCOMING',
-                                status: {
-                                    not: 'READ'
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+                            where: { direction: 'INCOMING', status: { not: 'READ' } },
+                        },
+                    },
+                },
+            },
         })
 
         const recentConversations = recentConversationsRaw.map(conv => ({
@@ -111,14 +183,13 @@ export async function GET(request: Request) {
             phone: conv.contact.phone,
             lastMessage: conv.messages[0]?.content || 'No messages',
             time: formatTimeAgo(conv.lastMessageAt),
-            unread: conv._count.messages
+            unread: conv._count.messages,
         }))
 
-        // 8. WhatsApp Accounts Status
+        // ── 8. WhatsApp Accounts Status ─────────────────────────────
         const whatsappAccounts = await prisma.whatsAppAccount.findMany({
-            include: {
-                branch: true
-            }
+            where: waAccountWhere(scope),
+            include: { branch: true },
         })
 
         const accountsStatus = whatsappAccounts.map(acc => ({
@@ -126,69 +197,55 @@ export async function GET(request: Request) {
             name: acc.name,
             phone: acc.phone,
             status: acc.status,
-            branch: acc.branch?.name || 'No Branch'
+            branch: acc.branch?.name || 'No Branch',
         }))
 
-        // 9. Calculate Team Performance Metrics
+        // ── 9. Team Performance Metrics ─────────────────────────────
         const totalIncoming = await prisma.message.count({
-            where: { direction: 'INCOMING' }
+            where: messageWhere(scope, { direction: 'INCOMING' }),
         })
         const totalOutgoing = await prisma.message.count({
-            where: { direction: 'OUTGOING' }
+            where: messageWhere(scope, { direction: 'OUTGOING' }),
         })
 
-        // Response Rate: percentage of incoming messages that got a response (cap at 100%)
         const responseRateRaw = totalIncoming > 0
-            ? Math.round((totalOutgoing / totalIncoming) * 100)
-            : 0
+            ? Math.round((totalOutgoing / totalIncoming) * 100) : 0
         const responseRate = Math.min(100, responseRateRaw)
 
-        // Customer Satisfaction: based on active conversations ratio
-        const totalContactsCount = await prisma.contact.count()
+        const totalContactsCount = await prisma.contact.count({
+            where: contactWhere(scope),
+        })
         const customerSatisfaction = totalContactsCount > 0
-            ? Math.round((activeContacts / totalContactsCount) * 100)
-            : 0
+            ? Math.round((activeContacts / totalContactsCount) * 100) : 0
 
-        const slaScore = avgMinutes > 0 ? Math.round(100 - (avgMinutes / 60 * 20)) : 100 // Simple heuristic
+        const slaScore = avgMinutes > 0 ? Math.round(100 - (avgMinutes / 60 * 20)) : 100
 
         const teamPerformance = [
-            {
-                name: "Response Rate",
-                current: responseRate,
-                target: 100,
-                percentage: responseRate
-            },
-            {
-                name: "Customer Satisfaction",
-                current: customerSatisfaction,
-                target: 100,
-                percentage: customerSatisfaction
-            },
-            {
-                name: "SLA Compliance",
-                current: slaScore > 100 ? 100 : slaScore,
-                target: 95,
-                percentage: slaScore > 100 ? 100 : slaScore
-            }
+            { name: "Response Rate", current: responseRate, target: 100, percentage: responseRate },
+            { name: "Customer Satisfaction", current: customerSatisfaction, target: 100, percentage: customerSatisfaction },
+            { name: "SLA Compliance", current: slaScore > 100 ? 100 : slaScore, target: 95, percentage: slaScore > 100 ? 100 : slaScore },
         ]
 
-        // 10. Calculate AI Analytics Insights
-        // Peak Activity - Find day and hour with most messages
-        const peakActivityData = await prisma.$queryRaw<Array<{
-            day: string
-            hour: number
-            count: bigint
-        }>>`
-            SELECT 
-                DATE_FORMAT(createdAt, '%a') as day,
-                HOUR(createdAt) as hour,
+        // ── 10. AI Insights ─────────────────────────────────────────
+        const peakJoin = messageRawJoinFilter(scope, 'Message')
+        const peakWhere = messageRawWhereFilter(scope, 'Message')
+
+        const peakActivityData = await prisma.$queryRawUnsafe<Array<{
+            day: string; hour: number; count: bigint
+        }>>(
+            `SELECT 
+                DATE_FORMAT(Message.createdAt, '%a') as day,
+                HOUR(Message.createdAt) as hour,
                 COUNT(*) as count
-            FROM Message
-            WHERE createdAt >= ${startDate}
-            GROUP BY DATE(createdAt), HOUR(createdAt), day
-            ORDER BY count DESC
-            LIMIT 1
-        `
+             FROM Message
+             ${peakJoin}
+             WHERE Message.createdAt >= ?
+             ${peakWhere}
+             GROUP BY DATE(Message.createdAt), HOUR(Message.createdAt), day
+             ORDER BY count DESC
+             LIMIT 1`,
+            startDate,
+        )
 
         const peakActivity = peakActivityData[0] || null
         const dayNames: Record<string, string> = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' }
@@ -196,166 +253,134 @@ export async function GET(request: Request) {
         const peakHour = peakActivity ? peakActivity.hour : null
         const peakTime = peakHour != null ? (peakHour < 12 ? `${peakHour}:00 AM` : peakHour === 12 ? '12:00 PM' : `${peakHour - 12}:00 PM`) : null
 
-        // Calculate average messages per hour for comparison
-        const avgMessagesPerHour = await prisma.$queryRaw<Array<{ avgCount: number }>>`
-            SELECT AVG(hourly_count) as avgCount
-            FROM (
-                SELECT COUNT(*) as hourly_count
-                FROM Message
-                WHERE createdAt >= ${startDate}
-                GROUP BY DATE(createdAt), HOUR(createdAt)
-            ) as hourly_stats
-        `
+        const avgMessagesPerHour = await prisma.$queryRawUnsafe<Array<{ avgCount: number }>>(
+            `SELECT AVG(hourly_count) as avgCount
+             FROM (
+                 SELECT COUNT(*) as hourly_count
+                 FROM Message
+                 ${peakJoin}
+                 WHERE Message.createdAt >= ?
+                 ${peakWhere}
+                 GROUP BY DATE(Message.createdAt), HOUR(Message.createdAt)
+             ) as hourly_stats`,
+            startDate,
+        )
         const avgCount = avgMessagesPerHour[0]?.avgCount || 0
         const peakCount = peakActivity ? Number(peakActivity.count) : 0
         const peakVsAvg = avgCount > 0 ? Math.round(((peakCount - avgCount) / avgCount) * 100) : 14
 
-        // Top Template - Get most recent approved template
         const topTemplate = await prisma.template.findFirst({
             where: { status: 'APPROVED' },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
         })
 
-        // Template "response rate" = overall response rate capped at 100%
         const templateResponseRate = responseRate
 
-        // Weekly Growth - Compare current period with previous period (same length)
+        // Weekly Growth
         const previousPeriodStart = new Date(now.getTime() - (daysToSubtract * 2) * 24 * 60 * 60 * 1000)
         const previousPeriodEnd = startDate
 
         const currentPeriodMessages = await prisma.message.count({
-            where: { createdAt: { gte: startDate } }
+            where: messageWhere(scope, { createdAt: { gte: startDate } }),
         })
-
         const previousPeriodMessages = await prisma.message.count({
-            where: {
-                createdAt: {
-                    gte: previousPeriodStart,
-                    lt: previousPeriodEnd
-                }
-            }
+            where: messageWhere(scope, {
+                createdAt: { gte: previousPeriodStart, lt: previousPeriodEnd },
+            }),
         })
 
-        // نمو فعلي: إن لم يكن هناك رسائل سابقة = لا نسبة (0 أو stable)
         const weeklyGrowthPct = previousPeriodMessages > 0
             ? ((currentPeriodMessages - previousPeriodMessages) / previousPeriodMessages) * 100
             : currentPeriodMessages > 0 ? 100 : 0
         const weeklyGrowthTrend = weeklyGrowthPct > 0 ? 'up' : weeklyGrowthPct < 0 ? 'down' : 'stable'
 
-        // 11. Calculate Live Support Status
+        // ── 11. Live Support Status ─────────────────────────────────
         const connectedAccounts = whatsappAccounts.filter(acc => acc.status === 'CONNECTED').length
         const totalAccounts = whatsappAccounts.length
         const systemHealth = totalAccounts > 0 && connectedAccounts > 0 ? 'Healthy' : totalAccounts === 0 ? 'No Accounts' : 'Degraded'
 
-        // Calculate uptime (simplified - based on connected accounts)
         const uptimePercentage = totalAccounts > 0 ? Math.round((connectedAccounts / totalAccounts) * 100) : 0
         const uptime = uptimePercentage >= 90 ? '99.9%' : uptimePercentage >= 50 ? `${uptimePercentage}%` : '<50%'
 
-        // Agent Efficiency - based on response rate (capped at 100)
         const agentEfficiency = responseRate >= 80 ? 'Optimal' : responseRate >= 50 ? 'Good' : responseRate >= 25 ? 'Fair' : 'Needs Improvement'
         const agentEfficiencyPercentage = Math.min(100, responseRate)
 
         const aiInsights = {
             peakActivity: peakDay != null && peakTime != null ? {
-                day: peakDay,
-                time: peakTime,
-                vsAvg: peakVsAvg,
-                confidence: Math.min(100, avgCount > 0 && peakCount > 0 ? Math.round((peakCount / (avgCount || 1)) * 50) + 50 : 92)
+                day: peakDay, time: peakTime, vsAvg: peakVsAvg,
+                confidence: Math.min(100, avgCount > 0 && peakCount > 0 ? Math.round((peakCount / (avgCount || 1)) * 50) + 50 : 92),
             } : null,
             topTemplate: {
                 name: topTemplate?.name ?? null,
                 responseRate: templateResponseRate,
-                usageCount: totalOutgoing // عدد الرسائل الصادرة الفعلي (لا تقدير)
+                usageCount: totalOutgoing,
             },
-            weeklyGrowth: {
-                percentage: weeklyGrowthPct,
-                trend: weeklyGrowthTrend
-            }
+            weeklyGrowth: { percentage: weeklyGrowthPct, trend: weeklyGrowthTrend },
         }
 
-        const liveSupportStatus = {
-            systemHealth,
-            uptime,
-            agentEfficiency,
-            agentEfficiencyPercentage
-        }
+        const liveSupportStatus = { systemHealth, uptime, agentEfficiency, agentEfficiencyPercentage }
 
         return NextResponse.json({
             success: true,
             data: {
-                stats: {
-                    totalMessages,
-                    totalConversations,
-                    activeContacts,
-                    avgResponseTime
-                },
+                stats: { totalMessages, totalConversations, activeContacts, avgResponseTime },
                 charts: {
                     messagesByDay: messagesByDay.length > 0 ? messagesByDay : getDefaultMessagesByDay(range as 'week' | 'month'),
-                    messageTypes: messageTypes.length > 0 ? messageTypes : getDefaultMessageTypes()
+                    messageTypes: messageTypes.length > 0 ? messageTypes : getDefaultMessageTypes(),
                 },
                 recentConversations,
                 whatsappAccounts: accountsStatus,
                 teamPerformance,
                 aiInsights,
-                liveSupportStatus
-            }
+                liveSupportStatus,
+            },
         })
-
     } catch (error) {
+        if (error instanceof Error && error.message === 'Unauthorized') {
+            return unauthorizedResponse()
+        }
         console.error('Dashboard stats error:', error)
         return NextResponse.json(
             {
                 success: false,
                 error: 'Failed to fetch dashboard statistics',
-                message: error instanceof Error ? error.message : 'Unknown error'
+                message: error instanceof Error ? error.message : 'Unknown error',
             },
-            { status: 500 }
+            { status: 500 },
         )
     }
 }
 
-// Helper function to format time ago
+// ─── Helpers ────────────────────────────────────────────────────────
 function formatTimeAgo(date: Date): string {
     const now = new Date()
     const diffMs = now.getTime() - new Date(date).getTime()
     const diffMins = Math.floor(diffMs / 60000)
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
-
     if (diffMins < 1) return 'Just now'
     if (diffMins < 60) return `${diffMins}m ago`
     if (diffHours < 24) return `${diffHours}h ago`
     return `${diffDays}d ago`
 }
 
-// Helper function to get color for message type
-// Helper function to get color for message type
 function getColorForType(type: string): string {
     const colors: Record<string, string> = {
-        TEXT: '#8884d8',      // Purple
-        IMAGE: '#82ca9d',     // Green
-        VIDEO: '#ffc658',     // Yellow
-        AUDIO: '#ff7300',     // Orange
-        DOCUMENT: '#0088fe',  // Blue
-        LOCATION: '#00C49F',  // Teal
-        STICKER: '#FFBB28',   // Gold
-        CONTACT: '#FF8042'    // Coral
+        TEXT: '#8884d8', IMAGE: '#82ca9d', VIDEO: '#ffc658', AUDIO: '#ff7300',
+        DOCUMENT: '#0088fe', LOCATION: '#00C49F', STICKER: '#FFBB28', CONTACT: '#FF8042',
     }
-    return colors[type] || '#999999' // Grey default
+    return colors[type] || '#999999'
 }
 
-// Default data when no messages exist
 function getDefaultMessagesByDay(range: 'week' | 'month') {
     const days = range === 'month' ? 30 : 7
     const result = []
     const now = new Date()
-
     for (let i = days - 1; i >= 0; i--) {
         const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
         const dayName = d.toLocaleDateString('en-US', { weekday: 'short' })
         result.push({ day: dayName, incoming: 0, outgoing: 0 })
     }
-
     return result
 }
 
@@ -363,6 +388,6 @@ function getDefaultMessageTypes() {
     return [
         { name: 'Text', value: 0, color: 'hsl(var(--chart-1))' },
         { name: 'Images', value: 0, color: 'hsl(var(--chart-4))' },
-        { name: 'Documents', value: 0, color: 'hsl(var(--chart-3))' }
+        { name: 'Documents', value: 0, color: 'hsl(var(--chart-3))' },
     ]
 }

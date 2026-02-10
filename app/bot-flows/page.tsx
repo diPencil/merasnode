@@ -13,6 +13,7 @@ import { mockBotFlows } from "@/lib/mock-data"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
+import { authenticatedFetch } from "@/lib/auth"
 
 interface BotFlow {
   id: string
@@ -43,7 +44,7 @@ export default function BotFlowsPage() {
   const fetchBotFlows = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/bot-flows')
+      const response = await authenticatedFetch('/api/bot-flows')
       const data = await response.json()
 
       if (data.success && data.data?.length > 0) {
@@ -79,7 +80,7 @@ export default function BotFlowsPage() {
 
       // Update in database if exists, otherwise just update local state
       try {
-        const response = await fetch(`/api/bot-flows/${flowId}`, {
+        const response = await authenticatedFetch(`/api/bot-flows/${flowId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ isActive: newStatus })

@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
 import { Loader2, Upload } from "lucide-react"
 import Image from "next/image"
+import { authenticatedFetch } from "@/lib/auth"
 
 export default function ProfilePage() {
     const [profile, setProfile] = useState({
@@ -29,7 +30,7 @@ export default function ProfilePage() {
 
     const fetchProfile = async () => {
         try {
-            const response = await fetch('/api/profile')
+            const response = await authenticatedFetch('/api/profile')
             const data = await response.json()
 
             if (data.success) {
@@ -45,7 +46,7 @@ export default function ProfilePage() {
     const handleSave = async () => {
         try {
             setIsSaving(true)
-            const response = await fetch('/api/profile', {
+            const response = await authenticatedFetch('/api/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -11,7 +11,7 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { getUserRole } from "@/lib/auth"
+import { getUserRole, authenticatedFetch } from "@/lib/auth"
 
 interface DashboardStats {
   totalMessages: number
@@ -141,7 +141,7 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/dashboard/stats?range=${timeRange}`)
+      const response = await authenticatedFetch(`/api/dashboard/stats?range=${timeRange}`)
       const result = await response.json()
 
       if (result.success) {

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { formatDistanceToNow } from "date-fns"
 import { ar } from "date-fns/locale"
 import { useI18n } from "@/lib/i18n"
+import { authenticatedFetch } from "@/lib/auth"
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
@@ -50,7 +51,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
 
     const fetchAgents = async () => {
         try {
-            const res = await fetch('/api/users/agents')
+            const res = await authenticatedFetch('/api/users/agents')
             const data = await res.json()
             if (data.success) setAgents(data.data)
         } catch (error) {
@@ -60,7 +61,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
 
     const fetchBranches = async () => {
         try {
-            const res = await fetch('/api/branches')
+            const res = await authenticatedFetch('/api/branches')
             const data = await res.json()
             if (data.success) {
                 setBranches(data.branches || [])
@@ -73,7 +74,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
     const fetchNotes = async () => {
         setLoadingNotes(true)
         try {
-            const res = await fetch(`/api/contacts/${conversation.contactId}/notes`)
+            const res = await authenticatedFetch(`/api/contacts/${conversation.contactId}/notes`)
             const data = await res.json()
             if (data.success) setNotes(data.data)
         } catch (error) {
@@ -85,7 +86,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
 
     const handleAssignAgent = async (agentId: string) => {
         try {
-            const res = await fetch(`/api/conversations/${conversation.id}/assign`, {
+            const res = await authenticatedFetch(`/api/conversations/${conversation.id}/assign`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ agentId })
@@ -100,7 +101,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
 
     const handleUpdateBranch = async (branchId: string) => {
         try {
-            const res = await fetch(`/api/contacts/${conversation.contactId}`, {
+            const res = await authenticatedFetch(`/api/contacts/${conversation.contactId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ branchId })
@@ -117,7 +118,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
         if (!newNote.trim()) return
 
         try {
-            const res = await fetch(`/api/contacts/${conversation.contactId}/notes`, {
+            const res = await authenticatedFetch(`/api/contacts/${conversation.contactId}/notes`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content: newNote })
@@ -135,7 +136,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
     const handleUpdateTags = async () => {
         try {
             const tags = tagInput.split(',').map(t => t.trim()).filter(Boolean)
-            const res = await fetch(`/api/contacts/${conversation.contactId}`, {
+            const res = await authenticatedFetch(`/api/contacts/${conversation.contactId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tags })
@@ -194,7 +195,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                         <span className="text-[10px] uppercase font-bold text-purple-500 tracking-wider">{t("statusLabel")}</span>
                         <Select onValueChange={(val) => {
                             // Update tags via API
-                            fetch(`/api/contacts/${conversation.contactId}`, {
+                            authenticatedFetch(`/api/contacts/${conversation.contactId}`, {
                                 method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ tags: [val] }) // Start with simple single tag

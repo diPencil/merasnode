@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
+import { authenticatedFetch } from "@/lib/auth"
 
 
 export default function FlowBuilderPage() {
@@ -53,7 +54,7 @@ export default function FlowBuilderPage() {
       // Wait, route.ts has PATCH for update.
       // Let's assume we fetch all and find it for now to avoid changing backend if possible, or try to fetch.
 
-      const response = await fetch(`/api/bot-flows`)
+      const response = await authenticatedFetch(`/api/bot-flows`)
       const data = await response.json()
 
       if (data.success && data.data) {
@@ -99,7 +100,7 @@ export default function FlowBuilderPage() {
       // If editing, we need to send ID in body (as per route.ts PATCH handler)
       // If creating, we don't send ID
 
-      const response = await fetch('/api/bot-flows', {
+      const response = await authenticatedFetch('/api/bot-flows', {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(flow)
