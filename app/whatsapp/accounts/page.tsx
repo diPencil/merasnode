@@ -40,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Smartphone, CheckCircle2, XCircle, Clock, Copy, QrCode, RefreshCw, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
+import { authenticatedFetch } from "@/lib/auth"
 
 interface WhatsAppAccount {
   id: string
@@ -76,7 +77,7 @@ export default function AccountsPage() {
   const fetchAccounts = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/whatsapp/accounts')
+      const response = await authenticatedFetch('/api/whatsapp/accounts')
       const data = await response.json()
 
       if (data.success) {
@@ -110,7 +111,7 @@ export default function AccountsPage() {
     }
 
     try {
-      const response = await fetch('/api/whatsapp/accounts', {
+      const response = await authenticatedFetch('/api/whatsapp/accounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -123,7 +124,7 @@ export default function AccountsPage() {
 
       if (data.success) {
         try {
-          await fetch('/api/whatsapp/reload', { method: 'POST' })
+          await authenticatedFetch('/api/whatsapp/reload', { method: 'POST' })
         } catch {
           // reload optional; service may still init account on first Link
         }
@@ -169,7 +170,7 @@ export default function AccountsPage() {
     if ((qrGenerated || status === 'INITIALIZING' || status === 'WAITING_FOR_SCAN') && idToPoll) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch(`/api/whatsapp/auth?accountId=${encodeURIComponent(idToPoll)}`)
+          const res = await authenticatedFetch(`/api/whatsapp/auth?accountId=${encodeURIComponent(idToPoll)}`)
           const data = await res.json()
 
           if (data.status) {
@@ -200,7 +201,7 @@ export default function AccountsPage() {
     if (!idToPoll) return
     interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/whatsapp/auth?accountId=${encodeURIComponent(idToPoll)}`)
+        const res = await authenticatedFetch(`/api/whatsapp/auth?accountId=${encodeURIComponent(idToPoll)}`)
         const data = await res.json()
         if (data.status) setLinkingStatus(data.status)
         if (data.qrCode) setLinkingQrCode(data.qrCode)
@@ -225,7 +226,7 @@ export default function AccountsPage() {
     if (!accountToDelete) return
 
     try {
-      const response = await fetch(`/api/whatsapp/accounts?id=${accountToDelete}`, {
+      const response = await authenticatedFetch(`/api/whatsapp/accounts?id=${accountToDelete}`, {
         method: 'DELETE',
       })
       const data = await response.json()
@@ -269,7 +270,7 @@ export default function AccountsPage() {
     try {
       let accountId = qrAccountId
       if (!accountId) {
-        const createRes = await fetch('/api/whatsapp/accounts', {
+        const createRes = await authenticatedFetch('/api/whatsapp/accounts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -287,7 +288,7 @@ export default function AccountsPage() {
         setQrAccountId(accountId)
         fetchAccounts()
       }
-      const response = await fetch('/api/whatsapp/auth', {
+      const response = await authenticatedFetch('/api/whatsapp/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'init', accountId, force: true })
@@ -572,7 +573,7 @@ export default function AccountsPage() {
                                   setLinkingQrCode(null)
                                   setLinkingStatus('INITIALIZING')
                                   try {
-                                    const res = await fetch('/api/whatsapp/auth', {
+                                    const res = await authenticatedFetch('/api/whatsapp/auth', {
                                       method: 'POST',
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({ action: 'init', accountId: account.id, force: true })

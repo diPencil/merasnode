@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { authenticatedFetch } from "@/lib/auth"
 import { useI18n } from "@/lib/i18n"
 import { Search, Plus, CheckCircle2, Clock, XCircle } from "lucide-react"
 
@@ -61,7 +62,7 @@ export default function TemplatesPage() {
   const fetchTemplates = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/templates')
+      const response = await authenticatedFetch('/api/templates')
       const data = await response.json()
 
       if (data.success) {
@@ -92,7 +93,7 @@ export default function TemplatesPage() {
       const url = editingId ? `/api/templates/${editingId}` : '/api/templates'
       const method = editingId ? 'PUT' : 'POST'
 
-      const response = await fetch(url, {
+      const response = await authenticatedFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTemplate)

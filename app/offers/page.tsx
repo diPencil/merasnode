@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
+import { authenticatedFetch } from "@/lib/auth"
 import { format } from "date-fns"
 import {
     Select,
@@ -77,7 +78,7 @@ export default function OffersPage() {
     const fetchOffers = async () => {
         try {
             setIsLoading(true)
-            const response = await fetch("/api/offers")
+            const response = await authenticatedFetch("/api/offers")
             const data = await response.json()
             if (data.success) {
                 setOffers(data.offers)
@@ -96,7 +97,7 @@ export default function OffersPage() {
 
     const fetchContacts = async () => {
         try {
-            const response = await fetch("/api/contacts")
+            const response = await authenticatedFetch("/api/contacts")
             const data = await response.json()
             if (data.success) {
                 setContacts(data.data || [])
@@ -116,7 +117,7 @@ export default function OffersPage() {
             const url = editingOffer ? `/api/offers/${editingOffer.id}` : "/api/offers"
             const method = editingOffer ? "PUT" : "POST"
 
-            const response = await fetch(url, {
+            const response = await authenticatedFetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),
@@ -147,7 +148,7 @@ export default function OffersPage() {
         if (!confirm(t("confirmDeleteOffer"))) return
 
         try {
-            const response = await fetch(`/api/offers/${id}`, { method: "DELETE" })
+            const response = await authenticatedFetch(`/api/offers/${id}`, { method: "DELETE" })
             const data = await response.json()
             if (data.success) {
                 toast({
@@ -212,7 +213,7 @@ export default function OffersPage() {
             if (!contact) throw new Error("Contact not found")
 
             // Get or create conversation for this contact
-            const conversationsResponse = await fetch('/api/conversations')
+            const conversationsResponse = await authenticatedFetch('/api/conversations')
             const conversationsData = await conversationsResponse.json()
 
             let conversation = conversationsData.conversations?.find(
@@ -221,7 +222,7 @@ export default function OffersPage() {
 
             if (!conversation) {
                 // Create new conversation
-                const createConvResponse = await fetch('/api/conversations', {
+                const createConvResponse = await authenticatedFetch('/api/conversations', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contactId })
@@ -234,7 +235,7 @@ export default function OffersPage() {
             // Send offer as message
             const messageContent = `🎁 *${offer.title}*\n\n${offer.description ? offer.description + '\n\n' : ''}${offer.content}\n\n📅 Valid: ${format(new Date(offer.validFrom), "MMM dd")} - ${format(new Date(offer.validTo), "MMM dd, yyyy")}`
 
-            const response = await fetch('/api/messages', {
+            const response = await authenticatedFetch('/api/messages', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -27,6 +27,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
 import { Search, Plus, MoreVertical, Mail, Phone, Tag, Download, Upload, ShieldOff, Users } from "lucide-react"
+import { authenticatedFetch } from "@/lib/auth"
 
 interface Contact {
   id: string
@@ -76,7 +77,7 @@ export default function ContactsPage() {
   const fetchContacts = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/contacts')
+      const response = await authenticatedFetch('/api/contacts')
       const data = await response.json()
 
       if (data.success) {
@@ -188,7 +189,7 @@ export default function ContactsPage() {
         }
 
         setIsLoading(true)
-        const response = await fetch('/api/contacts', {
+        const response = await authenticatedFetch('/api/contacts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(parsedContacts)
@@ -227,7 +228,7 @@ export default function ContactsPage() {
   const handleSendMessage = async (contactId: string) => {
     // ... existing logic ...
     try {
-      const response = await fetch('/api/conversations', {
+      const response = await authenticatedFetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contactId })
@@ -251,7 +252,7 @@ export default function ContactsPage() {
 
   const handleDeleteContact = async (contactId: string) => {
     try {
-      const response = await fetch(`/api/contacts/${contactId}`, {
+      const response = await authenticatedFetch(`/api/contacts/${contactId}`, {
         method: 'DELETE'
       })
 
@@ -305,7 +306,7 @@ export default function ContactsPage() {
           : editContact.tags.split(',').map(t => t.trim()))
         : [];
 
-      const response = await fetch(`/api/contacts/${editContact.id}`, {
+      const response = await authenticatedFetch(`/api/contacts/${editContact.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -367,7 +368,7 @@ export default function ContactsPage() {
         : [...currentTags, 'blocked']
 
       setIsSubmitting(true)
-      const response = await fetch(`/api/contacts/${contact.id}`, {
+      const response = await authenticatedFetch(`/api/contacts/${contact.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -433,7 +434,7 @@ export default function ContactsPage() {
 
     try {
       setIsSubmitting(true)
-      const response = await fetch('/api/contacts', {
+      const response = await authenticatedFetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

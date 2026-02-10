@@ -40,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Smartphone, CheckCircle2, XCircle, Clock, Copy, QrCode, RefreshCw, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
+import { authenticatedFetch } from "@/lib/auth"
 
 interface WhatsAppAccount {
   id: string
@@ -73,7 +74,7 @@ export default function AccountsPage() {
   const fetchAccounts = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/whatsapp/accounts')
+      const response = await authenticatedFetch('/api/whatsapp/accounts')
       const data = await response.json()
 
       if (data.success) {
@@ -117,7 +118,7 @@ export default function AccountsPage() {
     }
 
     try {
-      const response = await fetch('/api/whatsapp/accounts', {
+      const response = await authenticatedFetch('/api/whatsapp/accounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -172,7 +173,7 @@ export default function AccountsPage() {
       interval = setInterval(async () => {
         try {
           const url = createdAccountId ? `/api/whatsapp/auth?accountId=${createdAccountId}` : '/api/whatsapp/auth'
-          const res = await fetch(url)
+          const res = await authenticatedFetch(url)
           const data = await res.json()
 
           if (data.status) {
@@ -204,7 +205,7 @@ export default function AccountsPage() {
     if (!accountToDelete) return
 
     try {
-      const response = await fetch(`/api/whatsapp/accounts?id=${accountToDelete}`, {
+      const response = await authenticatedFetch(`/api/whatsapp/accounts?id=${accountToDelete}`, {
         method: 'DELETE',
       })
       const data = await response.json()
@@ -253,7 +254,7 @@ export default function AccountsPage() {
 
       // 1. Create account first if not already created
       if (!accountId) {
-        const createRes = await fetch('/api/whatsapp/accounts', {
+        const createRes = await authenticatedFetch('/api/whatsapp/accounts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -276,7 +277,7 @@ export default function AccountsPage() {
       }
 
       // 2. Start initialization
-      const response = await fetch('/api/whatsapp/auth', {
+      const response = await authenticatedFetch('/api/whatsapp/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'init', accountId, force: true })

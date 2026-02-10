@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getUserRole } from "@/lib/auth"
+import { getUserRole, authenticatedFetch } from "@/lib/auth"
 import { AppLayout } from "@/components/app-layout"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -108,7 +108,7 @@ export default function BookingsPage() {
 
     const fetchAgents = async () => {
         try {
-            const response = await fetch('/api/users/agents')
+            const response = await authenticatedFetch('/api/users/agents')
             const data = await response.json()
             if (data.success) {
                 setAgents(data.data)
@@ -121,7 +121,7 @@ export default function BookingsPage() {
     const fetchBookings = async () => {
         try {
             setIsLoading(true)
-            const response = await fetch('/api/bookings')
+            const response = await authenticatedFetch('/api/bookings')
             const data = await response.json()
 
             if (data.success) {
@@ -162,7 +162,7 @@ export default function BookingsPage() {
 
     const confirmCancel = async () => {
         try {
-            const response = await fetch(`/api/bookings/${selectedBookingId}`, {
+            const response = await authenticatedFetch(`/api/bookings/${selectedBookingId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'CANCELLED' })
@@ -212,7 +212,7 @@ export default function BookingsPage() {
 
     const handleSubmitRequest = async () => {
         try {
-            const response = await fetch('/api/notifications/send-to-admins', {
+            const response = await authenticatedFetch('/api/notifications/send-to-admins', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -256,7 +256,7 @@ export default function BookingsPage() {
                 return
             }
 
-            const response = await fetch(`/api/bookings/${booking.id}`, {
+            const response = await authenticatedFetch(`/api/bookings/${booking.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

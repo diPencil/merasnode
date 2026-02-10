@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { logActivity } from "@/lib/logger"
+import {
+    requireAuthWithScope,
+    unauthorizedResponse,
+    forbiddenResponse,
+} from "@/lib/api-auth"
 
-// GET - جلب جميع جهات الاتصال
-export async function GET() {
+// GET - Fetch contacts (scoped by branch)
+export async function GET(request: NextRequest) {
     try {
+        const scope = await requireAuthWithScope(request)
+
+        // Build where clause based on role
+        const where: any = {}
+        if (scope.role !== 'ADMIN') {
+            where.branchId = { in: scope.branchIds }
+        }
+
         const contacts = await prisma.contact.findMany({
+            where,
             orderBy: { createdAt: 'desc' }
         })
 
@@ -15,30 +29,37 @@ export async function GET() {
             count: contacts.length
         })
     } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === 'Unauthorized') return unauthorizedResponse()
+            if (error.message === 'Forbidden') return forbiddenResponse()
+        }
         console.error('Error fetching contacts:', error)
         return NextResponse.json(
-            {
-                success: false,
-                error: "Failed to fetch contacts"
-            },
+            { success: false, error: "Failed to fetch contacts" },
             { status: 500 }
         )
     }
 }
 
-// POST - إضافة جهة اتصال جديدة
+// POST - Create contact (auth required, auto-assigns branch from user scope)
 export async function POST(request: NextRequest) {
     try {
+        const scope = await requireAuthWithScope(request)
         const body = await request.json()
 
         // Check for bulk import (array)
         if (Array.isArray(body)) {
+            // Determine default branchId for bulk imports
+            const defaultBranchId = scope.role !== 'ADMIN' && scope.branchIds.length > 0
+                ? scope.branchIds[0] : null
+
             const validContacts = body.filter((c: any) => c.name && c.phone).map((c: any) => ({
                 name: c.name,
                 phone: String(c.phone),
                 email: c.email || null,
                 tags: c.tags ? (Array.isArray(c.tags) ? c.tags.join(',') : c.tags) : null,
                 notes: c.notes || null,
+                branchId: c.branchId || defaultBranchId,
                 createdAt: new Date(),
                 updatedAt: new Date()
             }))
@@ -50,10 +71,9 @@ export async function POST(request: NextRequest) {
                 )
             }
 
-            // Using createMany for better performance
             const result = await prisma.contact.createMany({
                 data: validContacts,
-                skipDuplicates: true // Skip contacts with existing unique fields (like phone)
+                skipDuplicates: true
             })
 
             await logActivity({
@@ -70,16 +90,23 @@ export async function POST(request: NextRequest) {
             }, { status: 201 })
         }
 
-        // Single contact creation (existing logic)
-        // التحقق من البيانات المطلوبة
+        // Single contact creation
         if (!body.name || !body.phone) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: "Name and phone are required"
-                },
+                { success: false, error: "Name and phone are required" },
                 { status: 400 }
             )
+        }
+
+        // Auto-assign branch from user scope if not explicitly provided
+        let branchId = body.branchId || null
+        if (!branchId && scope.role !== 'ADMIN' && scope.branchIds.length > 0) {
+            branchId = scope.branchIds[0]
+        }
+
+        // Non-admin: verify the branchId is within their scope
+        if (branchId && scope.role !== 'ADMIN' && !scope.branchIds.includes(branchId)) {
+            return forbiddenResponse('You do not have access to this branch')
         }
 
         const contact = await prisma.contact.create({
@@ -89,11 +116,11 @@ export async function POST(request: NextRequest) {
                 email: body.email || null,
                 tags: body.tags && body.tags.length > 0 ? body.tags : null,
                 notes: body.notes || null,
-                followUpDate: body.followUpDate ? new Date(body.followUpDate) : null
+                followUpDate: body.followUpDate ? new Date(body.followUpDate) : null,
+                branchId,
             }
         })
 
-        // Log activity
         await logActivity({
             action: "CREATE",
             entityType: "Contact",
@@ -130,24 +157,21 @@ export async function POST(request: NextRequest) {
             data: contact
         }, { status: 201 })
     } catch (error: any) {
+        if (error instanceof Error) {
+            if (error.message === 'Unauthorized') return unauthorizedResponse()
+            if (error.message === 'Forbidden') return forbiddenResponse()
+        }
         console.error('Error creating contact:', error)
 
-        // التحقق من خطأ رقم مكرر
         if (error.code === 'P2002') {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: "Phone number already exists"
-                },
+                { success: false, error: "Phone number already exists" },
                 { status: 409 }
             )
         }
 
         return NextResponse.json(
-            {
-                success: false,
-                error: "Failed to create contact"
-            },
+            { success: false, error: "Failed to create contact" },
             { status: 500 }
         )
     }

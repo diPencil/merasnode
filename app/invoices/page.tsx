@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { authenticatedFetch } from "@/lib/auth"
 import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -87,7 +88,7 @@ export default function InvoicesPage() {
     const fetchInvoices = async () => {
         try {
             setIsLoading(true)
-            const response = await fetch("/api/invoices")
+            const response = await authenticatedFetch("/api/invoices")
             const data = await response.json()
             if (data.success) {
                 setInvoices(data.invoices)
@@ -101,7 +102,7 @@ export default function InvoicesPage() {
 
     const fetchContacts = async () => {
         try {
-            const response = await fetch("/api/contacts")
+            const response = await authenticatedFetch("/api/contacts")
             const data = await response.json()
             if (data.success) {
                 setContacts(data.contacts)
@@ -114,7 +115,7 @@ export default function InvoicesPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         try {
-            const response = await fetch("/api/invoices", {
+            const response = await authenticatedFetch("/api/invoices", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -181,7 +182,7 @@ export default function InvoicesPage() {
 
         try {
             // Get or create conversation for this contact
-            const conversationsResponse = await fetch('/api/conversations')
+            const conversationsResponse = await authenticatedFetch('/api/conversations')
             const conversationsData = await conversationsResponse.json()
 
             let conversation = conversationsData.conversations?.find(
@@ -190,7 +191,7 @@ export default function InvoicesPage() {
 
             if (!conversation) {
                 // Create new conversation
-                const createConvResponse = await fetch('/api/conversations', {
+                const createConvResponse = await authenticatedFetch('/api/conversations', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contactId: selectedInvoice.contactId })
@@ -209,7 +210,7 @@ export default function InvoicesPage() {
                 `Please proceed with payment at your earliest convenience.\n\n` +
                 `Thank you for your business! 🙏`
 
-            const response = await fetch('/api/messages', {
+            const response = await authenticatedFetch('/api/messages', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

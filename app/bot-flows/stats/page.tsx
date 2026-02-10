@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AppLayout } from "@/components/app-layout"
 import { useI18n } from "@/lib/i18n"
+import { authenticatedFetch } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -69,7 +70,7 @@ export default function BotFlowStatsPage() {
 
         try {
             setIsLoading(true)
-            const res = await fetch(`/api/bot-flows/stats/${flowId}`)
+            const res = await authenticatedFetch(`/api/bot-flows/stats/${flowId}`)
             const data = await res.json()
 
             if (data.error) throw new Error(data.error)

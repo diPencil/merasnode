@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { ArrowLeft, Plus, Trash2, Save } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
+import { authenticatedFetch } from "@/lib/auth"
 
 interface Step {
   id: string
@@ -80,7 +81,7 @@ export default function CreateBotFlowPage() {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/bot-flows', {
+      const response = await authenticatedFetch('/api/bot-flows', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
