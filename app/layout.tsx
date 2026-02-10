@@ -39,9 +39,13 @@ export default function RootLayout({
       <body className="font-sans antialiased" suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
           <I18nProvider>
-            <AuthGuard>
-              {children}
-            </AuthGuard>
+            <div className="app-root">
+              <AuthGuard>
+                <div className="app-content flex-1 flex flex-col min-h-0 overflow-hidden">
+                  {children}
+                </div>
+              </AuthGuard>
+            </div>
             <Toaster />
           </I18nProvider>
         </ThemeProvider>

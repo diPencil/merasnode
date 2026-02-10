@@ -876,10 +876,10 @@ export default function InboxPage() {
 
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 
-  // Dynamic "last active" from conversation and messages timestamps (refreshes every 60s)
+  // Dynamic "last active" from conversation and messages timestamps (refreshes every 30s)
   const [lastActiveTick, setLastActiveTick] = useState(0)
   useEffect(() => {
-    const id = setInterval(() => setLastActiveTick((n) => n + 1), 60_000)
+    const id = setInterval(() => setLastActiveTick((n) => n + 1), 30_000)
     return () => clearInterval(id)
   }, [])
   const lastActiveLabel = useMemo(() => {
@@ -902,7 +902,7 @@ export default function InboxPage() {
 
   return (
     <AppLayout title={t("inbox")} fullBleed>
-      <div className="flex h-full flex-col md:flex-row bg-background md:border md:rounded-xl overflow-hidden md:shadow-sm relative md:m-2 md:h-[calc(100vh-1rem)] min-h-0">
+      <div className="flex h-full flex-col md:flex-row bg-background md:border md:rounded-xl overflow-hidden md:shadow-sm relative md:m-2 min-h-0">
 
         {/* LEFT COLUMN: Conversations List — fixed width */}
         {/* On Mobile: Show this ONLY if no conversation is selected */}
