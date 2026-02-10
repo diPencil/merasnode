@@ -1,6 +1,6 @@
 "use client"
 
-import { logout, getUser } from "@/lib/auth"
+import { logout, getUser, authenticatedFetch } from "@/lib/auth"
 import { Search, Calendar, Globe, Bell, X, Check, Trash2, CheckCircle2, User, Settings, KeyRound, LogOut } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
@@ -69,7 +69,7 @@ export function TopBar({ title, showSearch = true, isMobile = false }: TopBarPro
     try {
       if (!currentUser?.id) return
 
-      const response = await fetch(`/api/notifications?userId=${currentUser.id}`)
+      const response = await authenticatedFetch(`/api/notifications?userId=${currentUser.id}`)
       const data = await response.json()
       if (data.success) {
         const fetchedNotifications = data.notifications || []
@@ -115,7 +115,7 @@ export function TopBar({ title, showSearch = true, isMobile = false }: TopBarPro
 
   const markAllAsRead = async () => {
     try {
-      await fetch('/api/notifications', { method: 'PUT' })
+      await authenticatedFetch('/api/notifications', { method: 'PUT' })
       setUnreadCount(0)
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
     } catch (error) {
@@ -125,7 +125,7 @@ export function TopBar({ title, showSearch = true, isMobile = false }: TopBarPro
 
   const clearAllNotifications = async () => {
     try {
-      await fetch('/api/notifications', { method: 'DELETE' })
+      await authenticatedFetch('/api/notifications', { method: 'DELETE' })
       setNotifications([])
       setUnreadCount(0)
     } catch (error) {
@@ -136,7 +136,7 @@ export function TopBar({ title, showSearch = true, isMobile = false }: TopBarPro
   const deleteNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
-      await fetch(`/api/notifications/${id}`, { method: 'DELETE' })
+      await authenticatedFetch(`/api/notifications/${id}`, { method: 'DELETE' })
       setNotifications(prev => prev.filter(n => n.id !== id))
       setUnreadCount(prev => {
         const notif = notifications.find(n => n.id === id)

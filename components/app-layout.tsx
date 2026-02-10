@@ -6,6 +6,7 @@ import { NavigationRail } from "./navigation-rail"
 import { MobileBottomNav } from "./mobile-bottom-nav"
 import { TopBar } from "./top-bar"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { cn } from "@/lib/utils"
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -17,7 +18,7 @@ export function AppLayout({ children, title, showSearch = false }: AppLayoutProp
   const isMobile = useIsMobile()
 
   // iOS-safe viewport height: keep --app-vh in sync with real innerHeight.
-  // Only needed on mobile; desktop uses regular viewport behavior.
+  // Only needed on mobile; desktop uses regular 100vh.
   useEffect(() => {
     if (!isMobile) return
 
@@ -38,12 +39,12 @@ export function AppLayout({ children, title, showSearch = false }: AppLayoutProp
 
   return (
     <div className="app-shell flex overflow-hidden bg-background flex-col md:flex-row">
-      {/* Desktop: Side navigation rail - hidden on mobile via CSS */}
-      <div className="hidden md:block shrink-0">
+      {/* Desktop sidebar navigation */}
+      <div className="hidden md:flex shrink-0">
         <NavigationRail />
       </div>
 
-      {/* Main Content Area */}
+      {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0 text-start">
         <TopBar title={title} showSearch={showSearch} isMobile={isMobile} />
 
@@ -51,8 +52,10 @@ export function AppLayout({ children, title, showSearch = false }: AppLayoutProp
           <div
             className={cn(
               "mx-auto w-full max-w-[1400px] text-start",
-              "p-4 sm:p-6 md:p-8",
-              "pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-8"
+              "p-4 sm:p-6 md:p-6 lg:p-8",
+              // Mobile: extra bottom padding for bottom nav + safe area
+              // Desktop: normal padding
+              "pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-6 lg:pb-8"
             )}
           >
             {children}
@@ -60,14 +63,10 @@ export function AppLayout({ children, title, showSearch = false }: AppLayoutProp
         </main>
       </div>
 
-      {/* Mobile: Bottom navigation - visible only on mobile via CSS */}
+      {/* Mobile bottom navigation */}
       <div className="md:hidden">
         <MobileBottomNav />
       </div>
     </div>
   )
-}
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ")
 }

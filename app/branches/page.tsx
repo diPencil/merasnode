@@ -385,14 +385,77 @@ export default function BranchesPage() {
                                 )}
                             </div>
                         ) : (
+                            <>
+                            {/* Mobile card view */}
+                            <div className="md:hidden space-y-3 p-4">
+                                {filteredBranches.map((branch, index) => (
+                                    <div key={branch.id} className="rounded-xl border bg-card p-4 space-y-3">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
+                                                    <Building2 className="h-5 w-5" />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="font-semibold truncate">{branch.name}</div>
+                                                    <div className="text-xs text-muted-foreground">ID: {branch.id.slice(0, 8)}</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {branch.isActive ? (
+                                                    <Badge variant="default" className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 border-none shadow-none font-normal text-xs">
+                                                        {t("active")}
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="secondary" className="text-muted-foreground bg-muted font-normal text-xs">
+                                                        {t("inactive")}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5 text-sm">
+                                            {branch.phone && (
+                                                <div className="flex items-center gap-2 text-muted-foreground">
+                                                    <Phone className="h-3.5 w-3.5 shrink-0" />
+                                                    <span>{branch.phone}</span>
+                                                </div>
+                                            )}
+                                            {branch.email && (
+                                                <div className="flex items-center gap-2 text-muted-foreground">
+                                                    <Mail className="h-3.5 w-3.5 shrink-0" />
+                                                    <span className="truncate">{branch.email}</span>
+                                                </div>
+                                            )}
+                                            {branch.address && (
+                                                <div className="flex items-center gap-2 text-muted-foreground">
+                                                    <MapPin className="h-3.5 w-3.5 shrink-0" />
+                                                    <span className="truncate">{branch.address}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center justify-end gap-2 pt-1 border-t">
+                                            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openEditDialog(branch)}>
+                                                <Edit className="me-1.5 h-3.5 w-3.5" />
+                                                {t("edit")}
+                                            </Button>
+                                            <Button variant="ghost" size="sm" className="h-8 text-xs text-destructive hover:text-destructive" onClick={() => handleDelete(branch.id)}>
+                                                <Trash2 className="me-1.5 h-3.5 w-3.5" />
+                                                {t("delete")}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Desktop table view */}
+                            <div className="hidden md:block table-scroll">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-muted/30 hover:bg-muted/30">
                                         <TableHead className="w-[50px]">#</TableHead>
-                                        <TableHead className="w-[20%]">{t("branchName")}</TableHead>
+                                        <TableHead className="w-[20%] min-w-[180px]">{t("branchName")}</TableHead>
                                         <TableHead className="w-[100px]">{t("status")}</TableHead>
-                                        <TableHead className="w-[25%]">{t("contact")}</TableHead>
-                                        <TableHead>{t("address")}</TableHead>
+                                        <TableHead className="w-[25%] min-w-[160px]">{t("contact")}</TableHead>
+                                        <TableHead className="min-w-[150px]">{t("address")}</TableHead>
                                         <TableHead className="text-end w-[80px]">{t("actionsLabel")}</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -404,11 +467,11 @@ export default function BranchesPage() {
                                             </TableCell>
                                             <TableCell className="font-medium">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
                                                         <Building2 className="h-5 w-5" />
                                                     </div>
-                                                    <div>
-                                                        <div className="font-semibold">{branch.name}</div>
+                                                    <div className="min-w-0">
+                                                        <div className="font-semibold truncate">{branch.name}</div>
                                                         <div className="text-xs text-muted-foreground">ID: {branch.id.slice(0, 8)}</div>
                                                     </div>
                                                 </div>
@@ -428,14 +491,14 @@ export default function BranchesPage() {
                                                 <div className="flex flex-col gap-1 text-sm">
                                                     {branch.phone && (
                                                         <div className="flex items-center gap-2 text-muted-foreground">
-                                                            <Phone className="h-3.5 w-3.5" />
+                                                            <Phone className="h-3.5 w-3.5 shrink-0" />
                                                             <span>{branch.phone}</span>
                                                         </div>
                                                     )}
                                                     {branch.email && (
                                                         <div className="flex items-center gap-2 text-muted-foreground">
-                                                            <Mail className="h-3.5 w-3.5" />
-                                                            <span>{branch.email}</span>
+                                                            <Mail className="h-3.5 w-3.5 shrink-0" />
+                                                            <span className="truncate">{branch.email}</span>
                                                         </div>
                                                     )}
                                                     {!branch.phone && !branch.email && (
@@ -446,8 +509,8 @@ export default function BranchesPage() {
                                             <TableCell>
                                                 {branch.address ? (
                                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                        <MapPin className="h-3.5 w-3.5" />
-                                                        <span className="truncate max-w-[200px]" title={branch.address}>
+                                                        <MapPin className="h-3.5 w-3.5 shrink-0" />
+                                                        <span className="truncate max-w-[250px]" title={branch.address}>
                                                             {branch.address}
                                                         </span>
                                                     </div>
@@ -484,6 +547,8 @@ export default function BranchesPage() {
                                     ))}
                                 </TableBody>
                             </Table>
+                            </div>
+                            </>
                         )}
                     </div>
                 </Card>

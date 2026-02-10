@@ -429,7 +429,7 @@ export default function UsersPage() {
               </div>
 
               {/* Desktop: Table */}
-              <div className="hidden md:block">
+              <div className="hidden md:block table-scroll">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border/50">

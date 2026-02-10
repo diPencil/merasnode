@@ -146,16 +146,24 @@
   }
 
   /* App shell height
-     - Desktop/tablet: regular viewport height
-     - Mobile: dynamic, JS-updated --app-vh for keyboard-safe layout
+     - Desktop/tablet (>=768px): fixed 100vh, no JS variable needed
+     - Mobile (<768px): dynamic, JS-updated --app-vh for keyboard-safe layout
   */
   .app-shell {
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
   }
 
   @media (max-width: 767px) {
     .app-shell {
-      min-height: var(--app-vh);
+      height: var(--app-vh);
+      max-height: var(--app-vh);
     }
+  }
+
+  /* Desktop table scroll wrapper */
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
