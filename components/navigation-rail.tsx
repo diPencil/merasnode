@@ -129,10 +129,12 @@ export function NavigationRail() {
         <aside
             className={cn(
                 "flex w-[240px] h-full flex-col bg-sidebar overflow-hidden",
+                /* overscroll-behavior prevents scroll chaining from nav list to page */
+                "overscroll-contain",
                 dir === "rtl" ? "border-s border-border/40" : "border-e border-border/40",
             )}
         >
-            {/* Logo / Brand */}
+            {/* ─── Logo / Brand (FIXED — never scrolls) ─── */}
             <div className="flex h-16 items-center gap-2.5 border-b border-border/40 px-4 shrink-0">
                 {companyDisplayType === "logo" && companyLogo ? (
                     <>
@@ -159,7 +161,7 @@ export function NavigationRail() {
                 )}
             </div>
 
-            {/* Quick Actions */}
+            {/* ─── Quick Actions (FIXED — never scrolls) ─── */}
             <div className="flex flex-col gap-1.5 p-3 border-b border-border/40 shrink-0">
                 <Button
                     variant="ghost"
@@ -181,8 +183,8 @@ export function NavigationRail() {
                 </Button>
             </div>
 
-            {/* Navigation Menu */}
-            <nav className="flex-1 overflow-y-auto overscroll-contain py-2 px-3 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+            {/* ─── Navigation Menu (SCROLLABLE — only section that scrolls) ─── */}
+            <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-2 px-3 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
                 {filteredGroups.map((group, groupIndex) => (
                     <div key={group.id} className={groupIndex > 0 ? "mt-4" : ""}>
                         {/* Section Label */}
@@ -228,7 +230,7 @@ export function NavigationRail() {
                 ))}
             </nav>
 
-            {/* Bottom: User Info + Settings + Logout */}
+            {/* ─── Bottom: User Info + Settings + Logout (FIXED — never scrolls) ─── */}
             <div className="border-t border-border/40 shrink-0">
                 {/* Current User */}
                 {currentUser && (

@@ -467,7 +467,7 @@ export default function BookingsPage() {
                                         <TableCell>{booking.branch || '-'}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center text-muted-foreground text-sm">
-                                                <User className="mr-1 h-3 w-3" />
+                                                <User className="me-1 h-3 w-3" />
                                                 {booking.agent?.name || t("unassigned")}
                                             </div>
                                         </TableCell>
@@ -479,7 +479,7 @@ export default function BookingsPage() {
                                         <TableCell>
                                             <div className="flex flex-col text-sm">
                                                 <span className="flex items-center">
-                                                    <Calendar className="mr-1 h-3 w-3 text-muted-foreground" />
+                                                    <Calendar className="me-1 h-3 w-3 text-muted-foreground" />
                                                     {format(new Date(booking.date), "MMM d, yyyy")}
                                                 </span>
                                                 <span className="text-[10px] text-muted-foreground pl-4">
@@ -502,7 +502,7 @@ export default function BookingsPage() {
                                                 {booking.status}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-end">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button variant="ghost" className="h-8 w-8 p-0">

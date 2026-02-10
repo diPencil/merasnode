@@ -124,7 +124,7 @@ export default function CreateBotFlowPage() {
             onClick={() => router.back()}
             className="rounded-full"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-4 w-4 me-2" />
             Back
           </Button>
           <div>
@@ -193,7 +193,7 @@ export default function CreateBotFlowPage() {
                   <CardDescription>Define the actions your bot will take</CardDescription>
                 </div>
                 <Button type="button" onClick={addStep} className="rounded-full">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 me-2" />
                   Add Step
                 </Button>
               </div>
@@ -299,12 +299,12 @@ export default function CreateBotFlowPage() {
             >
               {isSubmitting ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin me-2" />
                   Creating...
                 </>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
+                  <Save className="h-4 w-4 me-2" />
                   Create Flow
                 </>
               )}

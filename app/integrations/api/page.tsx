@@ -177,7 +177,7 @@ export default function ApiKeysPage() {
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                         <DialogTrigger asChild>
                             <Button>
-                                <Plus className="mr-2 h-4 w-4" />
+                                <Plus className="me-2 h-4 w-4" />
                                 Create API Key
                             </Button>
                         </DialogTrigger>
@@ -217,7 +217,7 @@ export default function ApiKeysPage() {
                                     disabled={isCreating}
                                     className="w-full"
                                 >
-                                    {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {isCreating && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                                     Generate Key
                                 </Button>
                             </div>

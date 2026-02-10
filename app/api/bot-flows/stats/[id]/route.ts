@@ -1,25 +1,38 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { startOfDay, subDays, format, eachDayOfInterval } from 'date-fns'
 import { prisma } from '@/lib/db'
+import { requireAuthWithScope, unauthorizedResponse } from '@/lib/api-auth'
 
 export async function GET(
-    request: Request,
+    request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
         const { id } = params
 
-        // 1. Get basic counts
+        // ── Auth + RBAC ──
+        const scope = await requireAuthWithScope(request)
+
+        // Build scope filter for flow interactions based on role
+        const interactionScope: Record<string, any> = { flowId: id }
+        if (scope.role === 'SUPERVISOR') {
+            interactionScope.contact = { branchId: { in: scope.branchIds } }
+        } else if (scope.role === 'AGENT') {
+            interactionScope.contact = { branchId: { in: scope.branchIds } }
+        }
+        // ADMIN: no extra filter
+
+        // 1. Get basic counts — scoped
         const totalInteractions = await prisma.flowInteraction.count({
-            where: { flowId: id }
+            where: interactionScope
         })
 
         const completions = await prisma.flowInteraction.count({
-            where: { flowId: id, action: 'COMPLETED' }
+            where: { ...interactionScope, action: 'COMPLETED' }
         })
 
         const clicks = await prisma.flowInteraction.count({
-            where: { flowId: id, action: 'STEP' } // Assuming steps count as clicks for now
+            where: { ...interactionScope, action: 'STEP' }
         })
 
         const conversionRate = totalInteractions > 0
@@ -30,7 +43,7 @@ export async function GET(
         const startDate = startOfDay(subDays(new Date(), 6))
         const interactionsLastWeek = await prisma.flowInteraction.findMany({
             where: {
-                flowId: id,
+                ...interactionScope,
                 createdAt: { gte: startDate }
             },
             select: {
@@ -61,7 +74,7 @@ export async function GET(
         // Get distinct interaction counts per stepIndex
         const stepStats = await prisma.flowInteraction.groupBy({
             by: ['stepIndex'],
-            where: { flowId: id },
+            where: interactionScope,
             _count: { _all: true },
             orderBy: { stepIndex: 'asc' }
         })
@@ -80,7 +93,7 @@ export async function GET(
 
         // 4. Recent Activity
         const recentInteractions = await prisma.flowInteraction.findMany({
-            where: { flowId: id },
+            where: interactionScope,
             take: 5,
             orderBy: { createdAt: 'desc' },
             include: {
@@ -111,6 +124,7 @@ export async function GET(
         })
 
     } catch (error: any) {
+        if (error?.message === 'Unauthorized') return unauthorizedResponse()
         console.error('Error fetching flow stats:', error)
         return NextResponse.json({
             error: 'Internal server error',

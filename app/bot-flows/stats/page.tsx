@@ -102,7 +102,7 @@ export default function BotFlowStatsPage() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" size="sm" onClick={() => router.back()} className="rounded-full">
-                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            <ArrowLeft className="h-4 w-4 me-2" />
                             Back
                         </Button>
                         <div>
@@ -112,7 +112,7 @@ export default function BotFlowStatsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" className="rounded-full shadow-sm">
-                            <Calendar className="h-4 w-4 mr-2" />
+                            <Calendar className="h-4 w-4 me-2" />
                             This Week
                         </Button>
                     </div>
@@ -242,10 +242,10 @@ export default function BotFlowStatsPage() {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-slate-50 text-slate-500">
-                                    <th className="text-left px-8 py-4 font-black text-[10px] uppercase tracking-widest">{t("customerEntity")}</th>
-                                    <th className="text-left px-8 py-4 font-black text-[10px] uppercase tracking-widest">{t("timeRegistered")}</th>
-                                    <th className="text-left px-8 py-4 font-black text-[10px] uppercase tracking-widest">{t("statusMatrix")}</th>
-                                    <th className="text-left px-8 py-4 font-black text-[10px] uppercase tracking-widest">Active Phase</th>
+                                    <th className="text-start px-8 py-4 font-black text-[10px] uppercase tracking-widest">{t("customerEntity")}</th>
+                                    <th className="text-start px-8 py-4 font-black text-[10px] uppercase tracking-widest">{t("timeRegistered")}</th>
+                                    <th className="text-start px-8 py-4 font-black text-[10px] uppercase tracking-widest">{t("statusMatrix")}</th>
+                                    <th className="text-start px-8 py-4 font-black text-[10px] uppercase tracking-widest">Active Phase</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">

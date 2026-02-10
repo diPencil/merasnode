@@ -307,7 +307,7 @@ export default function FlowTemplatesPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={() => router.back()}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="h-4 w-4 me-2" />
               Back
             </Button>
             <div>
@@ -320,12 +320,12 @@ export default function FlowTemplatesPage() {
         {/* Filters */}
         <div className="flex gap-4">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search templates..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="ps-10"
             />
           </div>
           <select
@@ -411,7 +411,7 @@ export default function FlowTemplatesPage() {
                     className="flex-1"
                     onClick={() => router.push(`/bot-flows/builder?template=${template.id}`)}
                   >
-                    <Eye className="h-3 w-3 mr-1" />
+                    <Eye className="h-3 w-3 me-1" />
                     Preview
                   </Button>
                   <Button
@@ -419,7 +419,7 @@ export default function FlowTemplatesPage() {
                     className="flex-1"
                     onClick={() => useTemplate(template)}
                   >
-                    <Copy className="h-3 w-3 mr-1" />
+                    <Copy className="h-3 w-3 me-1" />
                     Use Template
                   </Button>
                 </div>
@@ -445,7 +445,7 @@ export default function FlowTemplatesPage() {
               Create a completely custom automation flow using our visual builder
             </p>
             <Button onClick={() => router.push('/bot-flows/builder')}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 me-2" />
               Build Custom Flow
             </Button>
           </CardContent>

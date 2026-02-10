@@ -858,13 +858,13 @@ export default function InboxPage() {
   }
 
   return (
-    <AppLayout title={t("inbox")}>
-      <div className="flex h-[calc(100dvh-4rem)] md:h-[calc(100vh-7rem)] flex-col md:flex-row bg-background border md:rounded-xl overflow-hidden shadow-sm relative">
+    <AppLayout title={t("inbox")} fullBleed>
+      <div className="flex h-full flex-col md:flex-row bg-background md:border md:rounded-xl overflow-hidden md:shadow-sm relative md:m-2 md:h-[calc(100%-1rem)]">
 
         {/* LEFT COLUMN: Conversations List */}
         {/* On Mobile: Show this ONLY if no conversation is selected */}
         <div className={cn(
-          "flex flex-col border-e bg-muted/10 w-full md:w-[350px] h-full absolute md:relative z-0",
+          "flex flex-col border-e bg-muted/10 w-full md:w-[350px] shrink-0 h-full md:relative z-0",
           selectedConversation ? "hidden md:flex" : "flex"
         )}>
           {/* List Header */}
@@ -1008,17 +1008,17 @@ export default function InboxPage() {
         {selectedConversation ? (
           <div
             className={cn(
-              "flex-1 flex-col bg-slate-50 chat-column z-40",
-              // Mobile: Fixed overlay filling the screen but always sitting above bottom nav
-              // 4rem = bottom nav visual height, env() = safe-area on devices with a home indicator
-              "fixed top-0 left-0 right-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 bg-background",
-              // Desktop: Relative, natural flow
-              "md:relative md:inset-auto md:flex md:z-0",
+              "flex-1 flex-col bg-slate-50 dark:bg-background chat-column z-40",
+              /* Mobile: absolute overlay inside the inbox container, sitting above
+                 conversation list. Leaves space at bottom for mobile bottom nav. */
+              "absolute inset-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] bg-background",
+              /* Desktop: natural flex flow, no absolute positioning, no bottom offset */
+              "md:relative md:inset-auto md:bottom-auto md:flex md:z-0",
             )}
             dir={dir}
           >
-            {/* Header */}
-            <div className="h-16 border-b bg-card px-4 flex items-center justify-between shadow-sm z-30 shrink-0 sticky top-0">
+            {/* Chat Header — fixed top with safe-area on mobile */}
+            <div className="h-16 border-b bg-card px-4 flex items-center justify-between shadow-sm z-30 shrink-0">
               <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
                 {/* Mobile Back Button */}
                 <Button

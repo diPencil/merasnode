@@ -301,14 +301,14 @@ export default function AccountsPage() {
       case 'connected':
         return (
           <Badge className="bg-green-500 hover:bg-green-600">
-            <CheckCircle2 className="mr-1 h-3 w-3" />
+            <CheckCircle2 className="me-1 h-3 w-3" />
             Connected
           </Badge>
         )
       case 'waiting':
         return (
           <Badge variant="secondary">
-            <Clock className="mr-1 h-3 w-3" />
+            <Clock className="me-1 h-3 w-3" />
             Waiting
           </Badge>
         )
@@ -316,7 +316,7 @@ export default function AccountsPage() {
       default:
         return (
           <Badge variant="destructive">
-            <XCircle className="mr-1 h-3 w-3" />
+            <XCircle className="me-1 h-3 w-3" />
             Disconnected
           </Badge>
         )

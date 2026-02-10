@@ -185,6 +185,19 @@
   --color-green-100: var(--green-100);
 }
 
+/* ===================================================================
+   ROOT VARIABLES — iOS-safe dynamic viewport height
+   =================================================================== */
+:root {
+  --app-vh: 100dvh;
+}
+
+@supports not (height: 100dvh) {
+  :root {
+    --app-vh: 100vh;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -193,10 +206,20 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* CRITICAL: Prevent body-level scrolling — all scroll happens inside app-shell */
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
 }
 
-/* Custom shadow utilities for soft, diffused, layered shadows */
+/* ===================================================================
+   LAYOUT UTILITIES
+   =================================================================== */
 @layer utilities {
+  /* Shadow utilities */
   .shadow-soft {
     box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.08), 0 4px 16px -4px rgba(0, 0, 0, 0.04);
   }
@@ -208,41 +231,67 @@
   .shadow-floating {
     box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.12), 0 16px 48px -16px rgba(0, 0, 0, 0.08);
   }
+
+  /* Mobile touch target helper (44×44 Apple HIG minimum) */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* App shell height
+     - Desktop/tablet (≥768px): fixed 100vh
+     - Mobile (<768px): dynamic JS-updated --app-vh for keyboard-safe layout */
+  .app-shell {
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  @media (max-width: 767px) {
+    .app-shell {
+      height: var(--app-vh);
+      max-height: var(--app-vh);
+    }
+  }
+
+  /* Desktop table horizontal scroll wrapper */
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Sidebar scroll isolation — prevents scroll chaining from the
+     sidebar menu to the page content on all browsers.
+     contain: layout paint → isolates layout & paint without breaking size.
+     isolation: isolate → creates a new stacking context. */
+  @media (min-width: 768px) {
+    .app-shell > *:first-child {
+      contain: layout paint;
+      isolation: isolate;
+    }
+  }
 }
 
-/* Finly-style gradient background */
+/* ===================================================================
+   GRADIENT BACKGROUND
+   =================================================================== */
 body {
   background: linear-gradient(135deg,
       oklch(0.85 0.08 280) 0%,
-      /* Light purple */
       oklch(0.88 0.06 300) 25%,
-      /* Lavender */
       oklch(0.90 0.05 320) 50%,
-      /* Light pink-purple */
       oklch(0.88 0.06 340) 75%,
-      /* Pink */
-      oklch(0.85 0.08 280) 100%
-      /* Back to purple */
-    );
+      oklch(0.85 0.08 280) 100%);
   background-attachment: fixed;
-  min-height: 100vh;
 }
 
 .dark body {
   background: linear-gradient(135deg,
       oklch(0.20 0.08 280) 0%,
-      /* Deep purple */
       oklch(0.18 0.06 300) 25%,
-      /* Dark violet */
       oklch(0.16 0.05 320) 50%,
-      /* Dark pink-purple */
       oklch(0.18 0.06 340) 75%,
-      /* Dark pink */
-      oklch(0.20 0.08 280) 100%
-      /* Back to deep purple */
-    );
+      oklch(0.20 0.08 280) 100%);
   background-attachment: fixed;
-  min-height: 100vh;
 }
 
 /* Enhanced glassmorphism for cards on gradient background */

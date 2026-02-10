@@ -493,11 +493,11 @@ export default function InvoicesPage() {
 
                     <div className="flex items-center gap-2">
                         <div className="relative w-full sm:w-64">
-                            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Search className="absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 type="search"
                                 placeholder={t("searchInvoices") || "Search invoices..."}
-                                className="pl-9 h-9"
+                                className="ps-9 h-9"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -625,7 +625,7 @@ export default function InvoicesPage() {
                                         setIsDialogOpen(true)
                                     }}
                                 >
-                                    <Plus className="mr-2 h-4 w-4" />
+                                    <Plus className="me-2 h-4 w-4" />
                                     {t("createInvoice")}
                                 </Button>
                             )}
@@ -670,7 +670,7 @@ export default function InvoicesPage() {
                                             <TableCell>
                                                 {format(new Date(invoice.dueDate), "MMM dd, yyyy")}
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-end">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -752,7 +752,7 @@ export default function InvoicesPage() {
                                 Cancel
                             </Button>
                             <Button type="button" onClick={handleSendInvoice}>
-                                <Send className="mr-2 h-4 w-4" />
+                                <Send className="me-2 h-4 w-4" />
                                 Send to WhatsApp
                             </Button>
                         </DialogFooter>
@@ -793,7 +793,7 @@ export default function InvoicesPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="text-right space-y-4">
+                                        <div className="text-end space-y-4">
                                             <div>
                                                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Invoice Date</h3>
                                                 <p className="font-medium">{format(new Date(viewInvoice.createdAt), "MMM dd, yyyy")}</p>
@@ -812,8 +812,8 @@ export default function InvoicesPage() {
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow className="bg-muted/50">
-                                                        <TableHead className="pl-4">Description</TableHead>
-                                                        <TableHead className="text-right pr-4">Amount</TableHead>
+                                                        <TableHead className="ps-4">Description</TableHead>
+                                                        <TableHead className="text-end pe-4">Amount</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
@@ -823,7 +823,7 @@ export default function InvoicesPage() {
                                                                 ? viewInvoice.items[0].description
                                                                 : "Invoice Payment"}
                                                         </TableCell>
-                                                        <TableCell className="text-right pr-4">
+                                                        <TableCell className="text-end pe-4">
                                                             {viewInvoice.amount.toFixed(2)} {viewInvoice.currency}
                                                         </TableCell>
                                                     </TableRow>
@@ -858,11 +858,11 @@ export default function InvoicesPage() {
                                     </Button>
                                     <div className="flex gap-2">
                                         <Button variant="outline" onClick={() => handleGeneratePDF(viewInvoice)}>
-                                            <Download className="mr-2 h-4 w-4" />
+                                            <Download className="me-2 h-4 w-4" />
                                             Download PDF
                                         </Button>
                                         <Button onClick={() => openSendDialog(viewInvoice)}>
-                                            <Send className="mr-2 h-4 w-4" />
+                                            <Send className="me-2 h-4 w-4" />
                                             Send to WhatsApp
                                         </Button>
                                     </div>

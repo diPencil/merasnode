@@ -531,7 +531,7 @@ export default function OffersPage() {
                                         className="flex-1"
                                         onClick={() => setSendMode("single")}
                                     >
-                                        <Users className="mr-2 h-4 w-4" />
+                                        <Users className="me-2 h-4 w-4" />
                                         Single Contact
                                     </Button>
                                     <Button
@@ -540,7 +540,7 @@ export default function OffersPage() {
                                         className="flex-1"
                                         onClick={() => setSendMode("bulk")}
                                     >
-                                        <CheckSquare className="mr-2 h-4 w-4" />
+                                        <CheckSquare className="me-2 h-4 w-4" />
                                         Bulk Send
                                     </Button>
                                 </div>
@@ -641,7 +641,7 @@ export default function OffersPage() {
                                 Cancel
                             </Button>
                             <Button type="button" onClick={handleSendOffer}>
-                                <Send className="mr-2 h-4 w-4" />
+                                <Send className="me-2 h-4 w-4" />
                                 {sendMode === "single" ? "Send Offer" : `Send to ${selectedContactIds.length} Contact(s)`}
                             </Button>
                         </DialogFooter>

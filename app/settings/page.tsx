@@ -520,7 +520,7 @@ export default function SettingsPage() {
                             <Button
                               variant="destructive"
                               size="icon"
-                              className="absolute top-1 right-1 h-6 w-6"
+                              className="absolute top-1 end-1 h-6 w-6"
                               onClick={() => {
                                 setCompanyLogo("")
                                 setCompanyDisplayType("text")

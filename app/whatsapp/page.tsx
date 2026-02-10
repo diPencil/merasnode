@@ -186,12 +186,12 @@ export default function WhatsAppPage() {
                                 <span className="text-sm font-medium">Status:</span>
                                 {isLoading ? (
                                     <Badge variant="outline">
-                                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                        <Loader2 className="me-2 h-3 w-3 animate-spin" />
                                         Checking...
                                     </Badge>
                                 ) : isReady ? (
                                     <Badge className="bg-green-500/10 text-green-700 dark:text-green-400">
-                                        <CheckCircle2 className="mr-2 h-3 w-3" />
+                                        <CheckCircle2 className="me-2 h-3 w-3" />
                                         Connected
                                     </Badge>
                                 ) : (
@@ -231,12 +231,12 @@ export default function WhatsAppPage() {
                                 >
                                     {isInitializing ? (
                                         <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            <Loader2 className="me-2 h-4 w-4 animate-spin" />
                                             Initializing...
                                         </>
                                     ) : (
                                         <>
-                                            <QrCode className="mr-2 h-4 w-4" />
+                                            <QrCode className="me-2 h-4 w-4" />
                                             Connect WhatsApp
                                         </>
                                     )}
@@ -249,7 +249,7 @@ export default function WhatsAppPage() {
                                     onClick={checkStatus}
                                     className="w-full"
                                 >
-                                    <RefreshCw className="mr-2 h-4 w-4" />
+                                    <RefreshCw className="me-2 h-4 w-4" />
                                     Refresh Status
                                 </Button>
                             )}
@@ -263,12 +263,12 @@ export default function WhatsAppPage() {
                                 >
                                     {isSyncing ? (
                                         <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            <Loader2 className="me-2 h-4 w-4 animate-spin" />
                                             Syncing...
                                         </>
                                     ) : (
                                         <>
-                                            <RefreshCw className="mr-2 h-4 w-4" />
+                                            <RefreshCw className="me-2 h-4 w-4" />
                                             Sync Chats & Contacts
                                         </>
                                     )}

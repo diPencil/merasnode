@@ -1,40 +1,74 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import {
+  requireAuthWithScope,
+  unauthorizedResponse,
+  buildConversationScopeFilter,
+  type UserScope,
+} from "@/lib/api-auth"
+
+/**
+ * Helper: build a Prisma `where` clause that limits contacts
+ * to those the user is allowed to see.
+ */
+function contactScopeFilter(scope: UserScope): Record<string, any> {
+  if (scope.role === 'ADMIN') return {}
+  return { branchId: { in: scope.branchIds } }
+}
 
 export async function GET(request: NextRequest) {
   try {
-    // إحصائيات أساسية
+    // ── Auth + RBAC ──
+    const scope = await requireAuthWithScope(request)
+
+    // Scope filters based on role
+    const contactWhere = contactScopeFilter(scope)
+    const convWhere = buildConversationScopeFilter(scope)
+    const messageWhere: Record<string, any> = scope.role === 'ADMIN'
+      ? {}
+      : { conversation: convWhere }
+    const agentWhere: Record<string, any> = scope.role === 'ADMIN'
+      ? { role: { in: ['AGENT', 'SUPERVISOR'] } }
+      : scope.role === 'SUPERVISOR'
+        ? { role: { in: ['AGENT', 'SUPERVISOR'] }, branches: { some: { id: { in: scope.branchIds } } } }
+        : { id: scope.userId } // Agent sees only themselves
+
+    // إحصائيات أساسية — filtered by scope
     const [totalUsers, totalContacts, totalConversations, totalMessages, totalTemplates, totalBookings, totalInvoices] = await Promise.all([
-      prisma.user.count(),
-      prisma.contact.count(),
-      prisma.conversation.count(),
-      prisma.message.count(),
+      scope.role === 'ADMIN' ? prisma.user.count() : prisma.user.count({ where: agentWhere }),
+      prisma.contact.count({ where: contactWhere }),
+      prisma.conversation.count({ where: convWhere }),
+      prisma.message.count({ where: messageWhere }),
       prisma.template.count(),
-      prisma.booking.count(),
-      prisma.invoice.count()
+      prisma.booking.count({ where: scope.role === 'ADMIN' ? {} : { contact: contactWhere } }),
+      prisma.invoice.count({ where: scope.role === 'ADMIN' ? {} : { contact: contactWhere } }),
     ])
 
     // إحصائيات المحادثات حسب الحالة
     const conversationStats = await prisma.conversation.groupBy({
       by: ['status'],
+      where: convWhere,
       _count: { status: true }
     })
 
     // إحصائيات الرسائل حسب النوع
     const messageStats = await prisma.message.groupBy({
       by: ['type'],
+      where: messageWhere,
       _count: { type: true }
     })
 
     // إحصائيات الحجوزات حسب الحالة
     const bookingStats = await prisma.booking.groupBy({
       by: ['status'],
+      where: scope.role === 'ADMIN' ? {} : { contact: contactWhere },
       _count: { status: true }
     })
 
     // إحصائيات الفواتير حسب الحالة
     const invoiceStats = await prisma.invoice.groupBy({
       by: ['status'],
+      where: scope.role === 'ADMIN' ? {} : { contact: contactWhere },
       _count: { status: true }
     })
 
@@ -45,9 +79,8 @@ export async function GET(request: NextRequest) {
     const dailyStats = await prisma.message.groupBy({
       by: ['createdAt'],
       where: {
-        createdAt: {
-          gte: sevenDaysAgo
-        }
+        ...messageWhere,
+        createdAt: { gte: sevenDaysAgo },
       },
       _count: { id: true }
     })
@@ -56,20 +89,15 @@ export async function GET(request: NextRequest) {
     const monthlyStats = await prisma.log.groupBy({
       by: ['createdAt'],
       where: {
-        createdAt: {
-          gte: sevenDaysAgo
-        }
+        createdAt: { gte: sevenDaysAgo },
+        ...(scope.role !== 'ADMIN' ? { userId: scope.role === 'AGENT' ? scope.userId : undefined } : {}),
       },
       _count: { id: true }
     })
 
-    // أداء الفريق
+    // أداء الفريق — scoped
     const agentStats = await prisma.user.findMany({
-      where: {
-        role: {
-          in: ['AGENT', 'SUPERVISOR']
-        }
-      },
+      where: agentWhere,
       select: {
         id: true,
         name: true,
@@ -85,6 +113,7 @@ export async function GET(request: NextRequest) {
     // الردود السريعة (أقل من 5 دقائق)
     const quickResponses = await prisma.conversation.count({
       where: {
+        ...convWhere,
         status: 'RESOLVED'
       }
     })
@@ -153,6 +182,7 @@ export async function GET(request: NextRequest) {
       recentActivity: await prisma.log.findMany({
         take: 10,
         orderBy: { createdAt: 'desc' },
+        ...(scope.role !== 'ADMIN' ? { where: { userId: scope.role === 'AGENT' ? scope.userId : undefined } } : {}),
         include: {
           user: {
             select: { name: true }
@@ -167,6 +197,9 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return unauthorizedResponse()
+    }
     console.error('Error fetching analytics:', error)
     return NextResponse.json(
       {

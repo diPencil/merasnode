@@ -203,7 +203,7 @@ export default function CrmIntegrationPage() {
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                         <DialogTrigger asChild>
                             <Button>
-                                <Plus className="mr-2 h-4 w-4" />
+                                <Plus className="me-2 h-4 w-4" />
                                 Connect CRM
                             </Button>
                         </DialogTrigger>
@@ -254,7 +254,7 @@ export default function CrmIntegrationPage() {
                                     disabled={isCreating}
                                     className="w-full"
                                 >
-                                    {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {isCreating && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                                     Connect
                                 </Button>
                             </div>

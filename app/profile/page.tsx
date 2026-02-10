@@ -170,7 +170,7 @@ export default function ProfilePage() {
                                 onClick={handleSave}
                                 disabled={isSaving}
                             >
-                                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isSaving && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                                 Save Changes
                             </Button>
                         </div>

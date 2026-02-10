@@ -138,7 +138,7 @@ export default function FlowBuilderPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => router.back()}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="h-4 w-4 me-2" />
               Back
             </Button>
             <div>
@@ -158,12 +158,12 @@ export default function FlowBuilderPage() {
             <Button onClick={saveFlow} disabled={isSaving}>
               {isSaving ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin me-2" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
+                  <Save className="h-4 w-4 me-2" />
                   Save Flow
                 </>
               )}
@@ -234,7 +234,7 @@ export default function FlowBuilderPage() {
                   }]
                 }))}
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 me-2" />
                 Add Step
               </Button>
             </CardTitle>

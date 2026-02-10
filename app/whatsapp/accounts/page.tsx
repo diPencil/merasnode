@@ -313,14 +313,14 @@ export default function AccountsPage() {
       case 'connected':
         return (
           <Badge className="bg-green-500 hover:bg-green-600">
-            <CheckCircle2 className="mr-1 h-3 w-3" />
+            <CheckCircle2 className="me-1 h-3 w-3" />
             Connected
           </Badge>
         )
       case 'waiting':
         return (
           <Badge variant="secondary">
-            <Clock className="mr-1 h-3 w-3" />
+            <Clock className="me-1 h-3 w-3" />
             Waiting
           </Badge>
         )
@@ -328,7 +328,7 @@ export default function AccountsPage() {
       default:
         return (
           <Badge variant="destructive">
-            <XCircle className="mr-1 h-3 w-3" />
+            <XCircle className="me-1 h-3 w-3" />
             Disconnected
           </Badge>
         )
@@ -353,7 +353,7 @@ export default function AccountsPage() {
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button className="rounded-full shadow-md">
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="me-2 h-4 w-4" />
                 {t("connectAccountButton")}
               </Button>
             </DialogTrigger>
@@ -418,7 +418,7 @@ export default function AccountsPage() {
 
                   {!qrGenerated ? (
                     <Button onClick={handleGenerateQR} className="w-full" size="lg">
-                      <QrCode className="mr-2 h-5 w-5" />
+                      <QrCode className="me-2 h-5 w-5" />
                       {t("generateQrCode")}
                     </Button>
                   ) : (
@@ -538,7 +538,7 @@ export default function AccountsPage() {
                       <TableHead>{t("provider")}</TableHead>
                       <TableHead>{t("status")}</TableHead>
                       <TableHead>{t("connectedDate")}</TableHead>
-                      <TableHead className="text-right">{t("actions")}</TableHead>
+                      <TableHead className="text-end">{t("actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -562,7 +562,7 @@ export default function AccountsPage() {
                         <TableCell className="text-sm text-muted-foreground">
                           {format(new Date(account.createdAt), "MMM dd, yyyy")}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-end">
                           <div className="flex justify-end gap-2">
                             {account.status !== 'CONNECTED' && (
                               <Button
@@ -589,7 +589,7 @@ export default function AccountsPage() {
                                   }
                                 }}
                               >
-                                <QrCode className="mr-1 h-3 w-3" />
+                                <QrCode className="me-1 h-3 w-3" />
                                 Link
                               </Button>
                             )}

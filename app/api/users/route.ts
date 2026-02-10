@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import bcrypt from "bcryptjs"
-import { requireRole, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
+import { requireRole, requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
 import { createUserSchema, validateBody } from "@/lib/validations"
 import { getPaginationParams, createPaginatedResponse, getSortParams, getSearchParam, buildSearchFilter } from "@/lib/pagination"
 
 // GET - جلب جميع المستخدمين (Admin/Supervisor only)
 export async function GET(request: NextRequest) {
     try {
-        // Require ADMIN or SUPERVISOR role
-        const currentUser = await requireRole(request, ['ADMIN', 'SUPERVISOR'])
+        // Require ADMIN or SUPERVISOR role — use scope for branch filtering
+        const scope = await requireAuthWithScope(request)
+        if (!['ADMIN', 'SUPERVISOR'].includes(scope.role)) {
+            return forbiddenResponse('Only admins and supervisors can view users')
+        }
         
-        logDebug(`User ${currentUser.userId} fetching users list`)
+        logDebug(`User ${scope.userId} fetching users list`)
         
         // Get pagination, sorting, and search parameters
         const pagination = getPaginationParams(request)
@@ -26,6 +29,11 @@ export async function GET(request: NextRequest) {
         const where: any = {}
         if (roleFilter) where.role = roleFilter
         if (statusFilter) where.status = statusFilter
+        
+        // RBAC: Supervisors can only see users from their assigned branches
+        if (scope.role === 'SUPERVISOR' && scope.branchIds.length > 0) {
+            where.branches = { some: { id: { in: scope.branchIds } } }
+        }
         
         // Add search filter
         if (search) {
