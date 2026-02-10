@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { formatDistanceToNow } from "date-fns"
 import { ar } from "date-fns/locale"
 import { useI18n } from "@/lib/i18n"
-import { authenticatedFetch } from "@/lib/auth"
+import { authenticatedFetch, getUserRole } from "@/lib/auth"
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
@@ -33,12 +33,14 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
     const [newNote, setNewNote] = useState("")
     const [isAddingNote, setIsAddingNote] = useState(false)
     const [loadingNotes, setLoadingNotes] = useState(false)
+    const [userRole, setUserRole] = useState<string | null>(null)
 
     // Tag Editing State
     const [isEditingTags, setIsEditingTags] = useState(false)
     const [tagInput, setTagInput] = useState("")
 
     useEffect(() => {
+        setUserRole(getUserRole() || null)
         fetchAgents()
         fetchBranches()
     }, [])
@@ -85,6 +87,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
     }
 
     const handleAssignAgent = async (agentId: string) => {
+        if (userRole && userRole !== 'ADMIN') return
         try {
             const res = await authenticatedFetch(`/api/conversations/${conversation.id}/assign`, {
                 method: 'POST',
@@ -100,6 +103,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
     }
 
     const handleUpdateBranch = async (branchId: string) => {
+        if (userRole && userRole !== 'ADMIN') return
         try {
             const res = await authenticatedFetch(`/api/contacts/${conversation.contactId}`, {
                 method: 'PUT',
@@ -161,6 +165,8 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
 
     if (!conversation) return null
 
+    const isReadOnly = userRole === 'AGENT' || userRole === 'SUPERVISOR'
+
     return (
         <div className="flex flex-col h-full bg-card">
             {/* Profile */}
@@ -180,37 +186,48 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                 <div className="flex flex-col gap-2 w-full mt-6">
                     <div className="bg-orange-50/50 p-2.5 rounded-md border border-orange-100 flex items-center justify-between">
                         <span className="text-[10px] uppercase font-bold text-orange-500 tracking-wider">{t("branchLabel")}</span>
-                        <Select onValueChange={handleUpdateBranch} value={conversation.contact.branchId || undefined}>
-                            <SelectTrigger className="h-5 text-xs border-0 bg-transparent p-0 text-orange-700 font-bold w-auto focus:ring-0">
-                                <SelectValue placeholder={t("selectPlaceholder")} />
-                            </SelectTrigger>
-                            <SelectContent align="end">
-                                {branches.map(branch => (
-                                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        {isReadOnly ? (
+                            <span className="text-xs font-bold text-orange-700">
+                                {branches.find(b => b.id === conversation.contact.branchId)?.name || t("unassigned")}
+                            </span>
+                        ) : (
+                            <Select onValueChange={handleUpdateBranch} value={conversation.contact.branchId || undefined}>
+                                <SelectTrigger className="h-5 text-xs border-0 bg-transparent p-0 text-orange-700 font-bold w-auto focus:ring-0">
+                                    <SelectValue placeholder={t("selectPlaceholder")} />
+                                </SelectTrigger>
+                                <SelectContent align="end">
+                                    {branches.map(branch => (
+                                        <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                     </div>
                     <div className="bg-purple-50/50 p-2.5 rounded-md border border-purple-100 flex items-center justify-between">
                         <span className="text-[10px] uppercase font-bold text-purple-500 tracking-wider">{t("statusLabel")}</span>
-                        <Select onValueChange={(val) => {
-                            // Update tags via API
-                            authenticatedFetch(`/api/contacts/${conversation.contactId}`, {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ tags: [val] }) // Start with simple single tag
-                            }).then(() => onUpdate())
-                        }} value={conversation.contact.tags?.[0] || 'Regular'}>
-                            <SelectTrigger className="h-5 text-xs border-0 bg-transparent p-0 text-purple-700 font-bold w-auto gap-1 focus:ring-0">
-                                <SelectValue placeholder={t("regular")} />
-                            </SelectTrigger>
-                            <SelectContent align="end">
-                                <SelectItem value="Regular">{t("regular")}</SelectItem>
-                                <SelectItem value="VIP">{t("vip")} ⭐</SelectItem>
-                                <SelectItem value="New Lead">{t("newLead")}</SelectItem>
-                                <SelectItem value="Qualified">{t("qualified")}</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        {isReadOnly ? (
+                            <span className="text-xs font-bold text-purple-700">
+                                {conversation.contact.tags?.[0] || t("regular")}
+                            </span>
+                        ) : (
+                            <Select onValueChange={(val) => {
+                                authenticatedFetch(`/api/contacts/${conversation.contactId}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ tags: [val] })
+                                }).then(() => onUpdate())
+                            }} value={conversation.contact.tags?.[0] || 'Regular'}>
+                                <SelectTrigger className="h-5 text-xs border-0 bg-transparent p-0 text-purple-700 font-bold w-auto gap-1 focus:ring-0">
+                                    <SelectValue placeholder={t("regular")} />
+                                </SelectTrigger>
+                                <SelectContent align="end">
+                                    <SelectItem value="Regular">{t("regular")}</SelectItem>
+                                    <SelectItem value="VIP">{t("vip")} ⭐</SelectItem>
+                                    <SelectItem value="New Lead">{t("newLead")}</SelectItem>
+                                    <SelectItem value="Qualified">{t("qualified")}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
                     </div>
                 </div>
             </div>
@@ -257,17 +274,23 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                             </div>
                             <div className="flex-1">
                                 <p className="text-xs text-muted-foreground">{t("assignedAgent")}</p>
-                                <Select onValueChange={handleAssignAgent} value={conversation.assignedToId || undefined}>
-                                    <SelectTrigger className="h-6 text-sm border-0 bg-transparent p-0 font-medium w-full justify-start">
-                                        <SelectValue placeholder={t("unassigned")} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="unassigned">{t("unassigned")}</SelectItem>
-                                        {agents.map(agent => (
-                                            <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                {isReadOnly ? (
+                                    <p className="text-sm font-medium">
+                                        {conversation.assignedTo?.name || t("unassigned")}
+                                    </p>
+                                ) : (
+                                    <Select onValueChange={handleAssignAgent} value={conversation.assignedToId || undefined}>
+                                        <SelectTrigger className="h-6 text-sm border-0 bg-transparent p-0 font-medium w-full justify-start">
+                                            <SelectValue placeholder={t("unassigned")} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="unassigned">{t("unassigned")}</SelectItem>
+                                            {agents.map(agent => (
+                                                <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
@@ -277,25 +300,27 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                             <div className="flex-1">
                                 <div className="flex items-center justify-between mb-1">
                                     <p className="text-xs text-muted-foreground">{t("tags")}</p>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => {
-                                            if (!isEditingTags) {
-                                                const currentTags = conversation.contact.tags
-                                                    ? (Array.isArray(conversation.contact.tags) ? conversation.contact.tags.join(', ') : conversation.contact.tags)
-                                                    : ""
-                                                setTagInput(String(currentTags))
-                                            }
-                                            setIsEditingTags(!isEditingTags)
-                                        }}
-                                        className="h-auto p-0 text-[10px] text-primary"
-                                    >
-                                        {isEditingTags ? t("cancel") : t("edit")}
-                                    </Button>
+                                    {!isReadOnly && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                if (!isEditingTags) {
+                                                    const currentTags = conversation.contact.tags
+                                                        ? (Array.isArray(conversation.contact.tags) ? conversation.contact.tags.join(', ') : conversation.contact.tags)
+                                                        : ""
+                                                    setTagInput(String(currentTags))
+                                                }
+                                                setIsEditingTags(!isEditingTags)
+                                            }}
+                                            className="h-auto p-0 text-[10px] text-primary"
+                                        >
+                                            {isEditingTags ? t("cancel") : t("edit")}
+                                        </Button>
+                                    )}
                                 </div>
 
-                                {isEditingTags ? (
+                                {isEditingTags && !isReadOnly ? (
                                     <div className="space-y-2">
                                         <Input
                                             value={tagInput}
