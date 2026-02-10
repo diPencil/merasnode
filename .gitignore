@@ -37,8 +37,8 @@ whatsapp-sessions/
 *.sqlite
 *.sqlite3
 
-# Logs
-logs/
+# Logs (but not app/api/logs or app/logs)
+/logs/
 *.log
 debug.log
 whatsapp-debug.log
