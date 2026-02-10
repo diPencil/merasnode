@@ -68,6 +68,12 @@ interface Message {
   createdAt: string
   type?: "TEXT" | "IMAGE" | "AUDIO" | "VIDEO" | "DOCUMENT" | "LOCATION"
   mediaUrl?: string
+  sender?: {
+    id: string
+    name: string | null
+    email: string | null
+    username?: string | null
+  } | null
 }
 
 
@@ -1346,6 +1352,17 @@ export default function InboxPage() {
                           </span>
                         )}
                       </div>
+                      {isOutgoing && (
+                        <div
+                          className={cn(
+                            "mt-0.5 text-[10px] text-muted-foreground",
+                            dir === "rtl" ? "text-start" : "text-end"
+                          )}
+                          aria-label={t("sentBy")}
+                        >
+                          — {t("sentBy")}: {message.sender?.name?.trim() || message.sender?.username || t("systemLabel")}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )

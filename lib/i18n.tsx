@@ -858,6 +858,7 @@ const translations: Translations = {
   crmLabel: { en: "CRM", ar: "إدارة العلاقات" },
   automationLabel: { en: "Automation", ar: "الأتمتة" },
   systemLabel: { en: "System", ar: "النظام" },
+  sentBy: { en: "Sent by", ar: "أرسله" },
   whatsAppWeb: { en: "WhatsApp Web", ar: "واتساب ويب" },
   generateQrCode: { en: "Generate QR Code", ar: "إنشاء رمز QR" },
   allWhatsAppAccounts: { en: "All WhatsApp accounts", ar: "جميع حسابات واتساب" },
