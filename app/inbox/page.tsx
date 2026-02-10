@@ -148,6 +148,7 @@ export default function InboxPage() {
   const [isSending, setIsSending] = useState(false)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
   const [users, setUsers] = useState<User[]>([])
+  const [bookingAgents, setBookingAgents] = useState<{ id: string; name: string; role: string }[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
   const [botFlows, setBotFlows] = useState<BotFlow[]>([])
   const [suggestedFlow, setSuggestedFlow] = useState<BotFlow | null>(null)
@@ -180,6 +181,7 @@ export default function InboxPage() {
     fetchBranches()
     fetchBotFlows()
     fetchSettings()
+    fetchBookingAgents()
   }, [])
 
   // Refetch conversations when branch filter changes (and on mount)
@@ -387,6 +389,18 @@ export default function InboxPage() {
       }
     } catch (error) {
       console.error('Error fetching users:', error)
+    }
+  }
+
+  const fetchBookingAgents = async () => {
+    try {
+      const response = await authenticatedFetch('/api/users/agents')
+      const data = await response.json()
+      if (data.success && Array.isArray(data.data)) {
+        setBookingAgents(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching booking agents:', error)
     }
   }
 
@@ -814,6 +828,9 @@ export default function InboxPage() {
       })
       return
     }
+    const role = getUserRole()
+    const currentUser = getUser()
+    const agentId = role === "AGENT" ? (currentUser?.id ?? null) : (bookingFormData.agentId || null)
 
     try {
       const response = await authenticatedFetch('/api/bookings', {
@@ -821,7 +838,7 @@ export default function InboxPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contactId: selectedConversation.contactId,
-          agentId: bookingFormData.agentId || null,
+          agentId,
           branch: selectedConversation.branch || null,
           date: bookingFormData.date,
           notes: bookingFormData.notes
@@ -859,7 +876,12 @@ export default function InboxPage() {
 
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 
-  // Dynamic "last active" from conversation and messages timestamps
+  // Dynamic "last active" from conversation and messages timestamps (refreshes every 60s)
+  const [lastActiveTick, setLastActiveTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setLastActiveTick((n) => n + 1), 60_000)
+    return () => clearInterval(id)
+  }, [])
   const lastActiveLabel = useMemo(() => {
     if (!selectedConversation) return ''
     const convTime = new Date(selectedConversation.lastMessageAt).getTime()
@@ -868,7 +890,7 @@ export default function InboxPage() {
     const diffMs = Date.now() - last
     if (diffMs < 60_000) return language === 'ar' ? 'الآن' : 'Just now'
     return formatDistanceToNow(last, { addSuffix: true, locale: language === 'ar' ? ar : undefined })
-  }, [selectedConversation, messages, language])
+  }, [selectedConversation, messages, language, lastActiveTick])
 
   const getPlatformIcon = (platform?: string) => {
     switch (platform) {
@@ -880,12 +902,12 @@ export default function InboxPage() {
 
   return (
     <AppLayout title={t("inbox")} fullBleed>
-      <div className="flex h-full flex-col md:flex-row bg-background md:border md:rounded-xl overflow-hidden md:shadow-sm relative md:m-2 md:h-[calc(100%-1rem)]">
+      <div className="flex h-full flex-col md:flex-row bg-background md:border md:rounded-xl overflow-hidden md:shadow-sm relative md:m-2 md:h-[calc(100vh-1rem)] min-h-0">
 
-        {/* LEFT COLUMN: Conversations List */}
+        {/* LEFT COLUMN: Conversations List — fixed width */}
         {/* On Mobile: Show this ONLY if no conversation is selected */}
         <div className={cn(
-          "flex flex-col bg-muted/10 w-full md:w-[350px] shrink-0 h-full min-h-0 overflow-hidden",
+          "flex flex-col bg-muted/10 w-full md:w-[320px] shrink-0 h-full min-h-0 overflow-hidden",
           "absolute md:relative z-0",
           dir === "rtl" ? "border-s border-border/50" : "border-e border-border/50",
           selectedConversation ? "hidden md:flex" : "flex"
@@ -1026,12 +1048,12 @@ export default function InboxPage() {
           </div>
         </div>
 
-        {/* MIDDLE COLUMN: Chat Area */}
+        {/* MIDDLE COLUMN: Chat Area — flex-1, scrolls internally */}
         {/* On Mobile: Show this ONLY if conversation IS selected (covers list) */}
         {selectedConversation ? (
           <div
             className={cn(
-              "flex flex-col flex-1 bg-slate-50 dark:bg-background chat-column z-40 min-h-0",
+              "flex flex-col flex-1 min-w-0 min-h-0 bg-slate-50 dark:bg-background chat-column z-40",
               // Mobile: fixed overlay above bottom nav (WhatsApp-like)
               "fixed inset-x-0 top-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] bg-background md:inset-auto",
               "md:relative md:bottom-auto md:z-0",
@@ -1085,7 +1107,16 @@ export default function InboxPage() {
                   </SheetContent>
                 </Sheet>
 
-                <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
+                <Dialog open={isBookingOpen} onOpenChange={(open) => {
+                    if (open) {
+                      const role = getUserRole()
+                      const currentUser = getUser()
+                      if (role === "AGENT" && currentUser?.id) {
+                        setBookingFormData(prev => ({ ...prev, agentId: currentUser.id }))
+                      }
+                    }
+                    setIsBookingOpen(open)
+                  }}>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-2 h-8 hidden sm:flex">
                       <Calendar className="h-4 w-4" /> {t("book")}
@@ -1099,24 +1130,29 @@ export default function InboxPage() {
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                      {/* ... Booking Form ... */}
                       <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="agent" className="text-end">{t("agent")}</Label>
-                        <Select
-                          value={bookingFormData.agentId}
-                          onValueChange={(value) => setBookingFormData(prev => ({ ...prev, agentId: value }))}
-                        >
-                          <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder={t("selectAgent")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {users.map((user) => (
-                              <SelectItem key={user.id} value={user.id}>
-                                {user.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        {getUserRole() === "AGENT" ? (
+                          <div className="col-span-3 text-sm text-muted-foreground py-2">
+                            {getUser()?.name ?? t("selectAgent")}
+                          </div>
+                        ) : (
+                          <Select
+                            value={bookingFormData.agentId}
+                            onValueChange={(value) => setBookingFormData(prev => ({ ...prev, agentId: value }))}
+                          >
+                            <SelectTrigger className="col-span-3">
+                              <SelectValue placeholder={t("selectAgent")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {bookingAgents.map((agent) => (
+                                <SelectItem key={agent.id} value={agent.id}>
+                                  {agent.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="date" className="text-end">{t("dateLabel")}</Label>
@@ -1171,13 +1207,17 @@ export default function InboxPage() {
                     <DropdownMenuItem onClick={() => setIsBotFlowsDialogOpen(true)}>
                       <Play className="me-2 h-4 w-4" /> {t("botFlows")}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExportChat}>
-                      <p className="flex items-center"><span className="me-2">📤</span> {t("exportChat")}</p>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600" onClick={handleBlockContact}>
-                      {t("blockContact")}
-                    </DropdownMenuItem>
+                    {getUserRole() === "ADMIN" && (
+                      <>
+                        <DropdownMenuItem onClick={handleExportChat}>
+                          <p className="flex items-center"><span className="me-2">📤</span> {t("exportChat")}</p>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-red-600" onClick={handleBlockContact}>
+                          {t("blockContact")}
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
 
@@ -1516,7 +1556,7 @@ export default function InboxPage() {
               )}
             </div>
 
-          </div >
+          </div>
         ) : (
           <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-slate-50 text-center p-8">
             <div className="bg-white p-4 rounded-full shadow-sm mb-4">
@@ -1528,15 +1568,13 @@ export default function InboxPage() {
         )
         }
 
-        {/* RIGHT COLUMN: CRM Sidebar (Desktop) */}
-        {
-          selectedConversation && (
-            <div className={cn("hidden xl:flex h-full min-h-0 overflow-hidden", dir === "rtl" ? "border-e border-border/50" : "border-s border-border/50")}>
-              <SidebarContent conversation={selectedConversation} onUpdate={() => fetchConversations()} />
-            </div>
-          )
-        }
-      </div >
+        {/* RIGHT COLUMN: Contact details — fixed width, desktop xl+ */}
+        {selectedConversation && (
+          <div className={cn("hidden xl:flex w-[320px] shrink-0 h-full min-h-0 overflow-hidden bg-card", dir === "rtl" ? "border-e border-border/50" : "border-s border-border/50")}>
+            <SidebarContent conversation={selectedConversation} onUpdate={() => fetchConversations()} />
+          </div>
+        )}
+      </div>
 
       {/* Image Preview Modal */}
       <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
