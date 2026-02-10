@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const isArchived = searchParams.get('archived')
     const isRead = searchParams.get('read')
+    const branchId = searchParams.get('branchId')
 
     // Start with role-based scope filter
     const where: any = { ...buildConversationScopeFilter(scope) }
@@ -24,11 +25,19 @@ export async function GET(request: NextRequest) {
     if (status) where.status = status
     if (isArchived !== null) where.isArchived = isArchived === 'true'
     if (isRead !== null) where.isRead = isRead === 'true'
+    if (branchId && branchId !== 'all') {
+      where.AND = where.AND || []
+      where.AND.push({ contact: { branchId } })
+    }
 
     const conversations = await prisma.conversation.findMany({
       where,
       include: {
-        contact: true,
+        contact: {
+          include: {
+            branch: { select: { id: true, name: true } },
+          },
+        },
         assignedTo: {
           select: {
             id: true,

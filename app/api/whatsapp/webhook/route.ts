@@ -25,6 +25,16 @@ export async function POST(request: NextRequest) {
             externalId = identifier
         }
 
+        // Resolve branch from WhatsApp account so we can assign contact to that branch
+        let branchId: string | null = null
+        if (accountId) {
+            const waAccount = await prisma.whatsAppAccount.findUnique({
+                where: { id: accountId },
+                select: { branchId: true },
+            })
+            if (waAccount?.branchId) branchId = waAccount.branchId
+        }
+
         // 1. Try to find contact by externalId or phone
         let contact = await prisma.contact.findFirst({
             where: {
@@ -36,27 +46,37 @@ export async function POST(request: NextRequest) {
         })
 
         if (!contact) {
-            // Create new contact
+            // Create new contact (with branch when known)
             contact = await prisma.contact.create({
                 data: {
                     name: senderName || phoneNumber,
                     phone: phoneNumber,
                     externalId: externalId,
-                    tags: isGroup ? ["whatsapp-group"] : ["whatsapp-contact"]
+                    tags: isGroup ? ["whatsapp-group"] : ["whatsapp-contact"],
+                    ...(branchId && { branchId }),
                 }
             })
-        } else if (externalId && !contact.externalId) {
-            // Link externalId if we just discovered it for an existing contact
+        } else {
+            // Update existing contact: set branch from WA account when we have one and contact has none
+            if (branchId && !contact.branchId) {
+                contact = await prisma.contact.update({
+                    where: { id: contact.id },
+                    data: { branchId },
+                })
+            }
+        }
+
+        if (contact && externalId && !contact.externalId) {
             contact = await prisma.contact.update({
                 where: { id: contact.id },
-                data: { externalId }
+                data: { externalId },
             })
-        } else if (senderName && contact.name !== senderName) {
-            // Always update name if we have a better one and it's different
+        }
+        if (contact && senderName && contact.name !== senderName) {
             console.log(`🔄 Updating contact name from '${contact.name}' to '${senderName}'`)
             contact = await prisma.contact.update({
                 where: { id: contact.id },
-                data: { name: senderName }
+                data: { name: senderName },
             })
         }
 

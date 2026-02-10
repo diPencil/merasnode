@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { AppLayout } from "@/components/app-layout"
 import { useI18n } from "@/lib/i18n"
+import { authenticatedFetch } from "@/lib/auth"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -55,10 +56,10 @@ export default function LogsPage() {
         url += `&entityType=${entityFilter}`
       }
 
-      const response = await fetch(url)
+      const response = await authenticatedFetch(url)
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const data = await response.json()
@@ -67,7 +68,7 @@ export default function LogsPage() {
         setLogs(data.data || [])
         setError(null)
       } else {
-        setError(data.error || 'Failed to fetch logs')
+        setError(data.error || "Failed to fetch logs")
       }
     } catch (err) {
       setError(t("failedToConnectToServer"))

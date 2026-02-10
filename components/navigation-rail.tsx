@@ -27,27 +27,25 @@ import { getUserRole, logout, getUser, authenticatedFetch } from "@/lib/auth"
 import { canAccessPage, type PageRoute } from "@/lib/permissions"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
-const menuItems = [
-    { icon: LayoutDashboard, label: "dashboard", href: "/dashboard" },
-    { icon: MessageSquare, label: "inbox", href: "/inbox" },
-    { icon: Calendar, label: "bookings", href: "/bookings" },
-    { icon: Users, label: "contacts", href: "/contacts" },
-    { icon: Building2, label: "branches", href: "/branches" },
-    { icon: Tag, label: "offers", href: "/offers" },
-    { icon: Receipt, label: "invoices", href: "/invoices" },
-    { icon: FileText, label: "templates", href: "/templates" },
-    { icon: Bot, label: "botFlows", href: "/bot-flows" },
-    { icon: BarChart3, label: "analytics", href: "/analytics" },
-    { icon: UserPlus, label: "users", href: "/users" },
-    { icon: LinkIcon, label: "whatsappAccounts", href: "/accounts" },
-    { icon: Activity, label: "activityLogs", href: "/logs" },
+const GROUP_LABELS: Record<string, string> = {
+    main: "navigation",
+    crm: "crmLabel",
+    automation: "automationLabel",
+    system: "systemLabel",
+}
+
+const MENU_GROUPS = [
+    { id: "main", items: [{ icon: LayoutDashboard, label: "dashboard", href: "/dashboard" }, { icon: MessageSquare, label: "inbox", href: "/inbox" }, { icon: Calendar, label: "bookings", href: "/bookings" }] },
+    { id: "crm", items: [{ icon: Users, label: "contacts", href: "/contacts" }, { icon: Building2, label: "branches", href: "/branches" }, { icon: Tag, label: "offers", href: "/offers" }, { icon: Receipt, label: "invoices", href: "/invoices" }] },
+    { id: "automation", items: [{ icon: FileText, label: "templates", href: "/templates" }, { icon: Bot, label: "botFlows", href: "/bot-flows" }] },
+    { id: "system", items: [{ icon: BarChart3, label: "analytics", href: "/analytics" }, { icon: UserPlus, label: "users", href: "/users" }, { icon: LinkIcon, label: "whatsappAccounts", href: "/accounts" }, { icon: Activity, label: "activityLogs", href: "/logs" }] },
 ]
 
 export function NavigationRail() {
     const pathname = usePathname()
     const router = useRouter()
     const { t, dir } = useI18n()
-    const [filteredMenuItems, setFilteredMenuItems] = useState(menuItems)
+    const [filteredGroups, setFilteredGroups] = useState(MENU_GROUPS)
     const [companyName, setCompanyName] = useState("")
     const [companyLogo, setCompanyLogo] = useState("")
     const [companyDisplayType, setCompanyDisplayType] = useState<"text" | "logo">("text")
@@ -60,10 +58,13 @@ export function NavigationRail() {
     useEffect(() => {
         const userRole = getUserRole()
         if (userRole) {
-            const filtered = menuItems.filter(item =>
-                canAccessPage(userRole as any, item.href as PageRoute)
-            )
-            setFilteredMenuItems(filtered)
+            const filtered = MENU_GROUPS.map((group) => ({
+                ...group,
+                items: group.items.filter((item) =>
+                    canAccessPage(userRole as any, item.href as PageRoute)
+                ),
+            })).filter((g) => g.items.length > 0)
+            setFilteredGroups(filtered)
         }
     }, [])
 
@@ -142,28 +143,36 @@ export function NavigationRail() {
 
             {/* Navigation Menu (SCROLLABLE — only this section scrolls) */}
             <nav className="flex-1 min-h-0 py-2 px-3 sidebar-nav-scroll">
-                {filteredMenuItems.map((item) => {
-                    const Icon = item.icon
-                    const isActive = pathname === item.href || pathname?.startsWith(item.href + "/")
-
-                    return (
-                        <Link key={item.href} href={item.href}>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className={cn(
-                                    "w-full flex flex-row justify-start gap-3 transition-all duration-200 rounded-xl h-11 font-medium text-start",
-                                    isActive
-                                        ? "bg-primary text-primary-foreground shadow-md hover:bg-primary hover:text-primary-foreground"
-                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                )}
-                            >
-                                <Icon className="h-5 w-5 shrink-0 order-first" />
-                                <span className="text-sm">{t(item.label)}</span>
-                            </Button>
-                        </Link>
-                    )
-                })}
+                {filteredGroups.map((group, groupIndex) => (
+                    <div key={group.id} className={groupIndex > 0 ? "mt-4" : ""}>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-3 mb-1.5">
+                            {t(GROUP_LABELS[group.id] || group.id)}
+                        </p>
+                        <div className="space-y-0.5">
+                            {group.items.map((item) => {
+                                const Icon = item.icon
+                                const isActive = pathname === item.href || pathname?.startsWith(item.href + "/")
+                                return (
+                                    <Link key={item.href} href={item.href}>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className={cn(
+                                                "w-full flex flex-row justify-start gap-3 transition-all duration-200 rounded-lg h-9 font-medium text-start",
+                                                isActive
+                                                    ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground"
+                                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                            )}
+                                        >
+                                            <Icon className="h-[18px] w-[18px] shrink-0 order-first" />
+                                            <span className="text-[13px] truncate">{t(item.label)}</span>
+                                        </Button>
+                                    </Link>
+                                )
+                            })}
+                        </div>
+                    </div>
+                ))}
             </nav>
 
             {/* Bottom: User profile + Settings + Logout (FIXED — never scrolls) */}

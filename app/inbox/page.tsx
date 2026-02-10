@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { AppLayout } from "@/components/app-layout"
@@ -41,7 +41,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
-import { format } from "date-fns"
+import { format, formatDistanceToNow } from "date-fns"
 import { ar } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { getUserRole, getUser, authenticatedFetch, getAuthHeader } from "@/lib/auth"
@@ -170,12 +170,16 @@ export default function InboxPage() {
   }, [messages.length, selectedConversation?.id])
 
   useEffect(() => {
-    fetchConversations()
     fetchUsers()
     fetchBranches()
     fetchBotFlows()
     fetchSettings()
   }, [])
+
+  // Refetch conversations when branch filter changes (and on mount)
+  useEffect(() => {
+    fetchConversations()
+  }, [selectedBranch])
 
   const fetchSettings = async () => {
     try {
@@ -311,11 +315,13 @@ export default function InboxPage() {
     }, 10000) // Reappear after 10 seconds
   }
 
-  // Polling for Conversations List (every 5 seconds - optimized)
+  // Polling for Conversations List (every 5 seconds); respects branch filter
   useEffect(() => {
+    const url = selectedBranch && selectedBranch !== 'all'
+      ? `/api/conversations?branchId=${encodeURIComponent(selectedBranch)}`
+      : '/api/conversations'
     const interval = setInterval(() => {
-      // Don't show loading spinner on background refresh
-      authenticatedFetch('/api/conversations')
+      authenticatedFetch(url)
         .then(res => res.json())
         .then(data => {
           if (data.success && data.conversations) {
@@ -324,21 +330,18 @@ export default function InboxPage() {
               platform: 'whatsapp',
               leadScore: index === 0 ? 'Hot' : 'Warm',
               leadStatus: index === 0 ? 'New' : index === 1 ? 'Booked' : 'In Progress',
-              branch: c.branch || null
-            }));
-            // Only update if data actually changed
+              branch: c.contact?.branch ?? null,
+            }))
             setConversations(prev => {
-              if (JSON.stringify(prev) === JSON.stringify(enrichedConversations)) {
-                return prev;
-              }
-              return enrichedConversations;
-            });
+              if (JSON.stringify(prev) === JSON.stringify(enrichedConversations)) return prev
+              return enrichedConversations
+            })
           }
         })
-        .catch(err => console.error('Polling convos error:', err));
-    }, 5000); // Optimized: 5 seconds instead of 3
-    return () => clearInterval(interval);
-  }, []);
+        .catch(err => console.error('Polling convos error:', err))
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [selectedBranch])
 
   // Polling for Active Conversation Messages (every 4 seconds - optimized)
   useEffect(() => {
@@ -401,19 +404,20 @@ export default function InboxPage() {
   const fetchConversations = async () => {
     try {
       setIsLoading(true)
-      const response = await authenticatedFetch('/api/conversations')
+      const url = selectedBranch && selectedBranch !== 'all'
+        ? `/api/conversations?branchId=${encodeURIComponent(selectedBranch)}`
+        : '/api/conversations'
+      const response = await authenticatedFetch(url)
       const data = await response.json()
 
       if (data.success && data.conversations) {
         // Enriched mock data for UI demo purposes
         const enrichedConversations = data.conversations.map((c: any, index: number) => ({
           ...c,
-          // Platform is almost always WhatsApp now as requested
           platform: 'whatsapp',
           leadScore: index === 0 ? 'Hot' : 'Warm',
           leadStatus: index === 0 ? 'New' : index === 1 ? 'Booked' : 'In Progress',
-          // Branch will come from database or be null
-          branch: c.branch || null
+          branch: c.contact?.branch ?? null,
         }))
 
         setConversations(enrichedConversations)
@@ -849,6 +853,17 @@ export default function InboxPage() {
 
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 
+  // Dynamic "last active" from conversation and messages timestamps
+  const lastActiveLabel = useMemo(() => {
+    if (!selectedConversation) return ''
+    const convTime = new Date(selectedConversation.lastMessageAt).getTime()
+    const msgTimes = messages.map((m: Message) => new Date(m.createdAt).getTime())
+    const last = msgTimes.length ? Math.max(convTime, ...msgTimes) : convTime
+    const diffMs = Date.now() - last
+    if (diffMs < 60_000) return language === 'ar' ? 'الآن' : 'Just now'
+    return formatDistanceToNow(last, { addSuffix: true, locale: language === 'ar' ? ar : undefined })
+  }, [selectedConversation, messages, language])
+
   const getPlatformIcon = (platform?: string) => {
     switch (platform) {
       case 'facebook': return <Facebook className="h-3 w-3 text-blue-600" />
@@ -879,7 +894,7 @@ export default function InboxPage() {
               <SelectContent>
                 <SelectItem value="all">{t("allBranches")}</SelectItem>
                 {branches.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.name}>
+                  <SelectItem key={branch.id} value={branch.id}>
                     {branch.name}
                   </SelectItem>
                 ))}
@@ -1046,7 +1061,7 @@ export default function InboxPage() {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                     </span>
-                    <span className="truncate">{t("lastActiveAgo")} {t("minutesAgo").replace("{n}", "2")}</span>
+                    <span className="truncate">{lastActiveLabel}</span>
                   </p>
                 </div>
               </div>
