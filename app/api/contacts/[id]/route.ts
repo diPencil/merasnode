@@ -3,12 +3,13 @@ import { prisma } from "@/lib/db"
 import { logActivity } from "@/lib/logger"
 import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
 
-// GET - Fetch single contact (any authenticated user with contact access)
+// GET - Fetch single contact (scoped: non-Admin only within their branches)
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const scope = await requireAuthWithScope(request)
         const { id } = await params
         const contact = await prisma.contact.findUnique({
             where: { id },
@@ -28,6 +29,13 @@ export async function GET(
                 },
                 { status: 404 }
             )
+        }
+
+        if (scope.role !== 'ADMIN') {
+            const inScope = scope.branchIds?.length && contact.branchId && scope.branchIds.includes(contact.branchId)
+            if (!inScope) {
+                return forbiddenResponse("You do not have access to this contact")
+            }
         }
 
         return NextResponse.json({
