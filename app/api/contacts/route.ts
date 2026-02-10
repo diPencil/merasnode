@@ -47,11 +47,13 @@ export async function POST(request: NextRequest) {
         const scope = await requireAuthWithScope(request)
         const body = await request.json()
 
-        // Check for bulk import (array)
+        // Check for bulk import (array) — Admin only
         if (Array.isArray(body)) {
+            if (scope.role !== 'ADMIN') {
+                return forbiddenResponse('Only Admin can import contacts')
+            }
             // Determine default branchId for bulk imports
-            const defaultBranchId = scope.role !== 'ADMIN' && scope.branchIds.length > 0
-                ? scope.branchIds[0] : null
+            const defaultBranchId = scope.branchIds?.length > 0 ? scope.branchIds[0] : null
 
             const validContacts = body.filter((c: any) => c.name && c.phone).map((c: any) => ({
                 name: c.name,
