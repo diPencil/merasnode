@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { useEffect } from "react"
 import { NavigationRail } from "./navigation-rail"
 import { MobileBottomNav } from "./mobile-bottom-nav"
 import { TopBar } from "./top-bar"
@@ -15,8 +16,25 @@ interface AppLayoutProps {
 export function AppLayout({ children, title, showSearch = false }: AppLayoutProps) {
   const isMobile = useIsMobile()
 
+  // iOS-safe viewport height: keep --app-vh in sync with real innerHeight.
+  useEffect(() => {
+    const setAppVh = () => {
+      if (typeof window === "undefined") return
+      const vh = window.innerHeight
+      document.documentElement.style.setProperty("--app-vh", `${vh}px`)
+    }
+
+    setAppVh()
+    window.addEventListener("resize", setAppVh)
+    window.addEventListener("orientationchange", setAppVh)
+    return () => {
+      window.removeEventListener("resize", setAppVh)
+      window.removeEventListener("orientationchange", setAppVh)
+    }
+  }, [])
+
   return (
-    <div className="flex h-dvh overflow-hidden bg-background flex-col md:flex-row">
+    <div className="app-shell flex overflow-hidden bg-background flex-col md:flex-row">
       {/* Desktop: Side navigation rail - hidden on mobile via CSS */}
       <div className="hidden md:block shrink-0">
         <NavigationRail />

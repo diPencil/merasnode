@@ -37,6 +37,15 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Real viewport height for mobile (iOS-safe) */
+  --app-vh: 100dvh;
+}
+
+@supports not (height: 100dvh) {
+  :root {
+    --app-vh: 100vh;
+  }
 }
 
 .dark {
@@ -128,10 +137,16 @@
   }
 }
 
-/* Mobile touch target helper */
+/* Layout helpers */
 @layer utilities {
+  /* Mobile touch target helper */
   .touch-target {
     min-height: 44px;
     min-width: 44px;
+  }
+
+  /* App shell that uses real viewport height (iOS-safe) */
+  .app-shell {
+    min-height: var(--app-vh);
   }
 }
