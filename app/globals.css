@@ -205,11 +205,20 @@ body {
   min-height: 100%;
   overflow: hidden;
 }
+/* Single full-height container for app (survives provider wrappers) */
+.app-root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .app-shell {
   height: 100vh;
   min-height: 0;
+  flex: 1;
+  display: flex;
 }
-/* Sidebar: only the nav menu scrolls */
+/* Sidebar: only the nav menu scrolls; top and bottom stay fixed */
 .sidebar-nav-scroll {
   overflow-y: auto;
   overflow-x: hidden;
@@ -276,7 +285,7 @@ body {
   text-align: start;
 }
 
-[dir="rtl"] [class*="max-w-"] {
+[dir="rtl"] [class*="max-w-"]:not(.chat-bubble) {
   margin-inline: auto;
 }
 
@@ -417,17 +426,27 @@ body {
   margin-inline-end: 0;
   align-items: flex-end;
 }
-/* Bubble wrapper: alignment only; width is controlled by Tailwind max-w classes on the bubble */
+/* Bubble wrapper: alignment only; width follows bubble (no fixed width) */
 .chat-bubble-wrap {
   display: flex;
   flex-direction: column;
+  max-inline-size: 100%;
 }
-/* Bubble: text flows naturally, width based on content up to max-w utilities (≈70–85% of container) */
+/* Bubble: WhatsApp-like width — natural from content, min so text doesn’t collapse to one word per line */
 .chat-bubble {
   text-align: start;
-  display: inline-block;
+  display: block;
+  width: fit-content;
+  max-inline-size: 85%;
+  min-inline-size: min(8rem, 50%);
   word-break: normal;
   overflow-wrap: break-word;
+}
+@media (min-width: 768px) {
+  .chat-bubble {
+    max-inline-size: 78%;
+    min-inline-size: min(10rem, 55%);
+  }
 }
 /* Incoming: light bg, flat corner at start-bottom */
 .chat-bubble.incoming {

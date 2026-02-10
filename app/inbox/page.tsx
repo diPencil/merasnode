@@ -1313,7 +1313,7 @@ export default function InboxPage() {
                     <div className={`chat-bubble-wrap flex flex-col ${isOutgoing ? "outgoing items-end" : "incoming items-start"}`}>
                       <div
                         className={cn(
-                          "chat-bubble px-4 py-2 rounded-2xl shadow-sm text-sm max-w-[85%] md:max-w-[70%]",
+                          "chat-bubble px-4 py-2 rounded-2xl shadow-sm text-sm",
                           isOutgoing
                             ? cn(
                               "bg-[#dcf8c6] dark:bg-[#005c4b] text-slate-800 dark:text-slate-100",
@@ -1381,7 +1381,7 @@ export default function InboxPage() {
                             </div>
                           </a>
                         ) : (
-                          <span className="block text-start whitespace-pre-wrap leading-relaxed">{message.content}</span>
+                          <span className="block text-start whitespace-pre-wrap leading-relaxed" dir="auto">{message.content}</span>
                         )}
                       </div>
                       <div className="chat-bubble-meta mt-1 ms-1 text-[10px] text-gray-500 flex items-center gap-1">
