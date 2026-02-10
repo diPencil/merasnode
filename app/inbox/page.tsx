@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -129,6 +129,7 @@ interface BotFlow {
 }
 
 export default function InboxPage() {
+  const router = useRouter()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -430,15 +431,16 @@ export default function InboxPage() {
 
         setConversations(enrichedConversations)
 
+        // Selection is driven only by the URL (id query param).
+        // /inbox       → no selection (list-only)
+        // /inbox?id=.. → open that specific conversation
         if (conversationIdParam) {
-          const target = enrichedConversations.find((c: Conversation) => c.id === conversationIdParam)
-          if (target) {
-            setSelectedConversation(target)
-          } else if (enrichedConversations.length > 0 && !selectedConversation) {
-            setSelectedConversation(enrichedConversations[0])
-          }
-        } else if (enrichedConversations.length > 0 && !selectedConversation) {
-          setSelectedConversation(enrichedConversations[0])
+          const target = enrichedConversations.find(
+            (c: Conversation) => c.id === conversationIdParam
+          )
+          setSelectedConversation(target ?? null)
+        } else {
+          setSelectedConversation(null)
         }
       } else {
         setConversations([])
@@ -614,7 +616,9 @@ export default function InboxPage() {
           description: t("conversationResolvedDesc"),
         })
         fetchConversations()
+        // After resolving, return to the inbox list.
         setSelectedConversation(null)
+        router.push("/inbox")
       } else {
         throw new Error(data.error || 'Failed')
       }
@@ -698,7 +702,9 @@ export default function InboxPage() {
 
         toast({ title: t("blocked"), description: t("contactBlocked") })
         fetchConversations()
+        // After blocking, return to the inbox list.
         setSelectedConversation(null)
+        router.push("/inbox")
 
       } catch (error) {
         console.error("Block error", error)
@@ -938,7 +944,7 @@ export default function InboxPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {isLoading ? (
+              {isLoading ? (
               <div className="flex items-center justify-center h-32 text-muted-foreground">{t("loading")}</div>
             ) : filteredConversations.length === 0 ? (
               <div className="flex items-center justify-center h-32 text-muted-foreground">{t("noConversations")}</div>
@@ -946,10 +952,16 @@ export default function InboxPage() {
               filteredConversations.map((conversation) => (
                 <div
                   key={conversation.id}
-                  onClick={() => setSelectedConversation(conversation)}
+                  onClick={() => {
+                    // Drive selection via URL so bottom nav and back behave predictably.
+                    setSelectedConversation(conversation)
+                    router.push(`/inbox?id=${conversation.id}`)
+                  }}
                   className={cn(
                     "flex gap-3 p-4 border-b cursor-pointer hover:bg-muted/50 transition-all",
-                    selectedConversation?.id === conversation.id ? "bg-blue-50/50 border-s-4 border-s-primary" : "border-s-4 border-s-transparent"
+                    selectedConversation?.id === conversation.id
+                      ? "bg-blue-50/50 border-s-4 border-s-primary"
+                      : "border-s-4 border-s-transparent",
                   )}
                 >
                   <div className="relative shrink-0">
@@ -1015,7 +1027,10 @@ export default function InboxPage() {
                   variant="ghost"
                   size="icon"
                   className="md:hidden -ms-2 me-1 h-10 w-10 min-w-10 rounded-full"
-                  onClick={() => setSelectedConversation(null)}
+                  onClick={() => {
+                    setSelectedConversation(null)
+                    router.push("/inbox")
+                  }}
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </Button>
