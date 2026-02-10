@@ -331,10 +331,12 @@ export default function BookingsPage() {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
+                        {getUserRole() === "ADMIN" && (
                         <Button variant="outline" size="sm" className="h-9 gap-2" onClick={handleExport}>
                             <Download className="h-4 w-4" />
                             <span className="hidden sm:inline">{t("exportExcel")}</span>
                         </Button>
+                    )}
                     </div>
                 </div>
 
@@ -397,6 +399,7 @@ export default function BookingsPage() {
                                     <Button variant="outline" size="sm" className="flex-1 h-9" onClick={() => handleAction("View Details", booking.bookingNumber)}>
                                         {t("viewDetails")}
                                     </Button>
+                                    {getUserRole() === "ADMIN" && (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 border">
@@ -415,6 +418,7 @@ export default function BookingsPage() {
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
+                                    )}
                                 </div>
                             </div>
                         ))
@@ -433,13 +437,15 @@ export default function BookingsPage() {
                                 <TableHead>{t("notes")}</TableHead>
                                 <TableHead>{t("dateLabel")}</TableHead>
                                 <TableHead>{t("status")}</TableHead>
+                                {getUserRole() === "ADMIN" && (
                                 <TableHead className="text-end">{t("actionsLabel")}</TableHead>
+                                )}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="h-24 text-center">
+                                    <TableCell colSpan={getUserRole() === "ADMIN" ? 8 : 7} className="h-24 text-center">
                                         <div className="flex items-center justify-center gap-2">
                                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                                             <span className="text-muted-foreground">{t("loadingBookings")}</span>
@@ -448,7 +454,7 @@ export default function BookingsPage() {
                                 </TableRow>
                             ) : filteredBookings.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                                    <TableCell colSpan={getUserRole() === "ADMIN" ? 8 : 7} className="h-24 text-center text-muted-foreground">
                                         {t("noBookingsFound")}
                                     </TableCell>
                                 </TableRow>
@@ -502,6 +508,7 @@ export default function BookingsPage() {
                                                 {booking.status}
                                             </Badge>
                                         </TableCell>
+                                        {getUserRole() === "ADMIN" && (
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -526,6 +533,7 @@ export default function BookingsPage() {
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
+                                        )}
                                     </TableRow>
                                 ))
                             )}

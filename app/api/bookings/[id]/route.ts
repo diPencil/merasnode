@@ -1,24 +1,45 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
 
-// PUT - تحديث حجز
+async function canAccessBooking(scope: { role: string; userId: string; branchIds: string[] }, booking: { agentId: string | null; branch: string | null }) {
+    if (scope.role === "ADMIN") return true
+    if (scope.role === "AGENT") return booking.agentId === scope.userId
+    if (scope.role === "SUPERVISOR" && scope.branchIds?.length && booking.branch) {
+        const branches = await prisma.branch.findMany({
+            where: { id: { in: scope.branchIds } },
+            select: { name: true }
+        })
+        return branches.some((b) => b.name === booking.branch)
+    }
+    return false
+}
+
+// PUT - Update booking (scoped by role)
 export async function PUT(
     request: NextRequest,
     props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const params = await props.params;
+        const scope = await requireAuthWithScope(request)
+        const params = await props.params
         const body = await request.json()
         const { id } = params
 
         const existingBooking = await prisma.booking.findUnique({
             where: { id }
         })
-
         if (!existingBooking) {
             return NextResponse.json(
                 { success: false, error: "Booking not found" },
                 { status: 404 }
+            )
+        }
+        const allowed = await canAccessBooking(scope, existingBooking)
+        if (!allowed) {
+            return NextResponse.json(
+                { success: false, error: "You do not have permission to update this booking" },
+                { status: 403 }
             )
         }
 
@@ -55,7 +76,11 @@ export async function PUT(
             data: booking
         })
     } catch (error) {
-        console.error('Error updating booking:', error)
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return unauthorizedResponse()
+            if (error.message === "Forbidden") return forbiddenResponse()
+        }
+        console.error("Error updating booking:", error)
         return NextResponse.json(
             { success: false, error: "Failed to update booking" },
             { status: 500 }
@@ -63,7 +88,7 @@ export async function PUT(
     }
 }
 
-// PATCH - تحديث حجز (alias for PUT)
+// PATCH - Update booking (alias for PUT)
 export async function PATCH(
     request: NextRequest,
     props: { params: Promise<{ id: string }> }
@@ -71,23 +96,30 @@ export async function PATCH(
     return PUT(request, props)
 }
 
-// DELETE - حذف حجز
+// DELETE - Delete booking (scoped by role)
 export async function DELETE(
     request: NextRequest,
     props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const params = await props.params;
+        const scope = await requireAuthWithScope(request)
+        const params = await props.params
         const { id } = params
 
         const existingBooking = await prisma.booking.findUnique({
             where: { id }
         })
-
         if (!existingBooking) {
             return NextResponse.json(
                 { success: false, error: "Booking not found" },
                 { status: 404 }
+            )
+        }
+        const allowed = await canAccessBooking(scope, existingBooking)
+        if (!allowed) {
+            return NextResponse.json(
+                { success: false, error: "You do not have permission to delete this booking" },
+                { status: 403 }
             )
         }
 
@@ -100,7 +132,11 @@ export async function DELETE(
             message: "Booking deleted successfully"
         })
     } catch (error) {
-        console.error('Error deleting booking:', error)
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return unauthorizedResponse()
+            if (error.message === "Forbidden") return forbiddenResponse()
+        }
+        console.error("Error deleting booking:", error)
         return NextResponse.json(
             { success: false, error: "Failed to delete booking" },
             { status: 500 }
