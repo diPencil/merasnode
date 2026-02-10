@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { logActivity } from "@/lib/logger"
+import {
+    requireAuthWithScope,
+    unauthorizedResponse,
+    forbiddenResponse,
+} from "@/lib/api-auth"
 
-// GET - جلب جهة اتصال واحدة
+// GET - جلب جهة اتصال واحدة (scoped: non-Admin only see if contact in their branches)
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const scope = await requireAuthWithScope(request)
         const { id } = await params
         const contact = await prisma.contact.findUnique({
             where: { id },
@@ -29,11 +35,19 @@ export async function GET(
             )
         }
 
+        if (scope.role !== 'ADMIN' && contact.branchId && !scope.branchIds.includes(contact.branchId)) {
+            return forbiddenResponse('You do not have access to this contact')
+        }
+
         return NextResponse.json({
             success: true,
             data: contact
         })
     } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === 'Unauthorized') return unauthorizedResponse()
+            if (error.message === 'Forbidden') return forbiddenResponse()
+        }
         console.error('Error fetching contact:', error)
         return NextResponse.json(
             {
@@ -45,12 +59,16 @@ export async function GET(
     }
 }
 
-// PUT - تحديث جهة اتصال
+// PUT - تحديث جهة اتصال (Admin only; prevents Edit/Block for Agent and Supervisor)
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const scope = await requireAuthWithScope(request)
+        if (scope.role !== 'ADMIN') {
+            return forbiddenResponse('Only admins can edit contacts')
+        }
         const { id } = await params
         const body = await request.json()
 
@@ -97,6 +115,10 @@ export async function PUT(
             data: contact
         })
     } catch (error: any) {
+        if (error instanceof Error) {
+            if (error.message === 'Unauthorized') return unauthorizedResponse()
+            if (error.message === 'Forbidden') return forbiddenResponse()
+        }
         console.error('Error updating contact:', error)
 
         if (error.code === 'P2025') {
@@ -129,12 +151,16 @@ export async function PUT(
     }
 }
 
-// DELETE - حذف جهة اتصال
+// DELETE - حذف جهة اتصال (Admin only)
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const scope = await requireAuthWithScope(request)
+        if (scope.role !== 'ADMIN') {
+            return forbiddenResponse('Only admins can delete contacts')
+        }
         const { id } = await params
         // Get contact before delete
         const contact = await prisma.contact.findUnique({
@@ -163,6 +189,10 @@ export async function DELETE(
             message: "Contact deleted successfully"
         })
     } catch (error: any) {
+        if (error instanceof Error) {
+            if (error.message === 'Unauthorized') return unauthorizedResponse()
+            if (error.message === 'Forbidden') return forbiddenResponse()
+        }
         console.error('Error deleting contact:', error)
 
         if (error.code === 'P2025') {
