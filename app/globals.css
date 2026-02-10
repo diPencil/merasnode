@@ -407,18 +407,17 @@ body {
   margin-inline-end: 0;
   align-items: flex-end;
 }
+/* Bubble wrapper: alignment only; width is controlled by Tailwind max-w classes on the bubble */
 .chat-bubble-wrap {
-  max-inline-size: 85%;
+  display: flex;
+  flex-direction: column;
 }
-@media (min-width: 640px) {
-  .chat-bubble-wrap {
-    max-inline-size: 70%;
-  }
-}
-/* Bubble: logical radius (tail at correct edge) */
+/* Bubble: text flows naturally, width based on content up to max-w utilities (≈70–85% of container) */
 .chat-bubble {
   text-align: start;
-  inline-size: fit-content;
+  display: inline-block;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 /* Incoming: light bg, flat corner at start-bottom */
 .chat-bubble.incoming {
