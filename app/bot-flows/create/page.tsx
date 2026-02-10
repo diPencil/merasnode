@@ -209,7 +209,7 @@ export default function CreateBotFlowPage() {
                   <Card key={step.id} className="border border-dashed">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                        <div className="shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
                           {index + 1}
                         </div>
                         <div className="flex-1 space-y-3">
