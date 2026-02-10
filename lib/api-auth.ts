@@ -152,16 +152,16 @@ export async function requireRoleWithScope(
  * Build a Prisma `where` clause that limits conversations to those
  * the authenticated user is allowed to see.
  *
- * - ADMIN  : {} (no filter)
- * - SUPERVISOR : contact.branchId IN user.branchIds
- * - AGENT  : contact.branchId IN user.branchIds
- *            AND conversation has messages from user's WA accounts
- *            OR conversation is assigned to the user
+ * - ADMIN: no filter (sees all).
+ * - SUPERVISOR: contact.branchId IN user.branchIds (assigned branches).
+ * - AGENT: sees conversations for their assigned branch(s) AND (assigned to them OR has messages from their WA number).
+ *          If agent has no branches but has whatsappAccountIds, show conversations with messages from their WA account(s) or assigned to them.
  */
 export function buildConversationScopeFilter(scope: UserScope): Record<string, any> {
     if (scope.role === 'ADMIN') return {}
 
     if (scope.role === 'SUPERVISOR') {
+        if (!scope.branchIds?.length) return { id: { in: [] } } // no branches => no conversations
         return {
             contact: {
                 branchId: { in: scope.branchIds },
@@ -169,26 +169,31 @@ export function buildConversationScopeFilter(scope: UserScope): Record<string, a
         }
     }
 
-    // AGENT: must match branch AND (WA account OR direct assignment)
+    // AGENT: (assigned to user OR conversation has messages from user's WA accounts)
+    //        AND if user has branches, contact must be in one of those branches
+    const hasBranchScope = scope.branchIds && scope.branchIds.length > 0
+    const hasWaScope = scope.whatsappAccountIds && scope.whatsappAccountIds.length > 0
+
+    const agentVisibility = {
+        OR: [
+            { assignedToId: scope.userId },
+            ...(hasWaScope
+                ? [{ messages: { some: { whatsappAccountId: { in: scope.whatsappAccountIds } } } }]
+                : []),
+        ],
+    }
+
+    if (!hasBranchScope && !hasWaScope) {
+        return { assignedToId: scope.userId }
+    }
+    if (!hasBranchScope) {
+        return agentVisibility
+    }
+
     return {
         AND: [
-            {
-                contact: {
-                    branchId: { in: scope.branchIds },
-                },
-            },
-            {
-                OR: [
-                    { assignedToId: scope.userId },
-                    {
-                        messages: {
-                            some: {
-                                whatsappAccountId: { in: scope.whatsappAccountIds },
-                            },
-                        },
-                    },
-                ],
-            },
+            { contact: { branchId: { in: scope.branchIds } } },
+            agentVisibility,
         ],
     }
 }
