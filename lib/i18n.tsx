@@ -308,6 +308,8 @@ const translations: Translations = {
   sent: { en: "Sent", ar: "تم الإرسال" },
   group: { en: "Group", ar: "مجموعة" },
   blockConfirm: { en: "Are you sure you want to block this contact? They will be marked as blocked and the conversation will be archived.", ar: "هل أنت متأكد من حظر جهة الاتصال؟ سيتم وضع علامة محظور عليها وأرشفة المحادثة." },
+  lastActiveYesterday: { en: "Last active yesterday", ar: "آخر نشاط أمس" },
+  lastActiveOn: { en: "Last active on", ar: "آخر نشاط بتاريخ" },
 
   // Contacts page
   importContacts: { en: "Import", ar: "استيراد" },
