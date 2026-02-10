@@ -996,13 +996,17 @@ export default function InboxPage() {
         {/* MIDDLE COLUMN: Chat Area */}
         {/* On Mobile: Show this ONLY if conversation IS selected (covers list) */}
         {selectedConversation ? (
-          <div className={cn(
-            "flex-1 flex-col bg-slate-50 chat-column z-40",
-            // Mobile: Fixed overlay filling the screen
-            "fixed inset-0 bg-background",
-            // Desktop: Relative, natural flow
-            "md:relative md:inset-auto md:flex md:z-0"
-          )} dir={dir}>
+          <div
+            className={cn(
+              "flex-1 flex-col bg-slate-50 chat-column z-40",
+              // Mobile: Fixed overlay filling the screen but always sitting above bottom nav
+              // 4rem = bottom nav visual height, env() = safe-area on devices with a home indicator
+              "fixed top-0 left-0 right-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 bg-background",
+              // Desktop: Relative, natural flow
+              "md:relative md:inset-auto md:flex md:z-0",
+            )}
+            dir={dir}
+          >
             {/* Header */}
             <div className="h-16 border-b bg-card px-4 flex items-center justify-between shadow-sm z-30 shrink-0 sticky top-0">
               <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
@@ -1323,8 +1327,8 @@ export default function InboxPage() {
             </div>
 
             {/* Input bar — RTL: [Attach|Emoji|Mic] → Input → Send; Send on start (right in RTL) */}
-            <div className="bg-card mt-auto chat-input-bar border-t p-2 md:p-3 shrink-0 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] flex items-end gap-2">
-              <div className="flex items-center gap-1 md:gap-2 bg-muted/30 p-1 md:p-1.5 rounded-[24px] w-full flex-1 min-w-0 border focus-within:ring-2 ring-primary/20 transition-all min-h-[44px]">
+            <div className="bg-card mt-auto chat-input-bar border-t p-2 md:p-3 shrink-0 flex items-end gap-2">
+              <div className="flex items-center gap-1 md:gap-2 bg-muted/30 p-1 md:p-1.5 rounded-[24px] flex-1 min-w-0 border focus-within:ring-2 ring-primary/20 transition-all min-h-[44px]">
                 {/* Emoji Button */}
                 <Popover>
                   <PopoverTrigger asChild>
