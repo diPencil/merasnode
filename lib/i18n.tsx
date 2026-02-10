@@ -798,6 +798,7 @@ const translations: Translations = {
   documentLabel: { en: "Document", ar: "مستند" },
   minutesAgo: { en: "{n} min", ar: "منذ {n} د" },
   debugMatchFound: { en: "DEBUG: Match Found ({name})", ar: "تصحيح: تطابق ({name})" },
+  sentBy: { en: "Sent by:", ar: "أُرسلت بواسطة:" },
 
   // WhatsApp accounts
   manageWhatsAppAccounts: { en: "Manage your WhatsApp business accounts", ar: "إدارة حسابات واتساب للأعمال" },

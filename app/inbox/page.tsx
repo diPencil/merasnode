@@ -68,6 +68,11 @@ interface Message {
   createdAt: string
   type?: "TEXT" | "IMAGE" | "AUDIO" | "VIDEO" | "DOCUMENT" | "LOCATION"
   mediaUrl?: string
+  sender?: {
+    id: string
+    name: string
+    email?: string
+  } | null
 }
 
 
@@ -1332,6 +1337,12 @@ export default function InboxPage() {
             <div className="chat-messages p-4 md:p-6 pb-4 overflow-y-auto flex-1 min-h-0 overscroll-contain">
               {messages.map((message) => {
                 const isOutgoing = message.direction === "OUTGOING"
+                const senderName =
+                  isOutgoing && message.sender?.name
+                    ? message.sender.name
+                    : isOutgoing && !message.sender
+                    ? t("systemLabel")
+                    : ""
                 return (
                   <div
                     key={message.id}
@@ -1411,12 +1422,29 @@ export default function InboxPage() {
                           <span className="block text-start leading-relaxed">{message.content}</span>
                         )}
                       </div>
-                      <div className="chat-bubble-meta mt-1 ms-1 text-[10px] text-gray-500 flex items-center gap-1">
-                        <span>{format(new Date(message.createdAt), "h:mm a", { locale: dateLocale })}</span>
-                        {isOutgoing && (
-                          <span className={cn("text-[10px]", message.status === "READ" ? "text-blue-500" : "text-gray-400")} aria-hidden>
-                            {message.status === "READ" ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />}
-                          </span>
+                      <div className="mt-1 ms-1 flex flex-col items-start gap-0.5">
+                        <div className="chat-bubble-meta text-[10px] text-gray-500 flex items-center gap-1">
+                          <span>{format(new Date(message.createdAt), "h:mm a", { locale: dateLocale })}</span>
+                          {isOutgoing && (
+                            <span
+                              className={cn(
+                                "text-[10px]",
+                                message.status === "READ" ? "text-blue-500" : "text-gray-400"
+                              )}
+                              aria-hidden
+                            >
+                              {message.status === "READ" ? (
+                                <CheckCheck className="h-3 w-3" />
+                              ) : (
+                                <Check className="h-3 w-3" />
+                              )}
+                            </span>
+                          )}
+                        </div>
+                        {isOutgoing && senderName && (
+                          <div className="text-[10px] text-muted-foreground">
+                            {t("sentBy")} {senderName}
+                          </div>
                         )}
                       </div>
                     </div>
