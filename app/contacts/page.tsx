@@ -905,26 +905,28 @@ export default function ContactsPage() {
                   >
                     {t("sendMessageButton")}
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 rounded-full bg-transparent"
-                    onClick={() => {
-                      if (selectedContact) {
-                        setEditContact({
-                          id: selectedContact.id,
-                          name: selectedContact.name,
-                          phone: selectedContact.phone,
-                          email: selectedContact.email || "",
-                          tags: Array.isArray(selectedContact.tags) ? selectedContact.tags.join(', ') : (selectedContact.tags || ""),
-                          notes: selectedContact.notes || ""
-                        })
-                        setIsEditDialogOpen(true)
-                        setSelectedContact(null)
-                      }
-                    }}
-                  >
-                    {t("edit")}
-                  </Button>
+                  {getUserRole() === "ADMIN" && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 rounded-full bg-transparent"
+                      onClick={() => {
+                        if (selectedContact) {
+                          setEditContact({
+                            id: selectedContact.id,
+                            name: selectedContact.name,
+                            phone: selectedContact.phone,
+                            email: selectedContact.email || "",
+                            tags: Array.isArray(selectedContact.tags) ? selectedContact.tags.join(', ') : (selectedContact.tags || ""),
+                            notes: selectedContact.notes || ""
+                          })
+                          setIsEditDialogOpen(true)
+                          setSelectedContact(null)
+                        }
+                      }}
+                    >
+                      {t("edit")}
+                    </Button>
+                  )}
                 </div>
               </div>
             </>
