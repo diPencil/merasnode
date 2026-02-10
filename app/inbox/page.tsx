@@ -86,13 +86,14 @@ interface Conversation {
     email?: string // Added email for updates
     tags?: any // Added tags for block logic
     notes?: string
+    branchId?: string | null
+    branch?: { id: string; name: string } | null
   }
   messages: Message[]
   // Mock fields for UI
   platform?: 'whatsapp' | 'facebook' | 'instagram'
   leadScore?: 'Hot' | 'Warm' | 'Cold'
   leadStatus?: 'New' | 'Booked' | 'In Progress'
-  branch?: string
 }
 
 // ... existing code ...
@@ -324,7 +325,6 @@ export default function InboxPage() {
               platform: 'whatsapp',
               leadScore: index === 0 ? 'Hot' : 'Warm',
               leadStatus: index === 0 ? 'New' : index === 1 ? 'Booked' : 'In Progress',
-              branch: c.branch || null
             }));
             // Only update if data actually changed
             setConversations(prev => {
@@ -408,12 +408,9 @@ export default function InboxPage() {
         // Enriched mock data for UI demo purposes
         const enrichedConversations = data.conversations.map((c: any, index: number) => ({
           ...c,
-          // Platform is almost always WhatsApp now as requested
           platform: 'whatsapp',
           leadScore: index === 0 ? 'Hot' : 'Warm',
           leadStatus: index === 0 ? 'New' : index === 1 ? 'Booked' : 'In Progress',
-          // Branch will come from database or be null
-          branch: c.branch || null
         }))
 
         setConversations(enrichedConversations)
@@ -779,7 +776,8 @@ export default function InboxPage() {
 
     const matchesBranch =
       selectedBranch === 'all' ||
-      (conv.contact as any)?.branchId === selectedBranch
+      conv.contact?.branchId === selectedBranch ||
+      conv.contact?.branch?.id === selectedBranch
 
     const matchesFilter =
       filterType === 'all' ? true :
@@ -877,7 +875,7 @@ export default function InboxPage() {
               <SelectContent>
                 <SelectItem value="all">{t("allBranches")}</SelectItem>
                 {branches.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.name}>
+                  <SelectItem key={branch.id} value={branch.id}>
                     {branch.name}
                   </SelectItem>
                 ))}

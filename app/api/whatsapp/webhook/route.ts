@@ -35,29 +35,48 @@ export async function POST(request: NextRequest) {
             }
         })
 
+        // ── Resolve branch from WhatsApp account ──
+        // Every WhatsApp account can be linked to a branch.
+        // The contact should inherit that branch automatically.
+        let accountBranchId: string | null = null
+        if (accountId) {
+            const waAccount = await prisma.whatsAppAccount.findUnique({
+                where: { id: accountId },
+                select: { branchId: true }
+            })
+            accountBranchId = waAccount?.branchId ?? null
+        }
+
         if (!contact) {
-            // Create new contact
+            // Create new contact — assign branch from WhatsApp account
             contact = await prisma.contact.create({
                 data: {
                     name: senderName || phoneNumber,
                     phone: phoneNumber,
                     externalId: externalId,
-                    tags: isGroup ? ["whatsapp-group"] : ["whatsapp-contact"]
+                    tags: isGroup ? ["whatsapp-group"] : ["whatsapp-contact"],
+                    branchId: accountBranchId,
                 }
             })
-        } else if (externalId && !contact.externalId) {
-            // Link externalId if we just discovered it for an existing contact
-            contact = await prisma.contact.update({
-                where: { id: contact.id },
-                data: { externalId }
-            })
-        } else if (senderName && contact.name !== senderName) {
-            // Always update name if we have a better one and it's different
-            console.log(`🔄 Updating contact name from '${contact.name}' to '${senderName}'`)
-            contact = await prisma.contact.update({
-                where: { id: contact.id },
-                data: { name: senderName }
-            })
+            if (accountBranchId) {
+                console.log(`🏢 New contact auto-assigned to branch ${accountBranchId} via WA account ${accountId}`)
+            }
+        } else {
+            // Existing contact — build an update payload for any needed changes
+            const updateData: Record<string, any> = {}
+            if (externalId && !contact.externalId) updateData.externalId = externalId
+            if (senderName && contact.name !== senderName) updateData.name = senderName
+            // Auto-assign branch if contact has none but the WA account has one
+            if (accountBranchId && !contact.branchId) {
+                updateData.branchId = accountBranchId
+                console.log(`🏢 Existing contact ${contact.id} auto-assigned to branch ${accountBranchId} via WA account ${accountId}`)
+            }
+            if (Object.keys(updateData).length > 0) {
+                contact = await prisma.contact.update({
+                    where: { id: contact.id },
+                    data: updateData
+                })
+            }
         }
 
         // Find MOST RECENT conversation for this contact (resolved or not)

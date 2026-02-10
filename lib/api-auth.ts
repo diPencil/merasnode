@@ -162,32 +162,27 @@ export function buildConversationScopeFilter(scope: UserScope): Record<string, a
     if (scope.role === 'ADMIN') return {}
 
     if (scope.role === 'SUPERVISOR') {
+        // Supervisor sees conversations where:
+        //  - contact belongs to one of their branches, OR
+        //  - conversation has messages from a WA account linked to one of their branches
         return {
-            contact: {
-                branchId: { in: scope.branchIds },
-            },
+            OR: [
+                { contact: { branchId: { in: scope.branchIds } } },
+                { messages: { some: { whatsappAccount: { branchId: { in: scope.branchIds } } } } },
+            ],
         }
     }
 
-    // AGENT: must match branch AND (WA account OR direct assignment)
+    // AGENT: conversations from their WA accounts OR assigned to them
     return {
-        AND: [
+        OR: [
+            { assignedToId: scope.userId },
             {
-                contact: {
-                    branchId: { in: scope.branchIds },
-                },
-            },
-            {
-                OR: [
-                    { assignedToId: scope.userId },
-                    {
-                        messages: {
-                            some: {
-                                whatsappAccountId: { in: scope.whatsappAccountIds },
-                            },
-                        },
+                messages: {
+                    some: {
+                        whatsappAccountId: { in: scope.whatsappAccountIds },
                     },
-                ],
+                },
             },
         ],
     }

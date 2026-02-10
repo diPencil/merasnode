@@ -59,17 +59,19 @@ export async function PUT(
             where: { id }
         })
 
+        // Only update fields that are explicitly provided in the request body
+        const updateData: Record<string, any> = {}
+        if ('name' in body) updateData.name = body.name
+        if ('phone' in body) updateData.phone = body.phone
+        if ('email' in body) updateData.email = body.email || null
+        if ('tags' in body) updateData.tags = body.tags && body.tags.length > 0 ? body.tags : null
+        if ('notes' in body) updateData.notes = body.notes || null
+        if ('followUpDate' in body) updateData.followUpDate = body.followUpDate ? new Date(body.followUpDate) : null
+        if ('branchId' in body) updateData.branchId = body.branchId || null
+
         const contact = await prisma.contact.update({
             where: { id },
-            data: {
-                name: body.name,
-                phone: body.phone,
-                email: body.email || null,
-                tags: body.tags && body.tags.length > 0 ? body.tags : null,
-                notes: body.notes || null,
-                followUpDate: body.followUpDate ? new Date(body.followUpDate) : null,
-                branchId: body.branchId || null
-            }
+            data: updateData,
         })
 
         // Log activity
