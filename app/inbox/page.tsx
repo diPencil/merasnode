@@ -148,6 +148,7 @@ export default function InboxPage() {
   const [isSending, setIsSending] = useState(false)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
   const [users, setUsers] = useState<User[]>([])
+  const [bookingAgentsList, setBookingAgentsList] = useState<User[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
   const [botFlows, setBotFlows] = useState<BotFlow[]>([])
   const [suggestedFlow, setSuggestedFlow] = useState<BotFlow | null>(null)
@@ -182,6 +183,7 @@ export default function InboxPage() {
   useEffect(() => {
     fetchConversations()
     fetchUsers()
+    fetchBookingAgents()
     fetchBranches()
     fetchBotFlows()
     fetchSettings()
@@ -462,6 +464,21 @@ export default function InboxPage() {
       }
     } catch (error) {
       console.error('Error fetching users:', error)
+    }
+  }
+
+  const fetchBookingAgents = async () => {
+    try {
+      const response = await authenticatedFetch('/api/users/agents')
+      const data = await response.json()
+      if (data.success && Array.isArray(data.data)) {
+        setBookingAgentsList(data.data)
+      } else {
+        setBookingAgentsList([])
+      }
+    } catch (error) {
+      console.error('Error fetching booking agents:', error)
+      setBookingAgentsList([])
     }
   }
 
@@ -877,20 +894,15 @@ export default function InboxPage() {
     notes: ""
   })
 
-  // For Agent/Supervisor: only current user can be selected in Book Appointment
-  const bookingAgents = useMemo(() => {
-    if (isAgentOrSupervisor && currentUser) {
-      return users.filter((u) => u.id === currentUser.id)
-    }
-    return users
-  }, [users, isAgentOrSupervisor, currentUser])
+  // Book Appointment agents: from API (role-scoped: Agent=self, Supervisor=branch agents, Admin=all)
+  const bookingAgents = bookingAgentsList
 
-  // When opening Book Appointment as Agent/Supervisor, pre-fill current user as agent
+  // When opening Book Appointment as Agent, pre-fill current user as agent (not changeable)
   useEffect(() => {
-    if (isBookingOpen && isAgentOrSupervisor && currentUser) {
+    if (isBookingOpen && userRole === "AGENT" && currentUser) {
       setBookingFormData((prev) => ({ ...prev, agentId: currentUser.id }))
     }
-  }, [isBookingOpen, isAgentOrSupervisor, currentUser?.id])
+  }, [isBookingOpen, userRole, currentUser?.id])
 
   const handleBooking = async () => {
     if (!selectedConversation || !bookingFormData.date) {
@@ -1196,7 +1208,7 @@ export default function InboxPage() {
                         <Select
                           value={bookingFormData.agentId}
                           onValueChange={(value) => setBookingFormData(prev => ({ ...prev, agentId: value }))}
-                          disabled={isAgentOrSupervisor && bookingAgents.length <= 1}
+                          disabled={userRole === "AGENT" && bookingAgents.length <= 1}
                         >
                           <SelectTrigger className="col-span-3">
                             <SelectValue placeholder={t("selectAgent")} />
