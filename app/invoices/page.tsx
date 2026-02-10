@@ -633,16 +633,16 @@ export default function InvoicesPage() {
                     </Card>
                 ) : (
                     <Card className="rounded-xl border shadow-sm overflow-hidden">
-                        <div className="p-0">
+                        <div className="table-scroll">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-muted/30 hover:bg-muted/30">
                                         <TableHead className="w-[50px]">#</TableHead>
-                                        <TableHead>{t("invoiceNumber")}</TableHead>
-                                        <TableHead>{t("customerLabel")}</TableHead>
-                                        <TableHead>{t("amountLabel")}</TableHead>
-                                        <TableHead>{t("status")}</TableHead>
-                                        <TableHead>{t("dueDateLabel")}</TableHead>
+                                        <TableHead className="min-w-[120px]">{t("invoiceNumber")}</TableHead>
+                                        <TableHead className="min-w-[140px]">{t("customerLabel")}</TableHead>
+                                        <TableHead className="min-w-[100px]">{t("amountLabel")}</TableHead>
+                                        <TableHead className="min-w-[100px]">{t("status")}</TableHead>
+                                        <TableHead className="min-w-[110px]">{t("dueDateLabel")}</TableHead>
                                         <TableHead className="text-end w-[80px]">{t("actionsLabel")}</TableHead>
                                     </TableRow>
                                 </TableHeader>

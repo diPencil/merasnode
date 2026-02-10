@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
 import { Activity, User, Monitor, Globe, Filter, X } from "lucide-react"
+import { authenticatedFetch } from "@/lib/auth"
 
 interface Log {
   id: string
@@ -55,12 +56,7 @@ export default function LogsPage() {
         url += `&entityType=${entityFilter}`
       }
 
-      const response = await fetch(url)
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
+      const response = await authenticatedFetch(url)
       const data = await response.json()
 
       if (data.success) {

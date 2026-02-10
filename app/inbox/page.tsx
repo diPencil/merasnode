@@ -859,7 +859,7 @@ export default function InboxPage() {
 
   return (
     <AppLayout title={t("inbox")}>
-      <div className="flex h-[calc(100dvh-4rem)] md:h-[calc(100vh-8rem)] flex-col md:flex-row bg-background border md:rounded-xl overflow-hidden shadow-sm relative">
+      <div className="flex h-[calc(100dvh-4rem)] md:h-[calc(100vh-7rem)] flex-col md:flex-row bg-background border md:rounded-xl overflow-hidden shadow-sm relative">
 
         {/* LEFT COLUMN: Conversations List */}
         {/* On Mobile: Show this ONLY if no conversation is selected */}

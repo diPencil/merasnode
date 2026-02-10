@@ -16,58 +16,93 @@ import {
     Tag,
     BarChart3,
     Receipt,
-    Bell,
     TrendingUp,
     TrendingDown,
     Calendar,
     UserPlus,
-    Bot
+    Bot,
+    ChevronRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Separator } from "@/components/ui/separator"
 import { useI18n } from "@/lib/i18n"
-import { getUserRole, logout } from "@/lib/auth"
+import { getUserRole, logout, authenticatedFetch, getUser } from "@/lib/auth"
 import { canAccessPage, type PageRoute } from "@/lib/permissions"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
-const menuItems = [
-    { icon: LayoutDashboard, label: "dashboard", href: "/dashboard" },
-    { icon: MessageSquare, label: "inbox", href: "/inbox" },
-    { icon: Calendar, label: "bookings", href: "/bookings" },
-    { icon: Users, label: "contacts", href: "/contacts" },
-    { icon: Building2, label: "branches", href: "/branches" },
-    { icon: Tag, label: "offers", href: "/offers" },
-    { icon: Receipt, label: "invoices", href: "/invoices" },
-    { icon: FileText, label: "templates", href: "/templates" },
-    { icon: Bot, label: "botFlows", href: "/bot-flows" },
-    { icon: BarChart3, label: "analytics", href: "/analytics" },
-    { icon: UserPlus, label: "users", href: "/users" },
-    { icon: LinkIcon, label: "whatsappAccounts", href: "/accounts" },
-    { icon: Activity, label: "activityLogs", href: "/logs" },
+// Section labels for each group
+const GROUP_LABELS: Record<string, string> = {
+    main: "navigation",
+    crm: "crmLabel",
+    automation: "automationLabel",
+    system: "systemLabel",
+}
+
+// All menu items grouped for visual clarity
+const MENU_GROUPS = [
+    {
+        id: "main",
+        items: [
+            { icon: LayoutDashboard, label: "dashboard", href: "/dashboard" },
+            { icon: MessageSquare, label: "inbox", href: "/inbox" },
+            { icon: Calendar, label: "bookings", href: "/bookings" },
+        ],
+    },
+    {
+        id: "crm",
+        items: [
+            { icon: Users, label: "contacts", href: "/contacts" },
+            { icon: Building2, label: "branches", href: "/branches" },
+            { icon: Tag, label: "offers", href: "/offers" },
+            { icon: Receipt, label: "invoices", href: "/invoices" },
+        ],
+    },
+    {
+        id: "automation",
+        items: [
+            { icon: FileText, label: "templates", href: "/templates" },
+            { icon: Bot, label: "botFlows", href: "/bot-flows" },
+        ],
+    },
+    {
+        id: "system",
+        items: [
+            { icon: BarChart3, label: "analytics", href: "/analytics" },
+            { icon: UserPlus, label: "users", href: "/users" },
+            { icon: LinkIcon, label: "whatsappAccounts", href: "/accounts" },
+            { icon: Activity, label: "activityLogs", href: "/logs" },
+        ],
+    },
 ]
 
 export function NavigationRail() {
     const pathname = usePathname()
     const router = useRouter()
     const { t, dir } = useI18n()
-    const [filteredMenuItems, setFilteredMenuItems] = useState(menuItems)
+    const [filteredGroups, setFilteredGroups] = useState(MENU_GROUPS)
     const [companyName, setCompanyName] = useState("")
     const [companyLogo, setCompanyLogo] = useState("")
     const [companyDisplayType, setCompanyDisplayType] = useState<"text" | "logo">("text")
+    const [currentUser, setCurrentUser] = useState<{ name?: string; role?: string } | null>(null)
 
     useEffect(() => {
+        const user = getUser()
+        setCurrentUser(user)
+
         const userRole = getUserRole()
         if (userRole) {
-            const filtered = menuItems.filter(item =>
-                canAccessPage(userRole as any, item.href as PageRoute)
-            )
-            setFilteredMenuItems(filtered)
+            const filtered = MENU_GROUPS.map(group => ({
+                ...group,
+                items: group.items.filter(item =>
+                    canAccessPage(userRole as any, item.href as PageRoute)
+                ),
+            })).filter(group => group.items.length > 0)
+            setFilteredGroups(filtered)
         }
     }, [])
 
     useEffect(() => {
-        // Fetch settings to display company name or logo
-        fetch('/api/settings')
+        authenticatedFetch('/api/settings')
             .then(res => res.json())
             .then(data => {
                 if (data.success && data.settings) {
@@ -79,22 +114,32 @@ export function NavigationRail() {
             .catch(err => console.error('Error fetching settings:', err))
     }, [])
 
+    const userInitials = currentUser?.name
+        ?.split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2) || "U"
+
+    const roleLabel = currentUser?.role
+        ? currentUser.role.charAt(0) + currentUser.role.slice(1).toLowerCase()
+        : ""
+
     return (
         <aside
             className={cn(
-                "flex w-56 flex-col bg-sidebar border-border/40",
-                // في RTL نريد أن يكون الحد من الجهة اليسار (start في RTL)
-                dir === "rtl" ? "border-s" : "border-e",
+                "flex w-[240px] h-full flex-col bg-sidebar overflow-hidden",
+                dir === "rtl" ? "border-s border-border/40" : "border-e border-border/40",
             )}
         >
-            {/* Logo Section */}
-            <div className="flex h-16 items-center gap-2 border-b border-border/40 px-4">
+            {/* Logo / Brand */}
+            <div className="flex h-16 items-center gap-2.5 border-b border-border/40 px-4 shrink-0">
                 {companyDisplayType === "logo" && companyLogo ? (
                     <>
                         <img
                             src={companyLogo}
                             alt={companyName || "Company Logo"}
-                            className="h-8 w-8 object-contain rounded-lg"
+                            className="h-9 w-9 object-contain rounded-xl"
                         />
                         {companyName && (
                             <span className="text-lg font-bold text-sidebar-foreground truncate">
@@ -104,7 +149,7 @@ export function NavigationRail() {
                     </>
                 ) : (
                     <>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm shadow-sm">
                             {companyName ? companyName.charAt(0).toUpperCase() : "M"}
                         </div>
                         <span className="text-lg font-bold text-sidebar-foreground truncate">
@@ -115,77 +160,125 @@ export function NavigationRail() {
             </div>
 
             {/* Quick Actions */}
-            <div className="flex flex-col gap-2 p-4 border-b border-border/40">
+            <div className="flex flex-col gap-1.5 p-3 border-b border-border/40 shrink-0">
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-muted text-muted-foreground hover:text-foreground h-9 text-start"
+                    className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-primary/10 hover:text-primary text-muted-foreground h-9 text-start transition-colors"
                     onClick={() => router.push('/templates')}
                 >
-                    <TrendingUp className="h-4 w-4 shrink-0" />
+                    <TrendingUp className="h-4 w-4 shrink-0 order-first" />
                     {t("createTemplate")}
                 </Button>
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-muted text-muted-foreground hover:text-foreground h-9 text-start"
+                    className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-primary/10 hover:text-primary text-muted-foreground h-9 text-start transition-colors"
                     onClick={() => router.push('/bot-flows/create')}
                 >
-                    <TrendingDown className="h-4 w-4 shrink-0" />
+                    <TrendingDown className="h-4 w-4 shrink-0 order-first" />
                     {t("createBotFlow")}
                 </Button>
             </div>
 
-            {/* Menu Items */}
-            <nav className="flex-1 space-y-1 p-3 overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-                {filteredMenuItems.map((item) => {
-                    const Icon = item.icon
-                    const isActive = pathname === item.href || pathname?.startsWith(item.href + "/")
+            {/* Navigation Menu */}
+            <nav className="flex-1 overflow-y-auto overscroll-contain py-2 px-3 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                {filteredGroups.map((group, groupIndex) => (
+                    <div key={group.id} className={groupIndex > 0 ? "mt-4" : ""}>
+                        {/* Section Label */}
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-3 mb-1.5">
+                            {t(GROUP_LABELS[group.id] || group.id)}
+                        </p>
+                        <div className="space-y-0.5">
+                            {group.items.map((item) => {
+                                const Icon = item.icon
+                                const isActive =
+                                    pathname === item.href ||
+                                    pathname?.startsWith(item.href + "/")
 
-                    return (
-                        <Link key={item.href} href={item.href}>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className={cn(
-                                    "w-full flex flex-row justify-start gap-3 transition-all duration-200 rounded-xl h-11 font-medium text-start",
-                                    isActive
-                                        ? "bg-primary text-primary-foreground shadow-md hover:bg-primary hover:text-primary-foreground"
-                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                )}
-                            >
-                                <Icon className="h-5 w-5 shrink-0 order-first" />
-                                <span className="text-sm">{t(item.label)}</span>
-                            </Button>
-                        </Link>
-                    )
-                })}
+                                return (
+                                    <Link key={item.href} href={item.href}>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className={cn(
+                                                "w-full flex flex-row justify-start gap-3 transition-all duration-200 rounded-lg h-9 font-medium text-start group",
+                                                isActive
+                                                    ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground"
+                                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                            )}
+                                        >
+                                            <Icon className={cn(
+                                                "h-[18px] w-[18px] shrink-0 order-first transition-transform duration-200",
+                                                !isActive && "group-hover:scale-110"
+                                            )} />
+                                            <span className="text-[13px] truncate">{t(item.label)}</span>
+                                            {isActive && (
+                                                <ChevronRight className={cn(
+                                                    "h-3.5 w-3.5 ms-auto shrink-0 opacity-60",
+                                                    dir === "rtl" && "rotate-180"
+                                                )} />
+                                            )}
+                                        </Button>
+                                    </Link>
+                                )
+                            })}
+                        </div>
+                    </div>
+                ))}
             </nav>
 
-            {/* Bottom Section */}
-            <div className="space-y-1 p-3 border-t border-border/40">
-                <Link href="/settings">
+            {/* Bottom: User Info + Settings + Logout */}
+            <div className="border-t border-border/40 shrink-0">
+                {/* Current User */}
+                {currentUser && (
+                    <div
+                        className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => router.push('/settings')}
+                    >
+                        <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                                {userInitials}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-sidebar-foreground truncate leading-tight">
+                                {currentUser.name || t("userLabel")}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground leading-tight">
+                                {roleLabel}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                <div className="space-y-0.5 px-3 pb-3 pt-1">
+                    <Link href="/settings">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className={cn(
+                                "w-full flex flex-row justify-start gap-3 rounded-lg h-9 font-medium text-start",
+                                pathname === "/settings"
+                                    ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground"
+                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                            )}
+                        >
+                            <Settings className="h-[18px] w-[18px] shrink-0 order-first" />
+                            <span className="text-[13px]">{t("settings")}</span>
+                        </Button>
+                    </Link>
+
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full flex flex-row justify-start gap-3 rounded-xl h-11 text-muted-foreground hover:bg-muted hover:text-foreground font-medium text-start"
+                        onClick={logout}
+                        className="w-full flex flex-row justify-start gap-3 rounded-lg h-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive font-medium text-start"
                     >
-                        <Settings className="h-5 w-5 shrink-0 order-first" />
-                        <span className="text-sm">{t("settings")}</span>
+                        <LogOut className="h-[18px] w-[18px] shrink-0 order-first" />
+                        <span className="text-[13px]">{t("logout")}</span>
                     </Button>
-                </Link>
-
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={logout}
-                    className="w-full flex flex-row justify-start gap-3 rounded-xl h-11 text-muted-foreground hover:bg-muted hover:text-foreground font-medium text-start"
-                >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0 order-first">
-                        <LogOut className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm">{t("logout")}</span>
-                </Button>
+                </div>
             </div>
         </aside>
     )
