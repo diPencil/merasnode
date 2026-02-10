@@ -29,7 +29,7 @@ echo "==> بناء المشروع..."
 npm run build
 
 echo "==> إعادة تشغيل التطبيق (pm2)..."
-if pm2 describe meras-nextjs &>/dev/null || pm2 describe meras-whatsapp &>/dev/null; then
+if pm2 describe meras-node &>/dev/null || pm2 describe meras-whatsapp &>/dev/null; then
   pm2 restart ecosystem.config.js
   echo "==> تم إعادة التشغيل بنجاح."
 else
