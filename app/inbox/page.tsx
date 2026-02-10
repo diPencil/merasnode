@@ -159,6 +159,10 @@ export default function InboxPage() {
   const { t, language, dir } = useI18n()
   const dateLocale = language === "ar" ? ar : undefined
   const isMobile = useIsMobile()
+  const userRole = getUserRole()
+  const currentUser = getUser()
+  const isAdmin = userRole === "ADMIN"
+  const isAgentOrSupervisor = userRole === "AGENT" || userRole === "SUPERVISOR"
 
   // ... existing refs ...
   const searchParams = useSearchParams()
@@ -873,6 +877,21 @@ export default function InboxPage() {
     notes: ""
   })
 
+  // For Agent/Supervisor: only current user can be selected in Book Appointment
+  const bookingAgents = useMemo(() => {
+    if (isAgentOrSupervisor && currentUser) {
+      return users.filter((u) => u.id === currentUser.id)
+    }
+    return users
+  }, [users, isAgentOrSupervisor, currentUser])
+
+  // When opening Book Appointment as Agent/Supervisor, pre-fill current user as agent
+  useEffect(() => {
+    if (isBookingOpen && isAgentOrSupervisor && currentUser) {
+      setBookingFormData((prev) => ({ ...prev, agentId: currentUser.id }))
+    }
+  }, [isBookingOpen, isAgentOrSupervisor, currentUser?.id])
+
   const handleBooking = async () => {
     if (!selectedConversation || !bookingFormData.date) {
       toast({
@@ -1177,12 +1196,13 @@ export default function InboxPage() {
                         <Select
                           value={bookingFormData.agentId}
                           onValueChange={(value) => setBookingFormData(prev => ({ ...prev, agentId: value }))}
+                          disabled={isAgentOrSupervisor && bookingAgents.length <= 1}
                         >
                           <SelectTrigger className="col-span-3">
                             <SelectValue placeholder={t("selectAgent")} />
                           </SelectTrigger>
                           <SelectContent>
-                            {users.map((user) => (
+                            {bookingAgents.map((user) => (
                               <SelectItem key={user.id} value={user.id}>
                                 {user.name}
                               </SelectItem>
@@ -1243,13 +1263,19 @@ export default function InboxPage() {
                     <DropdownMenuItem onClick={() => setIsBotFlowsDialogOpen(true)}>
                       <Play className="me-2 h-4 w-4" /> {t("botFlows")}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExportChat}>
-                      <p className="flex items-center"><span className="me-2">📤</span> {t("exportChat")}</p>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600" onClick={handleBlockContact}>
-                      {t("blockContact")}
-                    </DropdownMenuItem>
+                    {isAdmin && (
+                      <DropdownMenuItem onClick={handleExportChat}>
+                        <p className="flex items-center"><span className="me-2">📤</span> {t("exportChat")}</p>
+                      </DropdownMenuItem>
+                    )}
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-red-600" onClick={handleBlockContact}>
+                          {t("blockContact")}
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
 

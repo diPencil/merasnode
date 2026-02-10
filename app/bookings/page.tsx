@@ -84,6 +84,8 @@ export default function BookingsPage() {
     const [bookings, setBookings] = useState<Booking[]>([])
     const [searchQuery, setSearchQuery] = useState("")
     const [isLoading, setIsLoading] = useState(true)
+    const actualRole = getUserRole()
+    const isAgentOrSupervisor = actualRole === "AGENT" || actualRole === "SUPERVISOR"
 
     // Role Simulation State
     const [userRole, setUserRole] = useState<'ADMIN' | 'EMPLOYEE'>('ADMIN')
@@ -397,24 +399,26 @@ export default function BookingsPage() {
                                     <Button variant="outline" size="sm" className="flex-1 h-9" onClick={() => handleAction("View Details", booking.bookingNumber)}>
                                         {t("viewDetails")}
                                     </Button>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 border">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => handleAction("Edit Booking", booking.bookingNumber)}>
-                                                {t("editBooking")}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                className="text-red-600 focus:text-red-600"
-                                                onClick={() => initiateCancel(booking.bookingNumber)}
-                                            >
-                                                {t("cancelBooking")}
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                    {!isAgentOrSupervisor && (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 border">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleAction("Edit Booking", booking.bookingNumber)}>
+                                                    {t("editBooking")}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    className="text-red-600 focus:text-red-600"
+                                                    onClick={() => initiateCancel(booking.bookingNumber)}
+                                                >
+                                                    {t("cancelBooking")}
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    )}
                                 </div>
                             </div>
                         ))
@@ -433,13 +437,15 @@ export default function BookingsPage() {
                                 <TableHead>{t("notes")}</TableHead>
                                 <TableHead>{t("dateLabel")}</TableHead>
                                 <TableHead>{t("status")}</TableHead>
-                                <TableHead className="text-end">{t("actionsLabel")}</TableHead>
+                                {!isAgentOrSupervisor && (
+                                    <TableHead className="text-end">{t("actionsLabel")}</TableHead>
+                                )}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="h-24 text-center">
+                                    <TableCell colSpan={isAgentOrSupervisor ? 7 : 8} className="h-24 text-center">
                                         <div className="flex items-center justify-center gap-2">
                                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                                             <span className="text-muted-foreground">{t("loadingBookings")}</span>
@@ -448,7 +454,7 @@ export default function BookingsPage() {
                                 </TableRow>
                             ) : filteredBookings.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                                    <TableCell colSpan={isAgentOrSupervisor ? 7 : 8} className="h-24 text-center text-muted-foreground">
                                         {t("noBookingsFound")}
                                     </TableCell>
                                 </TableRow>
@@ -502,30 +508,32 @@ export default function BookingsPage() {
                                                 {booking.status}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-end">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <span className="sr-only">Open menu</span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => handleAction("View Details", booking.bookingNumber)}>
-                                                        {t("viewDetails")}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleAction("Edit Booking", booking.bookingNumber)}>
-                                                        {t("editBooking")}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        className="text-red-600 focus:text-red-600"
-                                                        onClick={() => initiateCancel(booking.bookingNumber)}
-                                                    >
-                                                        {t("cancelBooking")}
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
+                                        {!isAgentOrSupervisor && (
+                                            <TableCell className="text-end">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => handleAction("View Details", booking.bookingNumber)}>
+                                                            {t("viewDetails")}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleAction("Edit Booking", booking.bookingNumber)}>
+                                                            {t("editBooking")}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            className="text-red-600 focus:text-red-600"
+                                                            onClick={() => initiateCancel(booking.bookingNumber)}
+                                                        >
+                                                            {t("cancelBooking")}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 ))
                             )}

@@ -27,7 +27,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
 import { Search, Plus, MoreVertical, Mail, Phone, Tag, Download, Upload, ShieldOff, Users } from "lucide-react"
-import { authenticatedFetch } from "@/lib/auth"
+import { authenticatedFetch, getUserRole } from "@/lib/auth"
 
 interface Contact {
   id: string
@@ -45,6 +45,8 @@ export default function ContactsPage() {
   const { toast } = useToast()
   const { t, language, dir } = useI18n()
   const dateLocale = language === "ar" ? ar : undefined
+  const userRole = getUserRole()
+  const isAgentOrSupervisor = userRole === "AGENT" || userRole === "SUPERVISOR"
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -531,23 +533,29 @@ export default function ContactsPage() {
 
             {/* Actions Row */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-              <Button
-                variant={viewMode === "blocked" ? "default" : "outline"}
-                size="sm"
-                className={`h-9 gap-2 shrink-0 ${viewMode === "blocked" ? "bg-red-600 hover:bg-red-700 text-white" : "bg-card"}`}
-                onClick={() => setViewMode(viewMode === "all" ? "blocked" : "all")}
-              >
-                {viewMode === "all" ? <ShieldOff className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-                <span className="hidden lg:inline">{viewMode === "all" ? t("blockedContactsLabel") : t("allContactsLabel")}</span>
-              </Button>
-              <Button variant="outline" size="sm" className="h-9 gap-2 shrink-0 bg-card" onClick={handleImport}>
-                <Upload className="h-4 w-4" />
-                <span className="hidden lg:inline">{t("importLabel")}</span>
-              </Button>
-              <Button variant="outline" size="sm" className="h-9 gap-2 shrink-0 bg-card" onClick={handleExport}>
-                <Download className="h-4 w-4" />
-                <span className="hidden lg:inline">{t("exportLabel")}</span>
-              </Button>
+              {!isAgentOrSupervisor && (
+                <Button
+                  variant={viewMode === "blocked" ? "default" : "outline"}
+                  size="sm"
+                  className={`h-9 gap-2 shrink-0 ${viewMode === "blocked" ? "bg-red-600 hover:bg-red-700 text-white" : "bg-card"}`}
+                  onClick={() => setViewMode(viewMode === "all" ? "blocked" : "all")}
+                >
+                  {viewMode === "all" ? <ShieldOff className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                  <span className="hidden lg:inline">{viewMode === "all" ? t("blockedContactsLabel") : t("allContactsLabel")}</span>
+                </Button>
+              )}
+              {!isAgentOrSupervisor && (
+                <Button variant="outline" size="sm" className="h-9 gap-2 shrink-0 bg-card" onClick={handleImport}>
+                  <Upload className="h-4 w-4" />
+                  <span className="hidden lg:inline">{t("importLabel")}</span>
+                </Button>
+              )}
+              {!isAgentOrSupervisor && (
+                <Button variant="outline" size="sm" className="h-9 gap-2 shrink-0 bg-card" onClick={handleExport}>
+                  <Download className="h-4 w-4" />
+                  <span className="hidden lg:inline">{t("exportLabel")}</span>
+                </Button>
+              )}
 
               {/* Desktop Add Button */}
               <Button size="sm" className="h-9 hidden md:flex shrink-0" onClick={() => setIsAddDialogOpen(true)}>
@@ -639,33 +647,43 @@ export default function ContactsPage() {
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSelectedContact(contact) }}>
                             {t("viewDetails")}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation()
-                            setEditContact({
-                              id: contact.id,
-                              name: contact.name,
-                              phone: contact.phone,
-                              email: contact.email || "",
-                              tags: Array.isArray(contact.tags) ? contact.tags.join(", ") : (contact.tags || ""),
-                              notes: contact.notes || ""
-                            })
-                            setIsEditDialogOpen(true)
-                          }}>
-                            {t("editContactLabel")}
-                          </DropdownMenuItem>
+                          {!isAgentOrSupervisor && (
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation()
+                              setEditContact({
+                                id: contact.id,
+                                name: contact.name,
+                                phone: contact.phone,
+                                email: contact.email || "",
+                                tags: Array.isArray(contact.tags) ? contact.tags.join(", ") : (contact.tags || ""),
+                                notes: contact.notes || ""
+                              })
+                              setIsEditDialogOpen(true)
+                            }}>
+                              {t("editContactLabel")}
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleSendMessage(contact.id) }}>
                             {t("sendMessageLabel")}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleBlock(contact) }}>
-                            {isBlocked ? t("unblockContactLabel") : t("blockContactLabel")}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={(e) => { e.stopPropagation(); setContactToDelete(contact.id); setIsDeleteDialogOpen(true) }}
-                          >
-                            {t("delete")}
-                          </DropdownMenuItem>
+                          {!isAgentOrSupervisor && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className={isBlocked ? "text-green-600" : "text-amber-600"}
+                                onClick={(e) => { e.stopPropagation(); handleToggleBlock(contact) }}
+                              >
+                                {isBlocked ? t("unblockContactLabel") : t("blockContactLabel")}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={(e) => { e.stopPropagation(); setContactToDelete(contact.id); setIsDeleteDialogOpen(true) }}
+                              >
+                                {t("delete")}
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -684,7 +702,9 @@ export default function ContactsPage() {
                       <TableHead>{t("email")}</TableHead>
                       <TableHead>{t("tags")}</TableHead>
                       <TableHead>{t("createdLabel")}</TableHead>
-                      <TableHead className="text-end w-[100px]">{t("actionsLabel")}</TableHead>
+                      {!isAgentOrSupervisor && (
+                        <TableHead className="text-end w-[100px]">{t("actionsLabel")}</TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -753,64 +773,66 @@ export default function ContactsPage() {
                             </div>
                           </TableCell>
                           <TableCell className="text-muted-foreground">{format(new Date(contact.createdAt), "MMM dd, yyyy", { locale: dateLocale })}</TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="rounded-xl shadow-soft-lg">
-                                <DropdownMenuItem onClick={(e) => {
-                                  e.stopPropagation()
-                                  setSelectedContact(contact)
-                                }}>
-                                  {t("viewDetails")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={(e) => {
-                                  e.stopPropagation()
-                                  setEditContact({
-                                    id: contact.id,
-                                    name: contact.name,
-                                    phone: contact.phone,
-                                    email: contact.email || "",
-                                    tags: Array.isArray(contact.tags) ? contact.tags.join(", ") : (contact.tags || ""),
-                                    notes: contact.notes || ""
-                                  })
-                                  setIsEditDialogOpen(true)
-                                }}>
-                                  {t("editContactLabel")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleSendMessage(contact.id)
-                                }}>
-                                  {t("sendMessageLabel")}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className={isBlocked ? "text-green-600" : "text-amber-600"}
-                                  onClick={(e) => {
+                          {!isAgentOrSupervisor && (
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="rounded-xl shadow-soft-lg">
+                                  <DropdownMenuItem onClick={(e) => {
                                     e.stopPropagation()
-                                    handleToggleBlock(contact)
-                                  }}
-                                >
-                                  {isBlocked ? t("unblockContactLabel") : t("blockContactLabel")}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={(e) => {
+                                    setSelectedContact(contact)
+                                  }}>
+                                    {t("viewDetails")}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => {
                                     e.stopPropagation()
-                                    setContactToDelete(contact.id)
-                                    setIsDeleteDialogOpen(true)
-                                  }}
-                                >
-                                  {t("delete")}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
+                                    setEditContact({
+                                      id: contact.id,
+                                      name: contact.name,
+                                      phone: contact.phone,
+                                      email: contact.email || "",
+                                      tags: Array.isArray(contact.tags) ? contact.tags.join(", ") : (contact.tags || ""),
+                                      notes: contact.notes || ""
+                                    })
+                                    setIsEditDialogOpen(true)
+                                  }}>
+                                    {t("editContactLabel")}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleSendMessage(contact.id)
+                                  }}>
+                                    {t("sendMessageLabel")}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className={isBlocked ? "text-green-600" : "text-amber-600"}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleToggleBlock(contact)
+                                    }}
+                                  >
+                                    {isBlocked ? t("unblockContactLabel") : t("blockContactLabel")}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setContactToDelete(contact.id)
+                                      setIsDeleteDialogOpen(true)
+                                    }}
+                                  >
+                                    {t("delete")}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          )}
                         </TableRow>
                       )
                     })}
@@ -893,26 +915,28 @@ export default function ContactsPage() {
                   >
                     {t("sendMessageButton")}
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 rounded-full bg-transparent"
-                    onClick={() => {
-                      if (selectedContact) {
-                        setEditContact({
-                          id: selectedContact.id,
-                          name: selectedContact.name,
-                          phone: selectedContact.phone,
-                          email: selectedContact.email || "",
-                          tags: Array.isArray(selectedContact.tags) ? selectedContact.tags.join(', ') : (selectedContact.tags || ""),
-                          notes: selectedContact.notes || ""
-                        })
-                        setIsEditDialogOpen(true)
-                        setSelectedContact(null)
-                      }
-                    }}
-                  >
-                    {t("edit")}
-                  </Button>
+                  {!isAgentOrSupervisor && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 rounded-full bg-transparent"
+                      onClick={() => {
+                        if (selectedContact) {
+                          setEditContact({
+                            id: selectedContact.id,
+                            name: selectedContact.name,
+                            phone: selectedContact.phone,
+                            email: selectedContact.email || "",
+                            tags: Array.isArray(selectedContact.tags) ? selectedContact.tags.join(', ') : (selectedContact.tags || ""),
+                            notes: selectedContact.notes || ""
+                          })
+                          setIsEditDialogOpen(true)
+                          setSelectedContact(null)
+                        }
+                      }}
+                    >
+                      {t("edit")}
+                    </Button>
+                  )}
                 </div>
               </div>
             </>
