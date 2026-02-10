@@ -2,21 +2,34 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { logActivity } from "@/lib/logger"
 
-// GET - جلب جميع القوالب
+// GET - جلب القوالب (optional: whatsappAccountId for quick-reply scope; trigger to match triggerKeywords)
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url)
         const category = searchParams.get('category')
         const status = searchParams.get('status')
+        const whatsappAccountId = searchParams.get('whatsappAccountId') || undefined
+        const trigger = searchParams.get('trigger') || undefined
 
         const where: any = {}
         if (category) where.category = category
         if (status) where.status = status
+        if (whatsappAccountId) where.whatsappAccountId = whatsappAccountId
 
-        const templates = await prisma.template.findMany({
+        let templates = await prisma.template.findMany({
             where,
             orderBy: { createdAt: 'desc' }
         })
+
+        // If trigger provided, filter templates whose triggerKeywords contain this trigger (case-insensitive)
+        if (trigger && trigger.trim()) {
+            const triggerLower = trigger.trim().toLowerCase()
+            templates = templates.filter((t) => {
+                const keywords = t.triggerKeywords as string[] | null
+                if (!keywords || !Array.isArray(keywords)) return false
+                return keywords.some((k) => String(k).toLowerCase() === triggerLower || String(k).toLowerCase().includes(triggerLower))
+            })
+        }
 
         // Extract variables from content dynamically
         const templatesWithVariables = templates.map(t => {
@@ -67,7 +80,9 @@ export async function POST(request: NextRequest) {
                 content: body.content,
                 category: body.category || null,
                 language: body.language || 'en',
-                status: body.status || 'PENDING'
+                status: body.status || 'PENDING',
+                whatsappAccountId: body.whatsappAccountId || null,
+                triggerKeywords: body.triggerKeywords != null ? body.triggerKeywords : null
             }
         })
 

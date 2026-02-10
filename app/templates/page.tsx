@@ -32,6 +32,8 @@ interface Template {
   status: string
   variables: string[]
   createdAt: string
+  whatsappAccountId?: string | null
+  triggerKeywords?: string[] | null
 }
 
 const AVAILABLE_VARIABLES = ['name', 'phone', 'email', 'company_name', 'order_id', 'date']
@@ -50,13 +52,25 @@ export default function TemplatesPage() {
     name: "",
     content: "",
     category: "",
-    language: "en"
+    language: "en",
+    whatsappAccountId: "" as string,
+    triggerKeywords: "" as string
   })
+  const [whatsappAccounts, setWhatsappAccounts] = useState<{ id: string; name: string; phone: string; status: string }[]>([])
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     fetchTemplates()
+  }, [])
+
+  useEffect(() => {
+    authenticatedFetch('/api/whatsapp/accounts')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.accounts) setWhatsappAccounts(data.accounts)
+      })
+      .catch(() => {})
   }, [])
 
   const fetchTemplates = async () => {
@@ -92,11 +106,18 @@ export default function TemplatesPage() {
 
       const url = editingId ? `/api/templates/${editingId}` : '/api/templates'
       const method = editingId ? 'PUT' : 'POST'
+      const payload = {
+        ...newTemplate,
+        whatsappAccountId: newTemplate.whatsappAccountId || undefined,
+        triggerKeywords: newTemplate.triggerKeywords
+          ? newTemplate.triggerKeywords.split(',').map((s) => s.trim()).filter(Boolean)
+          : undefined
+      }
 
       const response = await authenticatedFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTemplate)
+        body: JSON.stringify(payload)
       })
 
       const data = await response.json()
@@ -116,7 +137,7 @@ export default function TemplatesPage() {
           })
         }
         setIsCreateOpen(false)
-        setNewTemplate({ name: "", content: "", category: "", language: "en" })
+        setNewTemplate({ name: "", content: "", category: "", language: "en", whatsappAccountId: "", triggerKeywords: "" })
         setEditingId(null)
       } else {
         toast({
@@ -162,7 +183,9 @@ export default function TemplatesPage() {
       name: template.name,
       content: template.content,
       category: template.category,
-      language: template.language
+      language: template.language,
+      whatsappAccountId: template.whatsappAccountId || "",
+      triggerKeywords: Array.isArray(template.triggerKeywords) ? template.triggerKeywords.join(", ") : (template.triggerKeywords as string) || ""
     })
     setIsCreateOpen(true)
   }
@@ -244,7 +267,7 @@ export default function TemplatesPage() {
                         required
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="category">{t("categoryRequired")}</Label>
                         <Select value={newTemplate.category} onValueChange={(value) => setNewTemplate({ ...newTemplate, category: value })}>
@@ -271,6 +294,34 @@ export default function TemplatesPage() {
                           </SelectContent>
                         </Select>
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="whatsappAccount">{t("whatsappAccounts")} ({t("quickReplyScope")})</Label>
+                      <Select
+                        value={newTemplate.whatsappAccountId || "none"}
+                        onValueChange={(v) => setNewTemplate({ ...newTemplate, whatsappAccountId: v === "none" ? "" : v })}
+                      >
+                        <SelectTrigger id="whatsappAccount">
+                          <SelectValue placeholder={t("selectWhatsAppNumber")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{t("noScope")}</SelectItem>
+                          {whatsappAccounts.map((acc) => (
+                            <SelectItem key={acc.id} value={acc.id}>{acc.name || acc.phone}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">{t("templateShownOnlyForThisNumber")}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="triggerKeywords">{t("triggerKeywords")}</Label>
+                      <Input
+                        id="triggerKeywords"
+                        placeholder="Hi, Hello, مرحبا"
+                        value={newTemplate.triggerKeywords}
+                        onChange={(e) => setNewTemplate({ ...newTemplate, triggerKeywords: e.target.value })}
+                      />
+                      <p className="text-xs text-muted-foreground">{t("triggerKeywordsHint")}</p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="content">{t("messageContent")} *</Label>
@@ -301,7 +352,7 @@ export default function TemplatesPage() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => { setIsCreateOpen(false); setEditingId(null); setNewTemplate({ name: "", content: "", category: "", language: "en" }) }}>
+                    <Button type="button" variant="outline" onClick={() => { setIsCreateOpen(false); setEditingId(null); setNewTemplate({ name: "", content: "", category: "", language: "en", whatsappAccountId: "", triggerKeywords: "" }) }}>
                       {t("cancel")}
                     </Button>
                     <Button type="submit" disabled={isSubmitting}>

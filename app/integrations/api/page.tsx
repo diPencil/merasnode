@@ -24,7 +24,18 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { authenticatedFetch } from "@/lib/auth"
+import { useI18n } from "@/lib/i18n"
 
 interface ApiKey {
     id: string
@@ -42,6 +53,7 @@ export default function ApiKeysPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [newKeyName, setNewKeyName] = useState("")
     const [expiresIn, setExpiresIn] = useState("never")
+    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
     const { toast } = useToast()
     const { t } = useI18n()
 
@@ -123,38 +135,6 @@ export default function ApiKeysPage() {
         })
     }
 
-    const handleDeleteKey = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this API key?')) return
-
-        try {
-            const response = await authenticatedFetch(`/api/integrations/api-keys?id=${id}`, {
-                method: 'DELETE'
-            })
-
-            const data = await response.json()
-
-            if (data.success) {
-                toast({
-                    title: "Success",
-                    description: "API key deleted successfully"
-                })
-                fetchApiKeys()
-            } else {
-                toast({
-                    title: "Error",
-                    description: data.error || "Failed to delete API key",
-                    variant: "destructive"
-                })
-            }
-        } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to delete API key",
-                variant: "destructive"
-            })
-        }
-    }
-
     if (isLoading) {
         return (
             <AppLayout title={t("apiKeys")}>
@@ -167,6 +147,20 @@ export default function ApiKeysPage() {
 
     return (
         <AppLayout title={t("apiKeys")}>
+            <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("confirmDeleteApiKey")}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteApiKey} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            {t("delete")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <div className="max-w-4xl space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -253,7 +247,7 @@ export default function ApiKeysPage() {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => handleDeleteKey(apiKey.id)}
+                                            onClick={() => handleDeleteKeyClick(apiKey.id)}
                                         >
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>

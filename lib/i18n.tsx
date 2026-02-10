@@ -417,6 +417,10 @@ const translations: Translations = {
   offerDeletedSuccess: { en: "Offer deleted successfully", ar: "تم حذف العرض بنجاح" },
   failedToSaveOffer: { en: "Failed to save offer", ar: "فشل حفظ العرض" },
   confirmDeleteOffer: { en: "Are you sure you want to delete this offer?", ar: "هل أنت متأكد من حذف هذا العرض؟" },
+  confirmDeleteIntegration: { en: "Are you sure you want to delete this integration?", ar: "هل أنت متأكد من حذف هذا التكامل؟" },
+  confirmDeleteApiKey: { en: "Are you sure you want to delete this API key?", ar: "هل أنت متأكد من حذف مفتاح API هذا؟" },
+  confirmBlockContact: { en: "Block contact?", ar: "حظر جهة الاتصال؟" },
+  confirmBlockContactDescription: { en: "They will be marked as blocked and the conversation will be archived.", ar: "سيتم وضع علامة محظور عليها وأرشفة المحادثة." },
   noOfferSelected: { en: "No offer selected", ar: "لم يتم اختيار عرض" },
   pleaseSelectContact: { en: "Please select a contact", ar: "يرجى اختيار جهة اتصال" },
   searchOffers: { en: "Search offers...", ar: "بحث في العروض..." },
@@ -496,6 +500,12 @@ const translations: Translations = {
   createMessageTemplate: { en: "Create Message Template", ar: "إنشاء قالب رسالة" },
   updateExistingTemplate: { en: "Update your existing template", ar: "تحديث القالب الحالي" },
   createReusableTemplate: { en: "Create a reusable message template for quick responses", ar: "إنشاء قالب رسالة قابلة لإعادة الاستخدام للردود السريعة" },
+  quickReplyScope: { en: "Quick reply scope", ar: "نطاق الرد السريع" },
+  selectWhatsAppNumber: { en: "Select WhatsApp number", ar: "اختر رقم واتساب" },
+  noScope: { en: "No scope (global)", ar: "بدون نطاق" },
+  templateShownOnlyForThisNumber: { en: "Template will appear as quick reply only in conversations using this WhatsApp number.", ar: "سيظهر القالب كرد سريع فقط في المحادثات التي تستخدم هذا الرقم." },
+  triggerKeywords: { en: "Trigger keywords", ar: "كلمات المحفز" },
+  triggerKeywordsHint: { en: "Comma-separated. When customer sends one of these (e.g. Hi, Hello), this template appears as a button.", ar: "مفصولة بفاصلة. عند إرسال العميل إحداها يظهر القالب كزر." },
   // templateName: { en: "Template Name", ar: "اسم القالب" }, // Duplicate of line 99
   // messageContent: { en: "Message Content", ar: "محتوى الرسالة" }, // Duplicate of line 102
   categoryRequired: { en: "Category *", ar: "التصنيف *" },

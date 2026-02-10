@@ -27,6 +27,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface CrmIntegration {
     id: string
@@ -150,16 +160,19 @@ export default function CrmIntegrationPage() {
         }
     }
 
-    const handleDeleteIntegration = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this integration?')) return
+    const handleDeleteIntegrationClick = (id: string) => {
+        setDeleteConfirmId(id)
+    }
 
+    const confirmDeleteIntegration = async () => {
+        const id = deleteConfirmId
+        setDeleteConfirmId(null)
+        if (!id) return
         try {
             const response = await authenticatedFetch(`/api/integrations/crm?id=${id}`, {
                 method: 'DELETE'
             })
-
             const data = await response.json()
-
             if (data.success) {
                 toast({
                     title: "Success",
@@ -194,6 +207,20 @@ export default function CrmIntegrationPage() {
 
     return (
         <AppLayout title={t("crmIntegration")}>
+            <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("confirmDeleteIntegration")}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteIntegration} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            {t("delete")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <div className="max-w-4xl space-y-6">
                 <div className="flex items-center justify-between">
                     <div>

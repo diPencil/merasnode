@@ -59,6 +59,16 @@ import {
 } from "@/components/ui/sheet"
 import { SidebarContent } from "./sidebar-content"
 import { ArrowLeft, Info } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Message {
   id: string
@@ -68,6 +78,7 @@ interface Message {
   createdAt: string
   type?: "TEXT" | "IMAGE" | "AUDIO" | "VIDEO" | "DOCUMENT" | "LOCATION"
   mediaUrl?: string
+  whatsappAccountId?: string | null
   sender?: {
     id: string
     name: string | null
@@ -153,9 +164,11 @@ export default function InboxPage() {
   const [botFlows, setBotFlows] = useState<BotFlow[]>([])
   const [suggestedFlow, setSuggestedFlow] = useState<BotFlow | null>(null)
   const [isSuggestionSnoozed, setIsSuggestionSnoozed] = useState(false)
+  const [quickReplyTemplates, setQuickReplyTemplates] = useState<{ id: string; name: string; content: string }[]>([])
   const [settings, setSettings] = useState<any>(null)
   const [lastOrderId, setLastOrderId] = useState<string>("N/A")
   const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [blockConfirmOpen, setBlockConfirmOpen] = useState(false)
   const { toast } = useToast()
   const { t, language, dir } = useI18n()
   const dateLocale = language === "ar" ? ar : undefined
@@ -271,6 +284,36 @@ export default function InboxPage() {
       setSuggestedFlow(null)
     }
   }, [messages, botFlows])
+
+  // Quick-reply templates (WhatsApp/Facebook style): show when last customer message matches trigger keywords
+  useEffect(() => {
+    if (!selectedConversation || !messages.length) {
+      setQuickReplyTemplates([])
+      return
+    }
+    const lastIncoming = [...messages].reverse().find((m) => m.direction === "INCOMING" && m.content?.trim() && (m.type === "TEXT" || !m.type))
+    const triggerText = lastIncoming?.content?.trim()
+    if (!triggerText) {
+      setQuickReplyTemplates([])
+      return
+    }
+    const waId = lastIncoming?.whatsappAccountId ?? (messages.find((m) => m.whatsappAccountId)?.whatsappAccountId)
+    if (!waId) {
+      setQuickReplyTemplates([])
+      return
+    }
+    const url = `/api/templates?whatsappAccountId=${encodeURIComponent(waId)}&trigger=${encodeURIComponent(triggerText)}`
+    authenticatedFetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          setQuickReplyTemplates(data.data.map((t: any) => ({ id: t.id, name: t.name, content: t.content })))
+        } else {
+          setQuickReplyTemplates([])
+        }
+      })
+      .catch(() => setQuickReplyTemplates([]))
+  }, [selectedConversation?.id, messages])
 
   const fetchBotFlows = async () => {
     try {
@@ -526,6 +569,7 @@ export default function InboxPage() {
 
       if (data.success) {
         if (!mediaUrl) setNewMessage("") // Only clear input if not a file upload (which clears itself)
+        setQuickReplyTemplates([]) // Clear quick-reply buttons after sending
         fetchMessages(selectedConversation.id)
         // Optimistic update for last message time
         setConversations(prev => prev.map(c =>
@@ -682,57 +726,51 @@ export default function InboxPage() {
   }
 
 
-  const handleBlockContact = async () => {
+  const handleBlockContact = () => {
+    if (selectedConversation) setBlockConfirmOpen(true)
+  }
+
+  const confirmBlockContact = async () => {
     if (!selectedConversation) return
+    try {
+      setIsLoading(true)
+      setBlockConfirmOpen(false)
 
-    if (confirm(t("blockConfirm"))) {
-      try {
-        setIsLoading(true)
-
-        // 1. Update Contact Tags (Add 'blocked')
-        const currentTags = selectedConversation.contact.tags
-          ? (Array.isArray(selectedConversation.contact.tags) ? selectedConversation.contact.tags : String(selectedConversation.contact.tags).split(','))
-          : []
-
-        if (!currentTags.includes('blocked')) {
-          const updatedTags = [...currentTags, 'blocked']
-
-          await authenticatedFetch(`/api/contacts/${selectedConversation.contactId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: selectedConversation.contact.name,
-              phone: selectedConversation.contact.phone,
-              email: selectedConversation.contact.email,
-              notes: selectedConversation.contact.notes,
-              tags: updatedTags
-            })
-          })
-        }
-
-        // 2. Block Conversation
-        await authenticatedFetch(`/api/conversations/${selectedConversation.id}`, {
+      const currentTags = selectedConversation.contact.tags
+        ? (Array.isArray(selectedConversation.contact.tags) ? selectedConversation.contact.tags : String(selectedConversation.contact.tags).split(','))
+        : []
+      if (!currentTags.includes('blocked')) {
+        const updatedTags = [...currentTags, 'blocked']
+        await authenticatedFetch(`/api/contacts/${selectedConversation.contactId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            status: 'RESOLVED',
-            isBlocked: true,
-            isArchived: true
+            name: selectedConversation.contact.name,
+            phone: selectedConversation.contact.phone,
+            email: selectedConversation.contact.email,
+            notes: selectedConversation.contact.notes,
+            tags: updatedTags
           })
         })
-
-        toast({ title: t("blocked"), description: t("contactBlocked") })
-        fetchConversations()
-        // After blocking, return to the inbox list.
-        setSelectedConversation(null)
-        router.push("/inbox")
-
-      } catch (error) {
-        console.error("Block error", error)
-        toast({ title: t("error"), description: t("failedToBlockContact"), variant: "destructive" })
-      } finally {
-        setIsLoading(false)
       }
+      await authenticatedFetch(`/api/conversations/${selectedConversation.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'RESOLVED',
+          isBlocked: true,
+          isArchived: true
+        })
+      })
+      toast({ title: t("blocked"), description: t("contactBlocked") })
+      fetchConversations()
+      setSelectedConversation(null)
+      router.push("/inbox")
+    } catch (error) {
+      console.error("Block error", error)
+      toast({ title: t("error"), description: t("failedToBlockContact"), variant: "destructive" })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -902,6 +940,20 @@ export default function InboxPage() {
 
   return (
     <AppLayout title={t("inbox")} fullBleed>
+      <AlertDialog open={blockConfirmOpen} onOpenChange={setBlockConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("confirmBlockContact")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("confirmBlockContactDescription")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmBlockContact} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t("blockContact")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="inbox-root bg-background md:border md:rounded-xl md:shadow-sm relative md:m-2">
         <div className="inbox-three-col flex-col md:flex-row">
         {/* LEFT COLUMN: Conversations List — fixed width, own scroll */}
@@ -1408,6 +1460,27 @@ export default function InboxPage() {
 
               <div ref={chatMessagesEndRef} aria-hidden className="min-h-2" />
             </div>
+
+            {/* Quick-reply template buttons (WhatsApp/Messenger style) — show when last customer message matches trigger */}
+            {quickReplyTemplates.length > 0 && (
+              <div className="border-t bg-muted/30 px-2 md:px-3 py-2 flex flex-wrap gap-2">
+                {quickReplyTemplates.map((tpl) => (
+                  <Button
+                    key={tpl.id}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full text-sm font-medium shrink-0"
+                    onClick={() => {
+                      handleSendMessage(tpl.content)
+                      setQuickReplyTemplates([])
+                    }}
+                  >
+                    {tpl.name}
+                  </Button>
+                ))}
+              </div>
+            )}
 
             {/* Input bar — fixed at bottom */}
             <div className="inbox-chat-input bg-card chat-input-bar border-t p-2 md:p-3 flex items-end gap-2">

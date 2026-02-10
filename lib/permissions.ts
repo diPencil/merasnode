@@ -40,6 +40,10 @@ export type Permission =
     | 'view_analytics'
     | 'view_activity_logs'
     | 'manage_whatsapp'
+    | 'view_bot_flows'
+    | 'create_bot_flow'
+    | 'edit_bot_flow'
+    | 'delete_bot_flow'
 
 export type PageRoute =
     | '/dashboard'
@@ -76,6 +80,7 @@ const rolePermissions: Record<UserRole, Permission[]> = {
         'view_analytics',
         'view_activity_logs',
         'manage_whatsapp',
+        'view_bot_flows', 'create_bot_flow', 'edit_bot_flow', 'delete_bot_flow',
     ],
     SUPERVISOR: [
         // Management access (no users/accounts/whatsapp)
@@ -91,6 +96,7 @@ const rolePermissions: Record<UserRole, Permission[]> = {
         'view_settings', // Profile only
         'view_analytics', // Team data only
         'view_activity_logs', // Team logs only
+        'view_bot_flows', 'create_bot_flow', // No edit/delete
     ],
     AGENT: [
         // Basic access with offers and invoices
@@ -122,7 +128,7 @@ const pageAccess: Record<PageRoute, UserRole[]> = {
     '/analytics': ['ADMIN', 'SUPERVISOR'], // No AGENT
     '/logs': ['ADMIN', 'SUPERVISOR'], // No AGENT
     '/whatsapp': ['ADMIN'], // ADMIN only
-    '/bot-flows': ['ADMIN', 'SUPERVISOR'],
+    '/bot-flows': ['ADMIN', 'SUPERVISOR', 'AGENT'],
 }
 
 /**

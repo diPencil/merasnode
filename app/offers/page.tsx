@@ -29,6 +29,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Offer {
     id: string
@@ -69,6 +79,7 @@ export default function OffersPage() {
     const [selectedContactId, setSelectedContactId] = useState("")
     const [sendMode, setSendMode] = useState<"single" | "bulk">("single")
     const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
+    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
     useEffect(() => {
         fetchOffers()
@@ -144,9 +155,14 @@ export default function OffersPage() {
         }
     }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm(t("confirmDeleteOffer"))) return
+    const handleDeleteClick = (id: string) => {
+        setDeleteConfirmId(id)
+    }
 
+    const confirmDeleteOffer = async () => {
+        const id = deleteConfirmId
+        setDeleteConfirmId(null)
+        if (!id) return
         try {
             const response = await authenticatedFetch(`/api/offers/${id}`, { method: "DELETE" })
             const data = await response.json()
@@ -329,6 +345,20 @@ export default function OffersPage() {
 
     return (
         <AppLayout title={t("offers")}>
+            <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("confirmDeleteOffer")}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteOffer} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            {t("delete")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -470,7 +500,7 @@ export default function OffersPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="h-8 w-8 text-destructive hover:text-destructive"
-                                                onClick={() => handleDelete(offer.id)}
+                                                onClick={() => handleDeleteClick(offer.id)}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>

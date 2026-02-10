@@ -127,6 +127,7 @@ export default function DashboardPage() {
   } | null>(null)
 
   const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe']
+  const userRole = getUserRole()
 
   useEffect(() => {
     setMounted(true)
@@ -501,7 +502,8 @@ export default function DashboardPage() {
                   </Card>
                 )}
 
-                {/* AI Quick Insights - Premium Redesign */}
+                {/* AI Quick Insights - Admin only */}
+                {userRole === 'ADMIN' && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-2">
@@ -640,6 +642,7 @@ export default function DashboardPage() {
                     </Card>
                   </div>
                 </div>
+                )}
               </div>
 
               {/* Right Column */}
@@ -751,7 +754,8 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
 
-                {/* New Section: System Health & Live Support */}
+                {/* Live Support Status - Admin only */}
+                {userRole === 'ADMIN' && (
                 <Card className="rounded-3xl border shadow-sm bg-card border-border overflow-hidden relative">
                   <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 rounded-full blur-3xl opacity-50"></div>
                   <CardHeader className="pb-2">
@@ -801,6 +805,7 @@ export default function DashboardPage() {
                     </button>
                   </CardContent>
                 </Card>
+                )}
               </div>
             </div>
           </>

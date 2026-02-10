@@ -13,7 +13,9 @@ import { mockBotFlows } from "@/lib/mock-data"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
-import { authenticatedFetch } from "@/lib/auth"
+import { authenticatedFetch, getUserRole } from "@/lib/auth"
+import { hasPermission } from "@/lib/permissions"
+import type { UserRole } from "@/lib/permissions"
 
 interface BotFlow {
   id: string
@@ -35,6 +37,8 @@ export default function BotFlowsPage() {
   const [isUpdating, setIsUpdating] = useState<string | null>(null)
   const { t } = useI18n()
   const { toast } = useToast()
+  const userRole = getUserRole() as UserRole | null
+  const canEditBotFlow = userRole ? hasPermission(userRole, "edit_bot_flow") : false
 
   // Fetch bot flows from API or use mock data
   useEffect(() => {
@@ -184,7 +188,7 @@ export default function BotFlowsPage() {
                     <Switch
                       checked={flow.isActive}
                       onCheckedChange={() => toggleBotFlowStatus(flow.id, flow.isActive)}
-                      disabled={isUpdating === flow.id}
+                      disabled={isUpdating === flow.id || !canEditBotFlow}
                     />
                   </div>
                 </CardHeader>
@@ -221,13 +225,15 @@ export default function BotFlowsPage() {
                   <div className="text-xs text-muted-foreground">Updated {format(flow.updatedAt, "MMM dd, yyyy")}</div>
 
                   <div className="flex gap-2 pt-2">
-                    <Button
-                      size="sm"
-                      className="flex-1 rounded-full"
-                      onClick={() => router.push(`/bot-flows/builder?id=${flow.id}`)}
-                    >
-                      {t("editFlow")}
-                    </Button>
+                    {canEditBotFlow && (
+                      <Button
+                        size="sm"
+                        className="flex-1 rounded-full"
+                        onClick={() => router.push(`/bot-flows/builder?id=${flow.id}`)}
+                      >
+                        {t("editFlow")}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"

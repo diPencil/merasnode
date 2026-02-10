@@ -18,15 +18,19 @@ export async function PUT(
             )
         }
 
+        const updateData: any = {
+            name: body.name,
+            content: body.content,
+            category: body.category,
+            language: body.language,
+            status: body.status
+        }
+        if (body.whatsappAccountId !== undefined) updateData.whatsappAccountId = body.whatsappAccountId || null
+        if (body.triggerKeywords !== undefined) updateData.triggerKeywords = body.triggerKeywords
+
         const template = await prisma.template.update({
             where: { id },
-            data: {
-                name: body.name,
-                content: body.content,
-                category: body.category,
-                language: body.language,
-                status: body.status
-            }
+            data: updateData
         })
 
         await logActivity({

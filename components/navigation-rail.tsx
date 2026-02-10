@@ -18,8 +18,12 @@ import {
     Receipt,
     Calendar,
     UserPlus,
-    Bot
+    Bot,
+    FilePlus,
+    Workflow
 } from "lucide-react"
+import { QuickCreateTemplateDialog } from "@/components/quick-create-template-dialog"
+import { QuickCreateBotFlowDialog } from "@/components/quick-create-bot-flow-dialog"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useI18n } from "@/lib/i18n"
@@ -50,6 +54,8 @@ export function NavigationRail() {
     const [companyLogo, setCompanyLogo] = useState("")
     const [companyDisplayType, setCompanyDisplayType] = useState<"text" | "logo">("text")
     const [currentUser, setCurrentUser] = useState<{ name?: string; role?: string } | null>(null)
+    const [quickCreateTemplateOpen, setQuickCreateTemplateOpen] = useState(false)
+    const [quickCreateBotFlowOpen, setQuickCreateBotFlowOpen] = useState(false)
 
     useEffect(() => {
         setCurrentUser(getUser())
@@ -119,27 +125,29 @@ export function NavigationRail() {
                 )}
             </div>
 
-            {/* Quick Actions (FIXED — never scrolls) */}
+            {/* Quick Actions (FIXED — never scrolls): open creation modals directly */}
             <div className="flex flex-col gap-1.5 p-3 border-b border-border/40 shrink-0">
                 <Button
                     variant="ghost"
                     size="sm"
                     className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-primary/10 hover:text-primary text-muted-foreground h-9 text-start transition-colors"
-                    onClick={() => router.push('/templates')}
+                    onClick={() => setQuickCreateTemplateOpen(true)}
                 >
-                    <FileText className="h-4 w-4 shrink-0 order-first" />
+                    <FilePlus className="h-4 w-4 shrink-0 order-first" />
                     {t("createTemplate")}
                 </Button>
                 <Button
                     variant="ghost"
                     size="sm"
                     className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-primary/10 hover:text-primary text-muted-foreground h-9 text-start transition-colors"
-                    onClick={() => router.push('/bot-flows/create')}
+                    onClick={() => setQuickCreateBotFlowOpen(true)}
                 >
-                    <Bot className="h-4 w-4 shrink-0 order-first" />
+                    <Workflow className="h-4 w-4 shrink-0 order-first" />
                     {t("createBotFlow")}
                 </Button>
             </div>
+            <QuickCreateTemplateDialog open={quickCreateTemplateOpen} onOpenChange={setQuickCreateTemplateOpen} />
+            <QuickCreateBotFlowDialog open={quickCreateBotFlowOpen} onOpenChange={setQuickCreateBotFlowOpen} />
 
             {/* Navigation Menu (SCROLLABLE — only this section scrolls) */}
             <nav className="flex-1 min-h-0 py-2 px-3 sidebar-nav-scroll">
