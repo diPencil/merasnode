@@ -141,8 +141,8 @@ export default function AccountsPage() {
         fetchAccounts()
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Failed to create account",
+          title: t("errorTitle"),
+          description: data.error || t("failedToCreateAccountDesc"),
           variant: "destructive"
         })
       }
@@ -181,7 +181,7 @@ export default function AccountsPage() {
             if (data.status === 'CONNECTED') {
               setQrGenerated(false)
               setIsCreateOpen(false)
-              toast({ title: "Connected", description: "WhatsApp Web Connected Successfully" })
+              toast({ title: t("connectedTitle"), description: t("whatsAppWebConnectedSuccessfully") })
               fetchAccounts() // Refresh list
             }
           }
@@ -265,7 +265,7 @@ export default function AccountsPage() {
         const createData = await createRes.json()
 
         if (!createData.success) {
-          toast({ title: "Error", description: createData.error || "Failed to create account", variant: "destructive" })
+          toast({ title: t("errorTitle"), description: createData.error || t("failedToCreateAccountDesc"), variant: "destructive" })
           setQrGenerated(false)
           setStatus('DISCONNECTED')
           return
@@ -302,14 +302,14 @@ export default function AccountsPage() {
         return (
           <Badge className="bg-green-500 hover:bg-green-600">
             <CheckCircle2 className="mr-1 h-3 w-3" />
-            Connected
+            {t("connectedTitle")}
           </Badge>
         )
       case 'waiting':
         return (
           <Badge variant="secondary">
             <Clock className="mr-1 h-3 w-3" />
-            Waiting
+            {t("waiting")}
           </Badge>
         )
       case 'disconnected':
@@ -317,7 +317,7 @@ export default function AccountsPage() {
         return (
           <Badge variant="destructive">
             <XCircle className="mr-1 h-3 w-3" />
-            Disconnected
+            {t("disconnectedTitle")}
           </Badge>
         )
     }
@@ -335,20 +335,20 @@ export default function AccountsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">{t("whatsAppAccountsPageTitle")}</h2>
-            <p className="text-muted-foreground">Manage your WhatsApp business accounts</p>
+            <p className="text-muted-foreground">{t("manageWhatsAppAccounts")}</p>
           </div>
 
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button className="rounded-full shadow-md gap-2">
                 <Plus className="h-4 w-4" />
-                Connect Account
+                {t("connectAccount")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px]" fullScreenMobile>
               <DialogHeader>
-                <DialogTitle>Connect WhatsApp Account</DialogTitle>
-                <DialogDescription>Choose your connection method</DialogDescription>
+                <DialogTitle>{t("connectWhatsAppAccount")}</DialogTitle>
+                <DialogDescription>{t("chooseConnectionMethod")}</DialogDescription>
               </DialogHeader>
 
               <Tabs value={provider} onValueChange={(v) => setProvider(v as any)}>
@@ -575,12 +575,12 @@ export default function AccountsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[200px]">Account Name</TableHead>
-                        <TableHead>Phone Number</TableHead>
-                        <TableHead>Provider</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Connected Date</TableHead>
-                        <TableHead className="text-end">Actions</TableHead>
+                        <TableHead className="w-[200px]">{t("accountName")}</TableHead>
+                        <TableHead>{t("phoneNumber")}</TableHead>
+                        <TableHead>{t("providerLabel")}</TableHead>
+                        <TableHead>{t("statusLabel")}</TableHead>
+                        <TableHead>{t("connectedDate")}</TableHead>
+                        <TableHead className="text-end">{t("actionsTableHeader")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

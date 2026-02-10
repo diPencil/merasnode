@@ -226,7 +226,7 @@ export default function BotFlowsPage() {
                       className="flex-1 rounded-full"
                       onClick={() => router.push(`/bot-flows/builder?id=${flow.id}`)}
                     >
-                      Edit Flow
+                      {t("editFlow")}
                     </Button>
                     <Button
                       size="sm"
@@ -234,7 +234,7 @@ export default function BotFlowsPage() {
                       className="flex-1 rounded-full bg-transparent"
                       onClick={() => router.push(`/bot-flows/stats?id=${flow.id}`)}
                     >
-                      View Stats
+                      {t("viewStats")}
                     </Button>
                   </div>
                 </CardContent>
@@ -262,7 +262,7 @@ export default function BotFlowsPage() {
                   className="flex items-center gap-2"
                 >
                   <Workflow className="h-4 w-4" />
-                  Open Flow Builder
+                  {t("openFlowBuilder")}
                 </Button>
                 <Button
                   variant="outline"
@@ -271,7 +271,7 @@ export default function BotFlowsPage() {
                   className="flex items-center gap-2"
                 >
                   <FileText className="h-4 w-4" />
-                  Flow Templates
+                  {t("flowTemplates")}
                 </Button>
               </div>
 
@@ -280,22 +280,22 @@ export default function BotFlowsPage() {
                   <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
                     <MessageSquare className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <p className="text-sm font-medium">Triggers</p>
-                  <p className="text-xs text-muted-foreground">Start your flow</p>
+                  <p className="text-sm font-medium">{t("triggersLabel")}</p>
+                  <p className="text-xs text-muted-foreground">{t("startYourFlow")}</p>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
                     <Send className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
-                  <p className="text-sm font-medium">Actions</p>
-                  <p className="text-xs text-muted-foreground">What happens next</p>
+                  <p className="text-sm font-medium">{t("actionsLabelShort")}</p>
+                  <p className="text-xs text-muted-foreground">{t("whatHappensNext")}</p>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
                     <GitBranch className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <p className="text-sm font-medium">Conditions</p>
-                  <p className="text-xs text-muted-foreground">Make decisions</p>
+                  <p className="text-sm font-medium">{t("conditionsLabel")}</p>
+                  <p className="text-xs text-muted-foreground">{t("makeDecisions")}</p>
                 </div>
               </div>
             </div>

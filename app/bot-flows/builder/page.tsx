@@ -22,10 +22,11 @@ export default function FlowBuilderPage() {
   const searchParams = useSearchParams()
   const flowId = searchParams.get('id')
   const { toast } = useToast()
+  const { t } = useI18n()
 
   const [flow, setFlow] = useState({
     id: '',
-    name: 'New Flow',
+    name: t("newFlow"),
     description: '',
     trigger: '',
     steps: [] as any[],
@@ -69,12 +70,12 @@ export default function FlowBuilderPage() {
             isActive: foundFlow.isActive
           })
         } else {
-          toast({ title: "Error", description: "Flow not found", variant: "destructive" })
+          toast({ title: t("errorTitle"), description: t("flowNotFound"), variant: "destructive" })
         }
       }
     } catch (error) {
       console.error('Error fetching flow:', error)
-      toast({ title: "Error", description: "Failed to load flow", variant: "destructive" })
+      toast({ title: t("errorTitle"), description: t("failedToLoadFlow"), variant: "destructive" })
     } finally {
       setIsLoading(false)
     }
@@ -84,8 +85,8 @@ export default function FlowBuilderPage() {
   const saveFlow = async () => {
     if (!flow.name.trim()) {
       toast({
-        title: "Error",
-        description: "Please enter a flow name",
+        title: t("errorTitle"),
+        description: t("pleaseEnterFlowName"),
         variant: "destructive"
       })
       return
@@ -185,7 +186,7 @@ export default function FlowBuilderPage() {
                   id="flow-name"
                   value={flow.name}
                   onChange={(e) => setFlow(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Welcome Message Flow"
+                  placeholder={t("flowNamePlaceholder")}
                 />
               </div>
               <div className="space-y-2">
@@ -211,7 +212,7 @@ export default function FlowBuilderPage() {
                 id="flow-desc"
                 value={flow.description}
                 onChange={(e) => setFlow(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Describe what this flow does..."
+                placeholder={t("describeFlowPlaceholder")}
                 rows={3}
               />
             </div>
@@ -285,7 +286,7 @@ export default function FlowBuilderPage() {
                           <div className="space-y-2">
                             <Label>Message Content</Label>
                             <Textarea
-                              placeholder="Enter message to send..."
+                              placeholder={t("enterMessageToSend")}
                               value={step.content || ''}
                               onChange={(e) => {
                                 const newSteps = [...flow.steps]
@@ -316,7 +317,7 @@ export default function FlowBuilderPage() {
                           <div className="space-y-2">
                             <Label>Agent ID</Label>
                             <Input
-                              placeholder="Enter agent ID"
+                              placeholder={t("enterAgentId")}
                               value={step.agentId || ''}
                               onChange={(e) => {
                                 const newSteps = [...flow.steps]

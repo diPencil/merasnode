@@ -549,10 +549,10 @@ export default function OffersPage() {
                             {/* Single Contact Selection */}
                             {sendMode === "single" && (
                                 <div className="grid gap-2">
-                                    <Label htmlFor="contact">Select Contact *</Label>
+                                    <Label htmlFor="contact">{t("selectContactRequired")}</Label>
                                     <Select value={selectedContactId || "none"} onValueChange={(value) => setSelectedContactId(value === "none" ? "" : value)}>
                                         <SelectTrigger id="contact">
-                                            <SelectValue placeholder="Choose a contact" />
+                                            <SelectValue placeholder={t("chooseContact")} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {(contacts || []).length === 0 ? (
@@ -577,7 +577,7 @@ export default function OffersPage() {
                             {sendMode === "bulk" && (
                                 <div className="grid gap-2">
                                     <div className="flex items-center justify-between">
-                                        <Label>Select Contacts *</Label>
+                                        <Label>{t("selectContactsRequired")}</Label>
                                         <div className="flex gap-2">
                                             <Button
                                                 type="button"
@@ -593,13 +593,13 @@ export default function OffersPage() {
                                                     }
                                                 }}
                                             >
-                                                {selectedContactIds.length === (contacts?.length || 0) ? "Deselect All" : "Select All"}
+                                                {selectedContactIds.length === (contacts?.length || 0) ? t("deselectAll") : t("selectAll")}
                                             </Button>
                                         </div>
                                     </div>
                                     <div className="max-h-[300px] overflow-y-auto border rounded-lg p-2 space-y-2">
                                         {(contacts || []).length === 0 ? (
-                                            <p className="text-sm text-muted-foreground text-center py-4">No contacts available</p>
+                                            <p className="text-sm text-muted-foreground text-center py-4">{t("noContactsAvailable")}</p>
                                         ) : (
                                             (contacts || []).map((contact) => (
                                                 <div

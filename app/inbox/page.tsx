@@ -1281,7 +1281,7 @@ export default function InboxPage() {
                       >
                         {message.type === 'IMAGE' && message.mediaUrl ? (
                           <div className="rounded-lg overflow-hidden max-w-sm">
-                            <img src={message.mediaUrl} alt="Sent Image" className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setPreviewImage(message.mediaUrl || null)} />
+                            <img src={message.mediaUrl} alt={t("sentImageAlt")} className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setPreviewImage(message.mediaUrl || null)} />
                             {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
                           </div>
                         ) : message.type === 'AUDIO' && message.mediaUrl ? (

@@ -516,7 +516,7 @@ export default function InvoicesPage() {
                                 <form onSubmit={handleSubmit}>
                                     <DialogHeader>
                                         <DialogTitle>{t("createInvoice")}</DialogTitle>
-                                        <DialogDescription>Create a new invoice for a customer</DialogDescription>
+                                        <DialogDescription>{t("createNewInvoice")}</DialogDescription>
                                     </DialogHeader>
                                     <div className="grid gap-4 py-4">
                                         <div className="grid gap-2">
@@ -539,7 +539,7 @@ export default function InvoicesPage() {
                                             </Select>
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label htmlFor="description">Service / Description</Label>
+                                            <Label htmlFor="description">{t("serviceDescription")}</Label>
                                             <Input
                                                 id="description"
                                                 placeholder={t("servicePlaceholder")}
@@ -560,7 +560,7 @@ export default function InvoicesPage() {
                                                 />
                                             </div>
                                             <div className="grid gap-2">
-                                                <Label htmlFor="currency">Currency</Label>
+                                                <Label htmlFor="currency">{t("currencyLabel")}</Label>
                                                 <Select
                                                     value={formData.currency}
                                                     onValueChange={(value) => setFormData({ ...formData, currency: value })}
@@ -807,13 +807,13 @@ export default function InvoicesPage() {
 
                                     {/* Items Table */}
                                     <div className="mb-8">
-                                        <h3 className="text-sm font-semibold mb-4">Invoice Items</h3>
+                                        <h3 className="text-sm font-semibold mb-4">{t("invoiceItems")}</h3>
                                         <div className="rounded-xl border bg-white dark:bg-zinc-800/50 overflow-hidden">
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow className="bg-muted/50">
-                                                        <TableHead className="pl-4">Description</TableHead>
-                                                        <TableHead className="text-right pr-4">Amount</TableHead>
+                                                        <TableHead className="pl-4">{t("descriptionLabel")}</TableHead>
+                                                        <TableHead className="text-right pr-4">{t("amountLabelHeader")}</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
@@ -821,7 +821,7 @@ export default function InvoicesPage() {
                                                         <TableCell className="pl-4 font-medium">
                                                             {viewInvoice.items && viewInvoice.items.length > 0
                                                                 ? viewInvoice.items[0].description
-                                                                : "Invoice Payment"}
+                                                                : t("invoicePayment")}
                                                         </TableCell>
                                                         <TableCell className="text-right pr-4">
                                                             {viewInvoice.amount.toFixed(2)} {viewInvoice.currency}
@@ -836,7 +836,7 @@ export default function InvoicesPage() {
                                     <div className="flex justify-end mb-8">
                                         <div className="w-1/2 bg-primary/5 rounded-xl p-6">
                                             <div className="flex justify-between items-center">
-                                                <span className="text-lg font-semibold">Total Amount</span>
+                                                <span className="text-lg font-semibold">{t("totalAmount")}</span>
                                                 <span className="text-2xl font-bold text-primary">
                                                     {viewInvoice.amount.toFixed(2)} {viewInvoice.currency}
                                                 </span>
@@ -846,8 +846,8 @@ export default function InvoicesPage() {
 
                                     {/* Footer */}
                                     <div className="text-center text-sm text-muted-foreground pt-8 border-t">
-                                        <p>Thank you for your business!</p>
-                                        <p className="mt-1">Please make payment by the due date.</p>
+                                        <p>{t("thankYouForBusiness")}</p>
+                                        <p className="mt-1">{t("pleasePayByDueDate")}</p>
                                     </div>
                                 </div>
 

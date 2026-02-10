@@ -134,12 +134,12 @@ export default function ProfilePage() {
 
                         {/* Name */}
                         <div className="space-y-2">
-                            <Label htmlFor="name">Name</Label>
+                            <Label htmlFor="name">{t("nameLabel")}</Label>
                             <Input
                                 id="name"
                                 value={profile.name}
                                 onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                                placeholder="Enter your name"
+                                placeholder={t("enterYourName")}
                             />
                         </div>
 

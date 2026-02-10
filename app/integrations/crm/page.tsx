@@ -45,6 +45,7 @@ export default function CrmIntegrationPage() {
     const [apiKey, setApiKey] = useState("")
     const [apiSecret, setApiSecret] = useState("")
     const { toast } = useToast()
+    const { t } = useI18n()
 
     useEffect(() => {
         fetchIntegrations()
@@ -222,10 +223,10 @@ export default function CrmIntegrationPage() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="salesforce">Salesforce</SelectItem>
+                                            <SelectItem value="salesforce">{t("salesforce")}</SelectItem>
                                             <SelectItem value="hubspot">HubSpot</SelectItem>
                                             <SelectItem value="zoho">Zoho CRM</SelectItem>
-                                            <SelectItem value="pipedrive">Pipedrive</SelectItem>
+                                            <SelectItem value="pipedrive">{t("pipedrive")}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

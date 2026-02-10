@@ -27,6 +27,7 @@ interface Step {
 export default function CreateBotFlowPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { t } = useI18n()
 
   const [formData, setFormData] = useState({
     name: '',
@@ -71,8 +72,8 @@ export default function CreateBotFlowPage() {
 
     if (!formData.name.trim() || !formData.trigger.trim() || steps.length === 0) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: t("errorTitle"),
+        description: t("pleaseFillAllRequiredFields"),
         variant: "destructive"
       })
       return
@@ -94,8 +95,8 @@ export default function CreateBotFlowPage() {
 
       if (data.success) {
         toast({
-          title: "Success",
-          description: "Bot flow created successfully",
+          title: t("successTitle"),
+          description: t("botFlowCreatedSuccess"),
         })
         router.push('/bot-flows')
       } else {
@@ -125,11 +126,11 @@ export default function CreateBotFlowPage() {
             className="rounded-full"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            {t("back")}
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Create Bot Flow</h1>
-            <p className="text-muted-foreground">Build an automated workflow for your business</p>
+            <h1 className="text-2xl font-bold">{t("createBotFlow")}</h1>
+            <p className="text-muted-foreground">{t("createAutomatedWorkflow")}</p>
           </div>
         </div>
 
@@ -137,39 +138,39 @@ export default function CreateBotFlowPage() {
           {/* Basic Information */}
           <Card className="rounded-2xl shadow-soft">
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-              <CardDescription>Configure the basic settings for your bot flow</CardDescription>
+              <CardTitle>{t("basicInformation")}</CardTitle>
+              <CardDescription>{t("configureBasicSettings")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Flow Name *</Label>
+                  <Label htmlFor="name">{t("flowName")} *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g., Welcome Message Flow"
+                    placeholder={t("flowNamePlaceholder")}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="trigger">Trigger *</Label>
+                  <Label htmlFor="trigger">{t("triggerLabel")} *</Label>
                   <Input
                     id="trigger"
                     value={formData.trigger}
                     onChange={(e) => setFormData({ ...formData, trigger: e.target.value })}
-                    placeholder="e.g., new_contact"
+                    placeholder={t("flowTriggerPlaceholder")}
                     required
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t("descriptionLabel")}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Describe what this bot flow does..."
+                  placeholder={t("describeFlowPlaceholder")}
                   rows={3}
                 />
               </div>
@@ -179,7 +180,7 @@ export default function CreateBotFlowPage() {
                   checked={formData.isActive}
                   onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                 />
-                <Label htmlFor="isActive">Activate flow immediately</Label>
+                <Label htmlFor="isActive">{t("activateFlowImmediately")}</Label>
               </div>
             </CardContent>
           </Card>
@@ -189,19 +190,19 @@ export default function CreateBotFlowPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Flow Steps</CardTitle>
-                  <CardDescription>Define the actions your bot will take</CardDescription>
+                  <CardTitle>{t("flowSteps")}</CardTitle>
+                  <CardDescription>{t("defineActionsBotTakes")}</CardDescription>
                 </div>
                 <Button type="button" onClick={addStep} className="rounded-full">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Step
+                  {t("addStep")}
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {steps.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  <p>No steps defined yet. Add your first step to get started.</p>
+                  <p>{t("noStepsDefinedYet")}</p>
                 </div>
               ) : (
                 steps.map((step, index) => (
@@ -218,9 +219,9 @@ export default function CreateBotFlowPage() {
                               onChange={(e) => updateStep(step.id, { type: e.target.value as Step['type'] })}
                               className="px-3 py-1 border rounded-md text-sm"
                             >
-                              <option value="send_message">Send Message</option>
-                              <option value="wait">Wait</option>
-                              <option value="conditional">Conditional</option>
+                              <option value="send_message">{t("sendMessage")}</option>
+                              <option value="wait">{t("waitOption")}</option>
+                              <option value="conditional">{t("conditionalOption")}</option>
                             </select>
                             <Button
                               type="button"
@@ -235,11 +236,11 @@ export default function CreateBotFlowPage() {
 
                           {step.type === 'send_message' && (
                             <div className="space-y-2">
-                              <Label>Message Content</Label>
+                              <Label>{t("messageContent")}</Label>
                               <Textarea
                                 value={step.content || ''}
                                 onChange={(e) => updateStep(step.id, { content: e.target.value })}
-                                placeholder="Enter the message to send..."
+                                placeholder={t("enterMessageToSend")}
                                 rows={3}
                               />
                             </div>
@@ -247,12 +248,12 @@ export default function CreateBotFlowPage() {
 
                           {(step.type === 'send_message' || step.type === 'wait') && (
                             <div className="space-y-2">
-                              <Label>Delay (milliseconds)</Label>
+                              <Label>{t("delayMilliseconds")}</Label>
                               <Input
                                 type="number"
                                 value={step.delay || 0}
                                 onChange={(e) => updateStep(step.id, { delay: parseInt(e.target.value) || 0 })}
-                                placeholder="0"
+                                placeholder={t("zeroPlaceholder")}
                               />
                             </div>
                           )}
@@ -260,11 +261,11 @@ export default function CreateBotFlowPage() {
                           {step.type === 'conditional' && (
                             <div className="space-y-3">
                               <div className="space-y-2">
-                                <Label>Condition</Label>
+                                <Label>{t("conditionLabel")}</Label>
                                 <Input
                                   value={step.condition || ''}
                                   onChange={(e) => updateStep(step.id, { condition: e.target.value })}
-                                  placeholder="e.g., rating >= 4"
+                                  placeholder={t("enterConditionPlaceholder")}
                                 />
                               </div>
                               {/* TODO: Add nested steps for true/false branches */}

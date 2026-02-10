@@ -45,34 +45,10 @@ export default function AnalyticsPage() {
     }
 
     const analyticsCards = [
-        {
-            title: "Total Conversations",
-            value: stats.totalConversations.toString(),
-            icon: MessageSquare,
-            color: "text-primary",
-            bgColor: "bg-primary/10",
-        },
-        {
-            title: "Total Contacts",
-            value: stats.totalContacts.toString(),
-            icon: Users,
-            color: "text-secondary",
-            bgColor: "bg-secondary/10",
-        },
-        {
-            title: "Avg Response Time",
-            value: stats.avgResponseTime,
-            icon: Clock,
-            color: "text-warning",
-            bgColor: "bg-warning/10",
-        },
-        {
-            title: "Total Messages",
-            value: stats.totalMessages.toString(),
-            icon: TrendingUp,
-            color: "text-success",
-            bgColor: "bg-success/10",
-        },
+        { titleKey: "totalConversations", value: stats.totalConversations.toString(), icon: MessageSquare, color: "text-primary", bgColor: "bg-primary/10" },
+        { titleKey: "totalContacts", value: stats.totalContacts.toString(), icon: Users, color: "text-secondary", bgColor: "bg-secondary/10" },
+        { titleKey: "avgResponseTime", value: stats.avgResponseTime, icon: Clock, color: "text-warning", bgColor: "bg-warning/10" },
+        { titleKey: "totalMessages", value: stats.totalMessages.toString(), icon: TrendingUp, color: "text-success", bgColor: "bg-success/10" },
     ]
 
     return (
@@ -80,7 +56,7 @@ export default function AnalyticsPage() {
             <div className="space-y-6">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">{t("analytics")}</h2>
-                    <p className="text-muted-foreground">View insights and performance metrics</p>
+                    <p className="text-muted-foreground">{t("viewInsightsAndMetrics")}</p>
                 </div>
 
                 {isLoading ? (
@@ -97,10 +73,10 @@ export default function AnalyticsPage() {
                             {analyticsCards.map((card) => {
                                 const Icon = card.icon
                                 return (
-                                    <Card key={card.title} className="rounded-2xl shadow-soft">
+                                    <Card key={card.titleKey} className="rounded-2xl shadow-soft">
                                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                                             <CardTitle className="text-sm font-medium text-muted-foreground">
-                                                {card.title}
+                                                {t(card.titleKey)}
                                             </CardTitle>
                                             <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${card.bgColor}`}>
                                                 <Icon className={`h-5 w-5 ${card.color}`} />
@@ -109,7 +85,7 @@ export default function AnalyticsPage() {
                                         <CardContent>
                                             <div className="text-3xl font-bold">{card.value}</div>
                                             <p className="mt-1 text-xs text-muted-foreground">
-                                                <span className="text-success">+12%</span> from last month
+                                                <span className="text-success">+12%</span> {t("fromLastMonth")}
                                             </p>
                                         </CardContent>
                                     </Card>
@@ -122,7 +98,7 @@ export default function AnalyticsPage() {
                             <Card className="rounded-2xl shadow-soft">
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                                     <CardTitle className="text-sm font-medium text-muted-foreground">
-                                        Active Conversations
+                                        {t("activeConversations")}
                                     </CardTitle>
                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
                                         <MessageSquare className="h-5 w-5 text-blue-500" />
@@ -131,7 +107,7 @@ export default function AnalyticsPage() {
                                 <CardContent>
                                     <div className="text-3xl font-bold">{analyticsData?.overview.activeConversations || 0}</div>
                                     <p className="mt-1 text-xs text-muted-foreground">
-                                        Currently active
+                                        {t("currentlyActive")}
                                     </p>
                                 </CardContent>
                             </Card>
@@ -139,7 +115,7 @@ export default function AnalyticsPage() {
                             <Card className="rounded-2xl shadow-soft">
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                                     <CardTitle className="text-sm font-medium text-muted-foreground">
-                                        Response Rate
+                                        {t("responseRate")}
                                     </CardTitle>
                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
                                         <TrendingUp className="h-5 w-5 text-green-500" />
@@ -148,7 +124,7 @@ export default function AnalyticsPage() {
                                 <CardContent>
                                     <div className="text-3xl font-bold">{analyticsData?.performance.responseRate || 0}%</div>
                                     <p className="mt-1 text-xs text-muted-foreground">
-                                        Quick responses
+                                        {t("quickResponses")}
                                     </p>
                                 </CardContent>
                             </Card>
@@ -156,7 +132,7 @@ export default function AnalyticsPage() {
                             <Card className="rounded-2xl shadow-soft">
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                                     <CardTitle className="text-sm font-medium text-muted-foreground">
-                                        Customer Satisfaction
+                                        {t("customerSatisfaction")}
                                     </CardTitle>
                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
                                         <Users className="h-5 w-5 text-purple-500" />
@@ -165,7 +141,7 @@ export default function AnalyticsPage() {
                                 <CardContent>
                                     <div className="text-3xl font-bold">{analyticsData?.performance.customerSatisfaction || 0}%</div>
                                     <p className="mt-1 text-xs text-muted-foreground">
-                                        Based on responses
+                                        {t("basedOnResponses")}
                                     </p>
                                 </CardContent>
                             </Card>
@@ -173,7 +149,7 @@ export default function AnalyticsPage() {
                             <Card className="rounded-2xl shadow-soft">
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                                     <CardTitle className="text-sm font-medium text-muted-foreground">
-                                        Active Users
+                                        {t("activeUsers")}
                                     </CardTitle>
                                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
                                         <Users className="h-5 w-5 text-orange-500" />
@@ -182,7 +158,7 @@ export default function AnalyticsPage() {
                                 <CardContent>
                                     <div className="text-3xl font-bold">{analyticsData?.performance.activeUsers || 0}</div>
                                     <p className="mt-1 text-xs text-muted-foreground">
-                                        Team members
+                                        {t("teamMembers")}
                                     </p>
                                 </CardContent>
                             </Card>
@@ -192,8 +168,8 @@ export default function AnalyticsPage() {
                         <div className="grid gap-6 lg:grid-cols-2">
                             <Card className="rounded-2xl shadow-soft">
                                 <CardHeader>
-                                    <CardTitle>Daily Activity</CardTitle>
-                                    <CardDescription>Messages and conversations over the last 7 days</CardDescription>
+                                    <CardTitle>{t("dailyActivity")}</CardTitle>
+                                    <CardDescription>{t("messagesAndConversationsLast7Days")}</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
@@ -217,8 +193,8 @@ export default function AnalyticsPage() {
 
                             <Card className="rounded-2xl shadow-soft">
                                 <CardHeader>
-                                    <CardTitle>Conversation Status</CardTitle>
-                                    <CardDescription>Distribution of conversation states</CardDescription>
+                                    <CardTitle>{t("conversationStatus")}</CardTitle>
+                                    <CardDescription>{t("distributionOfConversationStates")}</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
@@ -244,8 +220,8 @@ export default function AnalyticsPage() {
                         {/* Team Performance */}
                         <Card className="rounded-2xl shadow-soft">
                             <CardHeader>
-                                <CardTitle>Team Performance</CardTitle>
-                                <CardDescription>Agent activity and conversation handling</CardDescription>
+                                <CardTitle>{t("teamPerformance")}</CardTitle>
+                                <CardDescription>{t("agentActivityAndHandling")}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
@@ -263,7 +239,7 @@ export default function AnalyticsPage() {
                                     ))}
                                     {(!analyticsData?.teamPerformance || analyticsData.teamPerformance.length === 0) && (
                                         <div className="text-center text-muted-foreground py-8">
-                                            No team performance data available
+                                            {t("noTeamPerformanceData")}
                                         </div>
                                     )}
                                 </div>

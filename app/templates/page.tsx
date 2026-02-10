@@ -213,7 +213,7 @@ export default function TemplatesPage() {
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search templates..."
+                placeholder={t("searchTemplates")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-9"
@@ -252,10 +252,10 @@ export default function TemplatesPage() {
                             <SelectValue placeholder={t("selectCategory")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="onboarding">Onboarding</SelectItem>
-                            <SelectItem value="sales">Sales</SelectItem>
-                            <SelectItem value="support">Support</SelectItem>
-                            <SelectItem value="marketing">Marketing</SelectItem>
+                            <SelectItem value="onboarding">{t("categoryOnboarding")}</SelectItem>
+                            <SelectItem value="sales">{t("categorySales")}</SelectItem>
+                            <SelectItem value="support">{t("categorySupport")}</SelectItem>
+                            <SelectItem value="marketing">{t("categoryMarketing")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -266,8 +266,8 @@ export default function TemplatesPage() {
                             <SelectValue placeholder={t("selectLanguage")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="en">English</SelectItem>
-                            <SelectItem value="ar">Arabic</SelectItem>
+                            <SelectItem value="en">{t("languageEnglish")}</SelectItem>
+                            <SelectItem value="ar">{t("languageArabic")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

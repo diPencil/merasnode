@@ -98,7 +98,7 @@ export function NavigationRail() {
                     <>
                         <img
                             src={companyLogo}
-                            alt={companyName || "Company Logo"}
+                            alt={companyName || t("companyLogoAlt")}
                             className="h-8 w-8 object-contain rounded-lg"
                         />
                         {companyName && (

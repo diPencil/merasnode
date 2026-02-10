@@ -683,7 +683,7 @@ export default function UsersPage() {
                 <Input id="edit-name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-username">Username</Label>
+                <Label htmlFor="edit-username">{t("username")}</Label>
                 <Input
                   id="edit-username"
                   type="text"
@@ -692,7 +692,7 @@ export default function UsersPage() {
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value.replace(/\s/g, '') })}
                 />
-                <p className="text-xs text-muted-foreground">Letters, numbers and underscores only. Must be unique.</p>
+                <p className="text-xs text-muted-foreground">{t("usernameHint")}</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-email">{t("emailAddress")}</Label>

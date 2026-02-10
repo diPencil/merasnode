@@ -205,7 +205,7 @@ export default function ApiKeysPage() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="never">Never</SelectItem>
+                                            <SelectItem value="never">{t("neverExpires")}</SelectItem>
                                             <SelectItem value="30">30 days</SelectItem>
                                             <SelectItem value="90">90 days</SelectItem>
                                             <SelectItem value="365">1 year</SelectItem>
