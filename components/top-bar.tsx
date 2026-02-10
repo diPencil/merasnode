@@ -191,11 +191,11 @@ export function TopBar({ title, showSearch = true, isMobile = false }: TopBarPro
         {/* Search - hidden on mobile, shown on tablet+ */}
         {showSearch && !isMobile && (
           <div className="relative hidden md:block">
-            <Search className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ${dir === "rtl" ? "right-3" : "left-3"}`} />
+            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder={`${t("search")}...`}
-              className={`h-10 w-48 lg:w-80 rounded-xl bg-card/80 backdrop-blur-sm border-border/50 shadow-sm ${dir === "rtl" ? "pr-10 pl-4" : "pl-10 pr-4"}`}
+              className="h-10 w-48 lg:w-80 rounded-xl bg-card/80 backdrop-blur-sm border-border/50 shadow-sm ps-10 pe-4"
             />
           </div>
         )}
@@ -216,7 +216,7 @@ export function TopBar({ title, showSearch = true, isMobile = false }: TopBarPro
             <Button variant="ghost" size="icon" className="relative min-h-[44px] min-w-[44px] h-10 w-10 rounded-xl hover:bg-muted">
               <Bell className="h-5 w-5 text-muted-foreground" />
               {unreadCount > 0 && (
-                <span className={`absolute top-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background animate-pulse ${dir === "rtl" ? "left-2" : "right-2"}`} />
+                <span className="absolute top-2 end-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background animate-pulse" />
               )}
             </Button>
           </PopoverTrigger>
@@ -291,7 +291,7 @@ export function TopBar({ title, showSearch = true, isMobile = false }: TopBarPro
                         <Button
                           variant="ghost"
                           size="icon"
-                          className={`h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 hover:bg-destructive/10 hover:text-destructive ${dir === "rtl" ? "left-2" : "right-2"}`}
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 end-2 hover:bg-destructive/10 hover:text-destructive"
                           onClick={(e) => deleteNotification(notification.id, e)}
                         >
                           <X className="h-3.5 w-3.5" />
@@ -332,7 +332,7 @@ export function TopBar({ title, showSearch = true, isMobile = false }: TopBarPro
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">
-              <Settings className={`h-4 w-4 ${dir === "rtl" ? "ml-2" : "mr-2"}`} />
+              <Settings className="h-4 w-4 me-2" />
               <span>{t("settings")}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -340,7 +340,7 @@ export function TopBar({ title, showSearch = true, isMobile = false }: TopBarPro
               onClick={logout}
               className="cursor-pointer text-destructive focus:text-destructive"
             >
-              <LogOut className={`h-4 w-4 ${dir === "rtl" ? "ml-2" : "mr-2"}`} />
+              <LogOut className="h-4 w-4 me-2" />
               <span>{t("logout")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
