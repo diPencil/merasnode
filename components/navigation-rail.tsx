@@ -16,24 +16,20 @@ import {
     Tag,
     BarChart3,
     Receipt,
+    TrendingUp,
+    TrendingDown,
     Calendar,
     UserPlus,
     Bot,
-    ChevronRight,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { useI18n } from "@/lib/i18n"
 import { getUserRole, logout, authenticatedFetch } from "@/lib/auth"
 import { canAccessPage, type PageRoute } from "@/lib/permissions"
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
 
-// Grouped menu items for visual clarity
+// All menu items grouped for visual clarity
 const MENU_GROUPS = [
     {
         id: "main",
@@ -106,117 +102,126 @@ export function NavigationRail() {
     }, [])
 
     return (
-        <TooltipProvider delayDuration={0}>
-            <aside
-                className={cn(
-                    "flex h-full w-[240px] flex-col bg-sidebar",
-                    dir === "rtl" ? "border-s border-border/50" : "border-e border-border/50",
-                )}
-            >
-                {/* Brand / Logo */}
-                <div className="flex h-14 items-center gap-2.5 px-5 shrink-0">
-                    {companyDisplayType === "logo" && companyLogo ? (
-                        <>
-                            <img
-                                src={companyLogo}
-                                alt={companyName || "Logo"}
-                                className="h-7 w-7 object-contain rounded-md"
-                            />
-                            {companyName && (
-                                <span className="text-[15px] font-semibold text-sidebar-foreground truncate">
-                                    {companyName}
-                                </span>
-                            )}
-                        </>
-                    ) : (
-                        <>
-                            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-xs">
-                                {companyName ? companyName.charAt(0).toUpperCase() : "M"}
-                            </div>
-                            <span className="text-[15px] font-semibold text-sidebar-foreground truncate">
-                                {companyName || "Meras"}
+        <aside
+            className={cn(
+                "flex w-56 h-full flex-col bg-sidebar",
+                dir === "rtl" ? "border-s border-border/40" : "border-e border-border/40",
+            )}
+        >
+            {/* Logo / Brand */}
+            <div className="flex h-16 items-center gap-2 border-b border-border/40 px-4 shrink-0">
+                {companyDisplayType === "logo" && companyLogo ? (
+                    <>
+                        <img
+                            src={companyLogo}
+                            alt={companyName || "Company Logo"}
+                            className="h-8 w-8 object-contain rounded-lg"
+                        />
+                        {companyName && (
+                            <span className="text-lg font-bold text-sidebar-foreground truncate">
+                                {companyName}
                             </span>
-                        </>
-                    )}
-                </div>
-
-                <Separator className="opacity-50" />
-
-                {/* Navigation groups */}
-                <nav className="flex-1 overflow-y-auto py-2 px-3">
-                    {filteredGroups.map((group, groupIndex) => (
-                        <div key={group.id}>
-                            {groupIndex > 0 && (
-                                <Separator className="my-2 opacity-40" />
-                            )}
-                            <ul className="space-y-0.5">
-                                {group.items.map((item) => {
-                                    const Icon = item.icon
-                                    const isActive =
-                                        pathname === item.href ||
-                                        pathname?.startsWith(item.href + "/")
-
-                                    return (
-                                        <li key={item.href}>
-                                            <Link
-                                                href={item.href}
-                                                className={cn(
-                                                    "group flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
-                                                    isActive
-                                                        ? "bg-primary/10 text-primary"
-                                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                                                )}
-                                            >
-                                                <Icon
-                                                    className={cn(
-                                                        "h-[18px] w-[18px] shrink-0 transition-colors",
-                                                        isActive
-                                                            ? "text-primary"
-                                                            : "text-muted-foreground/70 group-hover:text-accent-foreground",
-                                                    )}
-                                                />
-                                                <span className="truncate">{t(item.label)}</span>
-                                                {isActive && (
-                                                    <ChevronRight
-                                                        className={cn(
-                                                            "h-3.5 w-3.5 shrink-0 opacity-60",
-                                                            dir === "rtl" ? "me-auto rotate-180" : "ms-auto",
-                                                        )}
-                                                    />
-                                                )}
-                                            </Link>
-                                        </li>
-                                    )
-                                })}
-                            </ul>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
+                            {companyName ? companyName.charAt(0).toUpperCase() : "M"}
                         </div>
-                    ))}
-                </nav>
+                        <span className="text-lg font-bold text-sidebar-foreground truncate">
+                            {companyName || "Meras"}
+                        </span>
+                    </>
+                )}
+            </div>
 
-                {/* Bottom section */}
-                <div className="shrink-0 border-t border-border/50 p-3 space-y-0.5">
-                    <Link
-                        href="/settings"
+            {/* Quick Actions */}
+            <div className="flex flex-col gap-1.5 p-3 border-b border-border/40 shrink-0">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-muted text-muted-foreground hover:text-foreground h-9 text-start"
+                    onClick={() => router.push('/templates')}
+                >
+                    <TrendingUp className="h-4 w-4 shrink-0 order-first" />
+                    {t("createTemplate")}
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-muted text-muted-foreground hover:text-foreground h-9 text-start"
+                    onClick={() => router.push('/bot-flows/create')}
+                >
+                    <TrendingDown className="h-4 w-4 shrink-0 order-first" />
+                    {t("createBotFlow")}
+                </Button>
+            </div>
+
+            {/* Navigation Menu */}
+            <nav className="flex-1 overflow-y-auto py-2 px-3 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                {filteredGroups.map((group, groupIndex) => (
+                    <div key={group.id}>
+                        {groupIndex > 0 && (
+                            <Separator className="my-2 opacity-40" />
+                        )}
+                        <div className="space-y-1">
+                            {group.items.map((item) => {
+                                const Icon = item.icon
+                                const isActive =
+                                    pathname === item.href ||
+                                    pathname?.startsWith(item.href + "/")
+
+                                return (
+                                    <Link key={item.href} href={item.href}>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className={cn(
+                                                "w-full flex flex-row justify-start gap-3 transition-all duration-200 rounded-xl h-10 font-medium text-start",
+                                                isActive
+                                                    ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground"
+                                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                            )}
+                                        >
+                                            <Icon className="h-5 w-5 shrink-0 order-first" />
+                                            <span className="text-sm truncate">{t(item.label)}</span>
+                                        </Button>
+                                    </Link>
+                                )
+                            })}
+                        </div>
+                    </div>
+                ))}
+            </nav>
+
+            {/* Bottom: Settings + Logout */}
+            <div className="space-y-1 p-3 border-t border-border/40 shrink-0">
+                <Link href="/settings">
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         className={cn(
-                            "group flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
+                            "w-full flex flex-row justify-start gap-3 rounded-xl h-10 font-medium text-start",
                             pathname === "/settings"
-                                ? "bg-primary/10 text-primary"
-                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                                ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
                         )}
                     >
-                        <Settings className="h-[18px] w-[18px] shrink-0 text-muted-foreground/70 group-hover:text-accent-foreground" />
-                        <span>{t("settings")}</span>
-                    </Link>
+                        <Settings className="h-5 w-5 shrink-0 order-first" />
+                        <span className="text-sm">{t("settings")}</span>
+                    </Button>
+                </Link>
 
-                    <button
-                        onClick={logout}
-                        className="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                    >
-                        <LogOut className="h-[18px] w-[18px] shrink-0 text-muted-foreground/70 group-hover:text-destructive" />
-                        <span>{t("logout")}</span>
-                    </button>
-                </div>
-            </aside>
-        </TooltipProvider>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={logout}
+                    className="w-full flex flex-row justify-start gap-3 rounded-xl h-10 text-muted-foreground hover:bg-destructive/10 hover:text-destructive font-medium text-start"
+                >
+                    <LogOut className="h-5 w-5 shrink-0 order-first" />
+                    <span className="text-sm">{t("logout")}</span>
+                </Button>
+            </div>
+        </aside>
     )
 }
