@@ -1,18 +1,40 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import {
+    requireAuthWithScope,
+    unauthorizedResponse,
+    forbiddenResponse,
+} from "@/lib/api-auth"
 
-// PUT - تحديث حجز
+async function canManageBooking(
+    scope: { role: string; userId: string; branchIds: string[] },
+    booking: { agentId: string | null; contact: { branchId: string | null } }
+) {
+    if (scope.role === "ADMIN") return true
+    if (scope.role === "AGENT") return false
+    if (scope.role === "SUPERVISOR") {
+        return (
+            booking.contact.branchId != null &&
+            scope.branchIds.includes(booking.contact.branchId)
+        )
+    }
+    return false
+}
+
+// PUT - Update booking (Admin or Supervisor for their branches only; Agent cannot)
 export async function PUT(
     request: NextRequest,
     props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const params = await props.params;
+        const scope = await requireAuthWithScope(request)
+        const params = await props.params
         const body = await request.json()
         const { id } = params
 
         const existingBooking = await prisma.booking.findUnique({
-            where: { id }
+            where: { id },
+            include: { contact: { select: { branchId: true } } },
         })
 
         if (!existingBooking) {
@@ -22,14 +44,17 @@ export async function PUT(
             )
         }
 
+        const allowed = await canManageBooking(scope, existingBooking)
+        if (!allowed) return forbiddenResponse("You cannot update this booking")
+
         const booking = await prisma.booking.update({
             where: { id },
             data: {
-                agentId: body.agentId || null,
-                branch: body.branch || null,
-                date: body.date ? new Date(body.date) : undefined,
-                notes: body.notes || null,
-                status: body.status || undefined
+                agentId: body.agentId ?? existingBooking.agentId,
+                branch: body.branch ?? existingBooking.branch,
+                date: body.date ? new Date(body.date) : existingBooking.date,
+                notes: body.notes !== undefined ? body.notes : existingBooking.notes,
+                status: body.status ?? existingBooking.status,
             },
             include: {
                 contact: {
@@ -37,25 +62,29 @@ export async function PUT(
                         id: true,
                         name: true,
                         phone: true,
-                        email: true
-                    }
+                        email: true,
+                    },
                 },
                 agent: {
                     select: {
                         id: true,
                         name: true,
-                        email: true
-                    }
-                }
-            }
+                        email: true,
+                    },
+                },
+            },
         })
 
         return NextResponse.json({
             success: true,
-            data: booking
+            data: booking,
         })
     } catch (error) {
-        console.error('Error updating booking:', error)
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return unauthorizedResponse()
+            if (error.message === "Forbidden") return forbiddenResponse()
+        }
+        console.error("Error updating booking:", error)
         return NextResponse.json(
             { success: false, error: "Failed to update booking" },
             { status: 500 }
@@ -63,7 +92,6 @@ export async function PUT(
     }
 }
 
-// PATCH - تحديث حجز (alias for PUT)
 export async function PATCH(
     request: NextRequest,
     props: { params: Promise<{ id: string }> }
@@ -71,17 +99,19 @@ export async function PATCH(
     return PUT(request, props)
 }
 
-// DELETE - حذف حجز
+// DELETE - Cancel/delete booking (Admin or Supervisor for their branches only; Agent cannot)
 export async function DELETE(
     request: NextRequest,
     props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const params = await props.params;
+        const scope = await requireAuthWithScope(request)
+        const params = await props.params
         const { id } = params
 
         const existingBooking = await prisma.booking.findUnique({
-            where: { id }
+            where: { id },
+            include: { contact: { select: { branchId: true } } },
         })
 
         if (!existingBooking) {
@@ -91,16 +121,23 @@ export async function DELETE(
             )
         }
 
+        const allowed = await canManageBooking(scope, existingBooking)
+        if (!allowed) return forbiddenResponse("You cannot delete this booking")
+
         await prisma.booking.delete({
-            where: { id }
+            where: { id },
         })
 
         return NextResponse.json({
             success: true,
-            message: "Booking deleted successfully"
+            message: "Booking deleted successfully",
         })
     } catch (error) {
-        console.error('Error deleting booking:', error)
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return unauthorizedResponse()
+            if (error.message === "Forbidden") return forbiddenResponse()
+        }
+        console.error("Error deleting booking:", error)
         return NextResponse.json(
             { success: false, error: "Failed to delete booking" },
             { status: 500 }

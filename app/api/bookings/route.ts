@@ -1,38 +1,67 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import {
+    requireAuthWithScope,
+    unauthorizedResponse,
+    forbiddenResponse,
+} from "@/lib/api-auth"
 
-// GET - جلب جميع الحجوزات
+function getBookingsWhere(scope: { role: string; userId: string; branchIds: string[] }) {
+    if (scope.role === "ADMIN") return {}
+    if (scope.role === "AGENT") {
+        return { agentId: scope.userId }
+    }
+    if (scope.role === "SUPERVISOR" && scope.branchIds.length > 0) {
+        return { contact: { branchId: { in: scope.branchIds } } }
+    }
+    if (scope.role === "SUPERVISOR") {
+        return { id: "impossible" }
+    }
+    return {}
+}
+
+// GET - List bookings (role-scoped: Agent = own only, Supervisor = branch only, Admin = all)
 export async function GET(request: NextRequest) {
     try {
+        const scope = await requireAuthWithScope(request)
+
+        const where = getBookingsWhere(scope)
+        if (Object.keys(where).length === 1 && (where as any).id === "impossible") {
+            return NextResponse.json({ success: true, data: [] })
+        }
+
         const bookings = await prisma.booking.findMany({
+            where,
             include: {
                 contact: {
                     select: {
                         id: true,
                         name: true,
                         phone: true,
-                        email: true
-                    }
+                        email: true,
+                    },
                 },
                 agent: {
                     select: {
                         id: true,
                         name: true,
-                        email: true
-                    }
-                }
+                        email: true,
+                    },
+                },
             },
-            orderBy: {
-                date: 'desc'
-            }
+            orderBy: { date: "desc" },
         })
 
         return NextResponse.json({
             success: true,
-            data: bookings
+            data: bookings,
         })
     } catch (error) {
-        console.error('Error fetching bookings:', error)
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return unauthorizedResponse()
+            if (error.message === "Forbidden") return forbiddenResponse()
+        }
+        console.error("Error fetching bookings:", error)
         return NextResponse.json(
             { success: false, error: "Failed to fetch bookings" },
             { status: 500 }
@@ -40,15 +69,27 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST - إنشاء حجز جديد
+// POST - Create booking (Agent can only set self as agentId)
 export async function POST(request: NextRequest) {
     try {
+        const scope = await requireAuthWithScope(request)
         const body = await request.json()
-        const { contactId, agentId, branch, date, notes } = body
+        let { contactId, agentId, branch, date, notes } = body
 
-        // التحقق من وجود جهة الاتصال
+        if (scope.role === "AGENT") {
+            agentId = scope.userId
+        }
+        if (scope.role === "SUPERVISOR" && agentId) {
+            const agent = await prisma.user.findFirst({
+                where: { id: agentId, branches: { some: { id: { in: scope.branchIds } } } },
+            })
+            if (!agent) {
+                return forbiddenResponse("You can only assign agents from your branches")
+            }
+        }
+
         const contact = await prisma.contact.findUnique({
-            where: { id: contactId }
+            where: { id: contactId },
         })
 
         if (!contact) {
@@ -58,11 +99,9 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // توليد رقم الحجز
         const bookingCount = await prisma.booking.count()
-        const bookingNumber = `BK-${String(bookingCount + 1).padStart(3, '0')}`
+        const bookingNumber = `BK-${String(bookingCount + 1).padStart(3, "0")}`
 
-        // إنشاء الحجز
         const booking = await prisma.booking.create({
             data: {
                 bookingNumber,
@@ -71,7 +110,7 @@ export async function POST(request: NextRequest) {
                 branch: branch || null,
                 date: new Date(date),
                 notes: notes || null,
-                status: 'CONFIRMED'
+                status: "CONFIRMED",
             },
             include: {
                 contact: {
@@ -79,25 +118,32 @@ export async function POST(request: NextRequest) {
                         id: true,
                         name: true,
                         phone: true,
-                        email: true
-                    }
+                        email: true,
+                    },
                 },
                 agent: {
                     select: {
                         id: true,
                         name: true,
-                        email: true
-                    }
-                }
-            }
+                        email: true,
+                    },
+                },
+            },
         })
 
-        return NextResponse.json({
-            success: true,
-            data: booking
-        }, { status: 201 })
+        return NextResponse.json(
+            {
+                success: true,
+                data: booking,
+            },
+            { status: 201 }
+        )
     } catch (error) {
-        console.error('Error creating booking:', error)
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return unauthorizedResponse()
+            if (error.message === "Forbidden") return forbiddenResponse()
+        }
+        console.error("Error creating booking:", error)
         return NextResponse.json(
             { success: false, error: "Failed to create booking" },
             { status: 500 }
