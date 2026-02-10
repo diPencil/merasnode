@@ -39,8 +39,9 @@ export function AppLayout({ children, title, showSearch = false }: AppLayoutProp
 
   return (
     <div className="app-shell flex overflow-hidden bg-background flex-col md:flex-row">
-      {/* Desktop sidebar navigation */}
-      <div className="hidden md:flex shrink-0">
+      {/* Desktop sidebar – sealed scroll boundary: overflow-hidden + h-full
+           ensures sidebar never participates in page scroll */}
+      <div className="hidden md:flex shrink-0 h-full overflow-hidden">
         <NavigationRail />
       </div>
 

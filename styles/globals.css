@@ -166,4 +166,15 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* Sidebar scroll isolation – prevents scroll chaining from the
+     sidebar menu to the page content on all browsers.
+     contain: layout paint → isolates layout & paint without breaking size.
+     isolation: isolate → creates a new stacking context. */
+  @media (min-width: 768px) {
+    .app-shell > *:first-child {
+      contain: layout paint;
+      isolation: isolate;
+    }
+  }
 }

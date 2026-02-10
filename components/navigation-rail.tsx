@@ -128,7 +128,7 @@ export function NavigationRail() {
     return (
         <aside
             className={cn(
-                "flex w-[240px] h-full flex-col bg-sidebar",
+                "flex w-[240px] h-full flex-col bg-sidebar overflow-hidden",
                 dir === "rtl" ? "border-s border-border/40" : "border-e border-border/40",
             )}
         >
@@ -182,7 +182,7 @@ export function NavigationRail() {
             </div>
 
             {/* Navigation Menu */}
-            <nav className="flex-1 overflow-y-auto py-2 px-3 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+            <nav className="flex-1 overflow-y-auto overscroll-contain py-2 px-3 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
                 {filteredGroups.map((group, groupIndex) => (
                     <div key={group.id} className={groupIndex > 0 ? "mt-4" : ""}>
                         {/* Section Label */}
