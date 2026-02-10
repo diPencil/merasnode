@@ -902,13 +902,12 @@ export default function InboxPage() {
 
   return (
     <AppLayout title={t("inbox")} fullBleed>
-      <div className="flex h-full flex-col md:flex-row bg-background md:border md:rounded-xl overflow-hidden md:shadow-sm relative md:m-2 min-h-0">
-
-        {/* LEFT COLUMN: Conversations List — fixed width */}
-        {/* On Mobile: Show this ONLY if no conversation is selected */}
+      <div className="inbox-root bg-background md:border md:rounded-xl md:shadow-sm relative md:m-2">
+        <div className="inbox-three-col flex-col md:flex-row">
+        {/* LEFT COLUMN: Conversations List — fixed width, own scroll */}
         <div className={cn(
-          "flex flex-col bg-muted/10 w-full md:w-[320px] shrink-0 h-full min-h-0 overflow-hidden",
-          "absolute md:relative z-0",
+          "inbox-col-left bg-muted/10",
+          "absolute md:relative z-0 w-full md:w-auto",
           dir === "rtl" ? "border-s border-border/50" : "border-e border-border/50",
           selectedConversation ? "hidden md:flex" : "flex"
         )}>
@@ -986,7 +985,7 @@ export default function InboxPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
               {isLoading ? (
               <div className="flex items-center justify-center h-32 text-muted-foreground">{t("loading")}</div>
             ) : filteredConversations.length === 0 ? (
@@ -1053,15 +1052,14 @@ export default function InboxPage() {
         {selectedConversation ? (
           <div
             className={cn(
-              "flex flex-col flex-1 min-w-0 min-h-0 bg-slate-50 dark:bg-background chat-column z-40",
-              // Mobile: fixed overlay above bottom nav (WhatsApp-like)
+              "inbox-col-middle chat-column bg-slate-50 dark:bg-background z-40",
               "fixed inset-x-0 top-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] bg-background md:inset-auto",
               "md:relative md:bottom-auto md:z-0",
             )}
             dir={dir}
           >
-            {/* Chat header — fixed, no scroll */}
-            <div className="h-14 md:h-16 border-b bg-card px-4 flex items-center justify-between shadow-sm z-30 shrink-0">
+            {/* Chat header — fixed */}
+            <div className="inbox-chat-header h-14 md:h-16 border-b bg-card px-4 flex items-center justify-between shadow-sm z-30">
               <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
                 {/* Mobile Back Button */}
                 <Button
@@ -1301,8 +1299,8 @@ export default function InboxPage() {
               </div>
             </div>
 
-            {/* Messages — RTL: incoming=start (right), outgoing=end (left) */}
-            <div className="chat-messages p-4 md:p-6 pb-4 overflow-y-auto flex-1 min-h-0 overscroll-contain">
+            {/* Messages — only this area scrolls */}
+            <div className="chat-messages inbox-chat-messages p-4 md:p-6 pb-4">
               {messages.map((message) => {
                 const isOutgoing = message.direction === "OUTGOING"
                 return (
@@ -1411,8 +1409,8 @@ export default function InboxPage() {
               <div ref={chatMessagesEndRef} aria-hidden className="min-h-2" />
             </div>
 
-            {/* Input bar — RTL: [Attach|Emoji|Mic] → Input → Send; Send on start (right in RTL) */}
-            <div className="bg-card mt-auto chat-input-bar border-t p-2 md:p-3 shrink-0 flex items-end gap-2">
+            {/* Input bar — fixed at bottom */}
+            <div className="inbox-chat-input bg-card chat-input-bar border-t p-2 md:p-3 flex items-end gap-2">
               <div className="flex items-center gap-1 md:gap-2 bg-muted/30 p-1 md:p-1.5 rounded-[24px] flex-1 min-w-0 border focus-within:ring-2 ring-primary/20 transition-all min-h-[44px]">
                 {/* Emoji Button */}
                 <Popover>
@@ -1558,8 +1556,8 @@ export default function InboxPage() {
 
           </div>
         ) : (
-          <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-slate-50 text-center p-8">
-            <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+          <div className="inbox-col-middle hidden md:flex flex-col items-center justify-center bg-slate-50 dark:bg-background text-center p-8 min-h-0">
+            <div className="bg-white dark:bg-card p-4 rounded-full shadow-sm mb-4">
               <MessageCircle className="h-8 w-8 text-primary" />
             </div>
             <h3 className="font-semibold text-lg">{t("noConversationSelected")}</h3>
@@ -1568,12 +1566,15 @@ export default function InboxPage() {
         )
         }
 
-        {/* RIGHT COLUMN: Contact details — fixed width, desktop xl+ */}
+        {/* RIGHT COLUMN: Contact details — fixed width, own scroll */}
         {selectedConversation && (
-          <div className={cn("hidden xl:flex w-[320px] shrink-0 h-full min-h-0 overflow-hidden bg-card", dir === "rtl" ? "border-e border-border/50" : "border-s border-border/50")}>
-            <SidebarContent conversation={selectedConversation} onUpdate={() => fetchConversations()} />
+          <div className={cn("inbox-col-right hidden xl:flex bg-card", dir === "rtl" ? "border-e border-border/50" : "border-s border-border/50")}>
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+              <SidebarContent conversation={selectedConversation} onUpdate={() => fetchConversations()} />
+            </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Image Preview Modal */}

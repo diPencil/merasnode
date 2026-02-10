@@ -400,20 +400,61 @@ body {
   padding-inline-end: 0.625rem;
 }
 
+/* ========== Inbox 3-column layout (no body scroll) ========== */
+.inbox-root {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.inbox-three-col {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  /* flex-direction set by Tailwind: flex-col md:flex-row */
+}
+.inbox-col-left,
+.inbox-col-right {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.inbox-col-left { min-width: 280px; max-width: 360px; width: 320px; flex-shrink: 0; }
+.inbox-col-right { width: 320px; flex-shrink: 0; }
+.inbox-col-middle {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.inbox-chat-header { flex-shrink: 0; }
+.inbox-chat-messages { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+.inbox-chat-input { flex-shrink: 0; }
+
 /* ========== RTL Chat / Messaging ========== */
 /* Chat column: flow top→bottom, content aligned to start (right in RTL) */
 .chat-column {
   display: flex;
   flex-direction: column;
+  min-height: 0;
   text-align: start;
 }
 .chat-column .chat-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   padding-inline: 1rem;
   padding-block: 1rem;
+  overscroll-behavior: contain;
 }
 /* Message row: no centering; alignment via bubble-wrap margins only */
 .chat-message-row {
