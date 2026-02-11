@@ -162,17 +162,42 @@ export function buildConversationScopeFilter(scope: UserScope): Record<string, a
     if (scope.role === 'ADMIN') return {}
 
     if (scope.role === 'SUPERVISOR') {
-        if (!scope.branchIds?.length) return { id: { in: [] } } // no branches => no conversations
-        return {
-            contact: {
-                branchId: { in: scope.branchIds },
-            },
+        const hasBranchScope = scope.branchIds && scope.branchIds.length > 0
+        const hasWaScope = scope.whatsappAccountIds && scope.whatsappAccountIds.length > 0
+
+        const orClauses: Record<string, any>[] = []
+
+        // 1) Conversations لعملاء فروعه
+        if (hasBranchScope) {
+            orClauses.push({
+                contact: {
+                    branchId: { in: scope.branchIds },
+                },
+            })
         }
+
+        // 2) أو محادثات قادمة من أرقام واتساب المرتبطة به (حتى لو الـcontact ليس له فرع)
+        if (hasWaScope) {
+            orClauses.push({
+                messages: {
+                    some: {
+                        whatsappAccountId: { in: scope.whatsappAccountIds },
+                    },
+                },
+            })
+        }
+
+        if (orClauses.length === 0) {
+            // لا فروع ولا أرقام واتساب مرتبطة → لا شيء
+            return { id: { in: [] } }
+        }
+
+        return orClauses.length === 1 ? orClauses[0] : { OR: orClauses }
     }
 
     // AGENT: (assigned to user OR conversation has messages from user's WA accounts)
     // ملاحظة: لا نقيّد بالـbranch هنا (حتى لو للـAgent فروع)،
-    // لأن الداشبورد يعتمد فقط على assignedToId، وبعض الـcontacts القديمة قد لا يكون لها branchId.
+    // لأن بعض الـcontacts القديمة قد لا يكون لها branchId.
     // وبالتالي نفضّل أن تكون رؤية الـInbox متسقة مع الداشبورد والـscope الفعلي للتعيين.
     const hasWaScope = scope.whatsappAccountIds && scope.whatsappAccountIds.length > 0
 

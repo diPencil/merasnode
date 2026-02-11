@@ -18,15 +18,35 @@ export async function GET(request: NextRequest) {
         if (scope.role === 'ADMIN') {
             where = {}
         } else if (scope.role === 'SUPERVISOR') {
-            // Supervisors: contacts in their branches only
-            if (!scope.branchIds?.length) {
+            const hasBranchScope = scope.branchIds && scope.branchIds.length > 0
+            const hasWaScope = scope.whatsappAccountIds && scope.whatsappAccountIds.length > 0
+
+            const orClauses: any[] = []
+
+            if (hasBranchScope) {
+                orClauses.push({ branchId: { in: scope.branchIds } })
+            }
+            if (hasWaScope) {
+                orClauses.push({
+                    conversations: {
+                        some: {
+                            messages: {
+                                some: { whatsappAccountId: { in: scope.whatsappAccountIds } },
+                            },
+                        },
+                    },
+                })
+            }
+
+            if (orClauses.length === 0) {
                 return NextResponse.json({
                     success: true,
                     data: [],
                     count: 0
                 })
             }
-            where = { branchId: { in: scope.branchIds } }
+
+            where = orClauses.length === 1 ? orClauses[0] : { OR: orClauses }
         } else {
             // AGENT: contacts that have at least one conversation assigned to this agent
             // This matches the dashboard's contact visibility

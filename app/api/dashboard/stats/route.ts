@@ -37,13 +37,33 @@ function messageWhere(scope: UserScope, extra: Record<string, any> = {}): Record
 // Build a Prisma `where` for conversations. For ADMIN: global. For AGENT: only conversations assigned to them.
 function conversationWhere(scope: UserScope, extra: Record<string, any> = {}): Record<string, any> {
     if (isGlobalScope(scope)) return { ...extra }
+
     if (scope.role === 'SUPERVISOR') {
-        if (!scope.branchIds?.length) return { id: { in: [] }, ...extra }
-        return {
-            ...extra,
-            contact: { branchId: { in: scope.branchIds } },
+        const hasBranchScope = scope.branchIds && scope.branchIds.length > 0
+        const hasWaScope = scope.whatsappAccountIds && scope.whatsappAccountIds.length > 0
+
+        const orClauses: Record<string, any>[] = []
+
+        if (hasBranchScope) {
+            orClauses.push({ contact: { branchId: { in: scope.branchIds } } })
         }
+        if (hasWaScope) {
+            orClauses.push({
+                messages: {
+                    some: { whatsappAccountId: { in: scope.whatsappAccountIds } },
+                },
+            })
+        }
+
+        if (orClauses.length === 0) {
+            return { id: { in: [] }, ...extra }
+        }
+
+        return orClauses.length === 1
+            ? { ...extra, ...orClauses[0] }
+            : { ...extra, OR: orClauses }
     }
+
     // AGENT: only conversations assigned to them
     return { ...extra, assignedToId: scope.userId }
 }
@@ -61,8 +81,31 @@ function waAccountWhere(scope: UserScope): Record<string, any> {
 function contactWhere(scope: UserScope): Record<string, any> {
     if (isGlobalScope(scope)) return {}
     if (scope.role === 'SUPERVISOR') {
-        if (!scope.branchIds?.length) return { id: { in: [] } }
-        return { branchId: { in: scope.branchIds } }
+        const hasBranchScope = scope.branchIds && scope.branchIds.length > 0
+        const hasWaScope = scope.whatsappAccountIds && scope.whatsappAccountIds.length > 0
+
+        const orClauses: Record<string, any>[] = []
+
+        if (hasBranchScope) {
+            orClauses.push({ branchId: { in: scope.branchIds } })
+        }
+        if (hasWaScope) {
+            orClauses.push({
+                conversations: {
+                    some: {
+                        messages: {
+                            some: { whatsappAccountId: { in: scope.whatsappAccountIds } },
+                        },
+                    },
+                },
+            })
+        }
+
+        if (orClauses.length === 0) {
+            return { id: { in: [] } }
+        }
+
+        return orClauses.length === 1 ? orClauses[0] : { OR: orClauses }
     }
     // AGENT: contacts that have a conversation assigned to this agent
     return {
