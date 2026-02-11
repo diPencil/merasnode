@@ -484,7 +484,8 @@ body {
 .chat-bubble {
   text-align: start;
   display: inline-block;
-  max-inline-size: 85%;
+  /* Mobile / small screens: allow bubble to be أوسع عشان الجملة القصيرة تظهر مدمجة */
+  max-inline-size: 92%;
   /* Prevent extremely narrow bubbles (one letter per line) */
   min-inline-size: 5.5rem;
   width: auto;
@@ -496,8 +497,8 @@ body {
 }
 @media (min-width: 768px) {
   .chat-bubble {
-    /* Desktop: slightly narrower bubbles */
-    max-inline-size: 70%;
+    /* Desktop: بابل أوسع شوية عشان الكلمات العربية ما تتكسرش زيادة */
+    max-inline-size: 80%;
   }
 }
 /* Incoming: light bg, flat corner at start-bottom */
