@@ -108,7 +108,9 @@ const rolePermissions: Record<UserRole, Permission[]> = {
         'view_offers', 'create_offer', 'edit_offer', // Can manage offers
         'view_invoices', 'create_invoice', 'edit_invoice', // Can manage invoices
         'view_settings', // Profile only
-        // No activity logs, analytics, users, branches, accounts, whatsapp
+        'view_analytics', // Own analytics only (scoped on backend)
+        'view_bot_flows', 'create_bot_flow', // No edit/delete
+        // No activity logs, users, branches, accounts, whatsapp
     ],
 }
 
@@ -125,7 +127,7 @@ const pageAccess: Record<PageRoute, UserRole[]> = {
     '/users': ['ADMIN', 'SUPERVISOR'], // SUPERVISOR read-only
     '/accounts': ['ADMIN'], // ADMIN only - WhatsApp Accounts with Meta API
     '/settings': ['ADMIN', 'SUPERVISOR', 'AGENT'],
-    '/analytics': ['ADMIN', 'SUPERVISOR'], // No AGENT
+    '/analytics': ['ADMIN', 'SUPERVISOR', 'AGENT'], // AGENT sees own data only (scoped)
     '/logs': ['ADMIN', 'SUPERVISOR'], // No AGENT
     '/whatsapp': ['ADMIN'], // ADMIN only
     '/bot-flows': ['ADMIN', 'SUPERVISOR', 'AGENT'],

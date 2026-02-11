@@ -8,8 +8,10 @@ import {
     UserScope,
 } from '@/lib/api-auth'
 
-// ─── Scope helpers ──────────────────────────────────────────────────
-// Build a Prisma `where` for messages that respects the user's scope.
+// ─── Scope helpers (role-based, account-scoped analytics) ────────────
+// ADMIN: global. SUPERVISOR: branches + WA + agents in those branches. AGENT: only own data.
+
+// Build a Prisma `where` for messages. For AGENT: only messages they sent.
 function messageWhere(scope: UserScope, extra: Record<string, any> = {}): Record<string, any> {
     if (scope.role === 'ADMIN') return { ...extra }
     if (scope.role === 'SUPERVISOR') {
@@ -20,19 +22,25 @@ function messageWhere(scope: UserScope, extra: Record<string, any> = {}): Record
             },
         }
     }
-    // AGENT: personal messages only (sent by them or on their assigned conversations)
+    // AGENT: only messages they sent (own analytics only)
     return {
         ...extra,
-        OR: [
-            { senderId: scope.userId },
-            { conversation: { assignedToId: scope.userId } },
-        ],
+        senderId: scope.userId,
     }
 }
 
-// Build a Prisma `where` for conversations that respects the user's scope.
+// Build a Prisma `where` for conversations. For AGENT: only conversations they handled (assigned to them).
 function conversationWhere(scope: UserScope, extra: Record<string, any> = {}): Record<string, any> {
-    return { ...buildConversationScopeFilter(scope), ...extra }
+    if (scope.role === 'ADMIN') return { ...extra }
+    if (scope.role === 'SUPERVISOR') {
+        if (!scope.branchIds?.length) return { id: { in: [] }, ...extra }
+        return {
+            ...extra,
+            contact: { branchId: { in: scope.branchIds } },
+        }
+    }
+    // AGENT: only conversations assigned to them
+    return { ...extra, assignedToId: scope.userId }
 }
 
 // Build a Prisma `where` for WhatsApp accounts.
@@ -44,10 +52,17 @@ function waAccountWhere(scope: UserScope): Record<string, any> {
     return { id: { in: scope.whatsappAccountIds } }
 }
 
-// Build a Prisma `where` for contacts.
+// Build a Prisma `where` for contacts. SUPERVISOR: their branches. AGENT: contacts in conversations they handle.
 function contactWhere(scope: UserScope): Record<string, any> {
     if (scope.role === 'ADMIN') return {}
-    return { branchId: { in: scope.branchIds } }
+    if (scope.role === 'SUPERVISOR') {
+        if (!scope.branchIds?.length) return { id: { in: [] } }
+        return { branchId: { in: scope.branchIds } }
+    }
+    // AGENT: contacts that have a conversation assigned to this agent
+    return {
+        conversations: { some: { assignedToId: scope.userId } },
+    }
 }
 
 // ─── Raw-SQL filter fragments (for $queryRaw) ───────────────────────
@@ -72,8 +87,19 @@ function messageRawWhereFilter(scope: UserScope, messageAlias: string = 'm'): st
         const ids = scope.branchIds.map(id => `'${id}'`).join(',')
         return ids.length > 0 ? `AND ct.branchId IN (${ids})` : 'AND 1=0'
     }
-    // AGENT: only their own messages or assigned conversations
-    return `AND (${messageAlias}.senderId = '${scope.userId}' OR conv.assignedToId = '${scope.userId}')`
+    // AGENT: only messages they sent (own analytics)
+    return `AND ${messageAlias}.senderId = '${scope.userId}'`
+}
+
+// For response-time query: Agent's reply must be sent by them. Outgoing alias in query is 'outgoing'.
+function responseTimeOutgoingFilter(scope: UserScope): string {
+    if (scope.role !== 'AGENT') return ''
+    return `AND outgoing.senderId = '${scope.userId}'`
+}
+
+function responseTimeConvFilter(scope: UserScope): string {
+    if (scope.role !== 'AGENT') return ''
+    return `AND conv.assignedToId = '${scope.userId}'`
 }
 
 export async function GET(request: NextRequest) {
@@ -109,17 +135,21 @@ export async function GET(request: NextRequest) {
         const joinFrag = messageRawJoinFilter(scope, 'incoming')
         const whereFrag = messageRawWhereFilter(scope, 'incoming')
 
+        const responseTimeConv = responseTimeConvFilter(scope)
+        const responseTimeOut = responseTimeOutgoingFilter(scope)
+        const responseTimeWhereExtra = scope.role === 'AGENT' ? `${responseTimeConv} ${responseTimeOut}` : whereFrag
         const responseTimeData = await prisma.$queryRawUnsafe<Array<{ avgMinutes: number }>>(
             `SELECT AVG(TIMESTAMPDIFF(MINUTE, incoming.createdAt, outgoing.createdAt)) as avgMinutes
              FROM Message incoming
              JOIN Message outgoing ON incoming.conversationId = outgoing.conversationId
              ${joinFrag}
+             ${scope.role === 'AGENT' ? 'JOIN Conversation conv ON incoming.conversationId = conv.id' : ''}
              WHERE incoming.direction = 'INCOMING'
                AND outgoing.direction = 'OUTGOING'
                AND outgoing.createdAt > incoming.createdAt
                AND incoming.createdAt >= ?
                AND TIMESTAMPDIFF(MINUTE, incoming.createdAt, outgoing.createdAt) <= 60
-               ${whereFrag}`,
+               ${responseTimeWhereExtra}`,
             startDate,
         )
 

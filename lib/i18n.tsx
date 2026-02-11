@@ -946,6 +946,8 @@ const translations: Translations = {
   chooseContact: { en: "Choose a contact", ar: "اختر جهة اتصال" },
   settingsTitle: { en: "Settings", ar: "الإعدادات" },
   viewInsightsAndMetrics: { en: "View insights and performance metrics", ar: "عرض الرؤى ومقاييس الأداء" },
+  analyticsScopeAgent: { en: "Your conversations, messages, and performance only", ar: "محادثاتك ورسائلك وأداؤك فقط" },
+  analyticsScopeSupervisor: { en: "Analytics for your branches and assigned agents", ar: "تحليلات لفروعك والوكلاء المعينين لك" },
   distributionOfConversationStates: { en: "Distribution of conversation states", ar: "توزيع حالات المحادثات" },
   agentActivityAndHandling: { en: "Agent activity and conversation handling", ar: "نشاط الموظفين ومعالجة المحادثات" },
   triggersLabel: { en: "Triggers", ar: "المحفزات" },

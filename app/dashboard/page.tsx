@@ -208,6 +208,11 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
+            {userRole !== 'ADMIN' && (
+              <p className="text-sm text-muted-foreground">
+                {userRole === 'AGENT' ? t("analyticsScopeAgent") : t("analyticsScopeSupervisor")}
+              </p>
+            )}
             {/* Top Stats Cards - Reference Design */}
             <div className="grid gap-4 md:grid-cols-3">
               {/* Card 1: Total Conversations */}

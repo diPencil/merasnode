@@ -5,10 +5,11 @@ import { AppLayout } from "@/components/app-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart3, MessageSquare, Users, Clock, TrendingUp } from "lucide-react"
 import { useI18n } from "@/lib/i18n"
-import { authenticatedFetch } from "@/lib/auth"
+import { authenticatedFetch, getUserRole } from "@/lib/auth"
 
 export default function AnalyticsPage() {
     const { t } = useI18n()
+    const userRole = getUserRole()
     const [stats, setStats] = useState({
         totalConversations: 0,
         totalContacts: 0,
@@ -56,7 +57,13 @@ export default function AnalyticsPage() {
             <div className="space-y-6">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">{t("analytics")}</h2>
-                    <p className="text-muted-foreground">{t("viewInsightsAndMetrics")}</p>
+                    <p className="text-muted-foreground">
+                        {userRole === "ADMIN"
+                            ? t("viewInsightsAndMetrics")
+                            : userRole === "AGENT"
+                                ? t("analyticsScopeAgent")
+                                : t("analyticsScopeSupervisor")}
+                    </p>
                 </div>
 
                 {isLoading ? (
