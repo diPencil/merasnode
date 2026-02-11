@@ -1619,13 +1619,16 @@ export default function InboxPage() {
 
           </div>
         ) : (
-          <div className="inbox-col-middle hidden md:flex flex-col items-center justify-center bg-slate-50 dark:bg-background text-center p-8 min-h-0">
-            <div className="bg-white dark:bg-card p-4 rounded-full shadow-sm mb-4">
-              <MessageCircle className="h-8 w-8 text-primary" />
+          // Desktop-only placeholder: on mobile we show ONLY the list when no conversation selected
+          !isMobile && (
+            <div className="inbox-col-middle flex flex-col items-center justify-center bg-slate-50 dark:bg-background text-center p-8 min-h-0">
+              <div className="bg-white dark:bg-card p-4 rounded-full shadow-sm mb-4">
+                <MessageCircle className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg">{t("noConversationSelected")}</h3>
+              <p className="text-muted-foreground text-sm max-w-xs mt-2">{t("selectConversationToView")}</p>
             </div>
-            <h3 className="font-semibold text-lg">{t("noConversationSelected")}</h3>
-            <p className="text-muted-foreground text-sm max-w-xs mt-2">{t("selectConversationToView")}</p>
-          </div>
+          )
         )
         }
 

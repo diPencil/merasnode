@@ -78,8 +78,12 @@ export async function POST(request: NextRequest) {
 
         const { conversationId, phone, content, direction = 'OUTGOING', mediaUrl, whatsappAccountId } = body;
 
-        if (!content) {
-            return NextResponse.json({ success: false, error: "Content is required" }, { status: 400 });
+        // Require either text content OR media – allow pure media messages
+        if (!content && !mediaUrl) {
+            return NextResponse.json(
+                { success: false, error: "Content or media is required" },
+                { status: 400 }
+            );
         }
 
         let targetConversationId = conversationId;
