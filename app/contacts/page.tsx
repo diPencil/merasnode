@@ -28,6 +28,8 @@ import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
 import { Search, Plus, MoreVertical, Mail, Phone, Tag, Download, Upload, ShieldOff, Users } from "lucide-react"
 import { authenticatedFetch, getUserRole } from "@/lib/auth"
+import { hasPermission } from "@/lib/permissions"
+import type { UserRole } from "@/lib/permissions"
 
 interface Contact {
   id: string
@@ -66,6 +68,7 @@ export default function ContactsPage() {
   // Delete Confirmation Dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [contactToDelete, setContactToDelete] = useState<string | null>(null)
+  const canDeleteContact = hasPermission((getUserRole() || "AGENT") as UserRole, "delete_contact")
 
   // Block/Unblock Confirmation Dialog
   const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false)
@@ -665,13 +668,17 @@ export default function ContactsPage() {
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleBlock(contact) }}>
                                 {isBlocked ? t("unblockContactLabel") : t("blockContactLabel")}
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive"
-                                onClick={(e) => { e.stopPropagation(); setContactToDelete(contact.id); setIsDeleteDialogOpen(true) }}
-                              >
-                                {t("delete")}
-                              </DropdownMenuItem>
+                              {canDeleteContact && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={(e) => { e.stopPropagation(); setContactToDelete(contact.id); setIsDeleteDialogOpen(true) }}
+                                  >
+                                    {t("delete")}
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </>
                           )}
                         </DropdownMenuContent>
@@ -807,17 +814,21 @@ export default function ContactsPage() {
                                     >
                                       {isBlocked ? t("unblockContactLabel") : t("blockContactLabel")}
                                     </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      className="text-destructive"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setContactToDelete(contact.id)
-                                        setIsDeleteDialogOpen(true)
-                                      }}
-                                    >
-                                      {t("delete")}
-                                    </DropdownMenuItem>
+                                    {canDeleteContact && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                          className="text-destructive"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            setContactToDelete(contact.id)
+                                            setIsDeleteDialogOpen(true)
+                                          }}
+                                        >
+                                          {t("delete")}
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
                                   </>
                                 )}
                               </DropdownMenuContent>
@@ -1074,8 +1085,9 @@ export default function ContactsPage() {
         </DialogContent>
       </Dialog >
 
-      {/* Delete Confirmation Dialog */}
-      < Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} >
+      {/* Delete Confirmation Dialog (hidden for Supervisor) */}
+      {canDeleteContact && (
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t("deleteContactTitle")}</DialogTitle>
@@ -1103,7 +1115,8 @@ export default function ContactsPage() {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog >
+      </Dialog>
+      )}
 
       {/* Block Confirmation Dialog */}
       <AlertDialog open={isBlockDialogOpen} onOpenChange={setIsBlockDialogOpen}>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import {
     requireAuthWithScope,
+    requireDeleteAllowed,
     unauthorizedResponse,
     forbiddenResponse,
 } from "@/lib/api-auth"
@@ -59,14 +60,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 }
 
-// DELETE - حذف Bot Flow (Admin only)
+// DELETE - حذف Bot Flow (Admin only; Supervisor blocked and audited)
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const scope = await requireAuthWithScope(request)
-        if (!hasPermission(scope.role as UserRole, "delete_bot_flow")) {
+        const { id } = params
+        const flow = await prisma.botFlow.findUnique({ where: { id } })
+        const prevState = flow ? { name: flow.name, trigger: flow.trigger } : undefined
+        const allowed = await requireDeleteAllowed(request, "BotFlow", id, prevState)
+        if (allowed instanceof NextResponse) return allowed
+        if (!hasPermission((allowed as { scope: { role: string } }).scope.role as UserRole, "delete_bot_flow")) {
             return forbiddenResponse("You do not have permission to delete bot flows")
         }
-        const { id } = params
 
         await prisma.botFlow.delete({
             where: { id }

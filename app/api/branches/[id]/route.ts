@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import {
     requireAuthWithScope,
-    requireRoleWithScope,
+    requireDeleteAllowed,
     unauthorizedResponse,
     forbiddenResponse,
 } from "@/lib/api-auth"
@@ -86,30 +86,27 @@ export async function PUT(
     }
 }
 
-// DELETE /api/branches/[id] - Delete branch (ADMIN only)
+// DELETE /api/branches/[id] - Delete branch (ADMIN only; Supervisor blocked and audited)
 export async function DELETE(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     try {
-        const scope = await requireRoleWithScope(request, ['ADMIN'])
         const params = await context.params
-
         const branch = await prisma.branch.findUnique({
             where: { id: params.id },
-            include: {
-                _count: { select: { whatsappAccounts: true } },
-            },
+            include: { _count: { select: { whatsappAccounts: true } } },
         })
-
         if (!branch) {
             return NextResponse.json(
                 { success: false, error: "Branch not found" },
                 { status: 404 }
             )
         }
+        const prevState = { name: branch.name, address: branch.address, phone: branch.phone }
+        const allowed = await requireDeleteAllowed(request, "Branch", params.id, prevState)
+        if (allowed instanceof NextResponse) return allowed
 
-        // Unlink WhatsApp accounts before deleting
         if (branch._count.whatsappAccounts > 0) {
             await prisma.whatsAppAccount.updateMany({
                 where: { branchId: params.id },

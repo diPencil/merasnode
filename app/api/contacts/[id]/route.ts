@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { logActivity } from "@/lib/logger"
-import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
+import { requireAuthWithScope, requireDeleteAllowed, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
 
 // GET - Fetch single contact (scoped: non-Admin only within their branches)
 export async function GET(
@@ -144,36 +144,29 @@ export async function PUT(
     }
 }
 
-// DELETE - Delete contact (Admin only)
+// DELETE - Delete contact (Admin only; Supervisor blocked and audited)
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const scope = await requireAuthWithScope(request)
-        if (scope.role !== "ADMIN") {
-            return forbiddenResponse("Only Admin can delete contacts")
-        }
         const { id } = await params
-        // Get contact before delete
-        const contact = await prisma.contact.findUnique({
-            where: { id }
-        })
+        const contact = await prisma.contact.findUnique({ where: { id } })
+        const prevState = contact ? { name: contact.name, phone: contact.phone, email: contact.email } : undefined
+        const allowed = await requireDeleteAllowed(request, "Contact", id, prevState)
+        if (allowed instanceof NextResponse) return allowed
+        const { scope } = allowed
 
         await prisma.contact.delete({
             where: { id }
         })
 
-        // Log activity
         await logActivity({
+            userId: scope.userId,
             action: "DELETE",
             entityType: "Contact",
             entityId: id,
-            oldValues: {
-                name: contact?.name,
-                phone: contact?.phone,
-                email: contact?.email
-            },
+            oldValues: prevState,
             description: `Deleted contact: ${contact?.name}`
         })
 

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import {
     requireAuthWithScope,
     requireRoleWithScope,
+    requireDeleteAllowed,
     unauthorizedResponse,
     forbiddenResponse,
 } from '@/lib/api-auth'
@@ -135,18 +136,18 @@ export async function POST(request: NextRequest) {
 // DELETE - Remove WhatsApp account (ADMIN only)
 export async function DELETE(request: NextRequest) {
     try {
-        const scope = await requireRoleWithScope(request, ['ADMIN'])
-
         const id = request.nextUrl.searchParams.get('id')
-
         if (!id) {
             return NextResponse.json(
                 { success: false, error: 'Account ID is required' },
                 { status: 400 }
             )
         }
+        const account = await prisma.whatsAppAccount.findUnique({ where: { id } })
+        const prevState = account ? { name: account.name, phone: account.phone, status: account.status } : undefined
+        const allowed = await requireDeleteAllowed(request, "WhatsAppAccount", id, prevState)
+        if (allowed instanceof NextResponse) return allowed
 
-        // Try to disconnect from live service first
         try {
             await fetch(`http://localhost:3001/disconnect/${id}`, { method: 'POST' })
         } catch (e) {

@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { logActivity } from '@/lib/logger'
+import { requireDeleteAllowed, unauthorizedResponse, forbiddenResponse } from '@/lib/api-auth'
 import crypto from 'crypto'
 
 // GET - Fetch all API keys
@@ -75,26 +76,32 @@ export async function POST(request: Request) {
 }
 
 // DELETE - Delete API key
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url)
         const id = searchParams.get('id')
-
         if (!id) {
             return NextResponse.json(
                 { success: false, error: 'ID is required' },
                 { status: 400 }
             )
         }
+        const key = await prisma.apiKey.findUnique({ where: { id } })
+        const prevState = key ? { name: key.name, isActive: key.isActive } : undefined
+        const allowed = await requireDeleteAllowed(request, 'ApiKey', id, prevState)
+        if (allowed instanceof NextResponse) return allowed
+        const { scope } = allowed
 
         await prisma.apiKey.delete({
             where: { id }
         })
 
         await logActivity({
+            userId: scope.userId,
             action: 'DELETE',
             entityType: 'ApiKey',
             entityId: id,
+            oldValues: prevState,
             description: 'Deleted API key'
         })
 
@@ -103,6 +110,10 @@ export async function DELETE(request: Request) {
             message: 'API key deleted successfully'
         })
     } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === 'Unauthorized') return unauthorizedResponse()
+            if (error.message === 'Forbidden') return forbiddenResponse()
+        }
         console.error('Error deleting API key:', error)
         return NextResponse.json(
             { success: false, error: 'Failed to delete API key' },

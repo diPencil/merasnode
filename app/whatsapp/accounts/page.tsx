@@ -40,7 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Smartphone, CheckCircle2, XCircle, Clock, Copy, QrCode, RefreshCw, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
-import { authenticatedFetch } from "@/lib/auth"
+import { authenticatedFetch, getUserRole } from "@/lib/auth"
 
 interface WhatsAppAccount {
   id: string
@@ -63,6 +63,7 @@ export default function AccountsPage() {
     phone: ""
   })
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null)
+  const canDeleteAccount = getUserRole() === "ADMIN"
   const [qrAccountId, setQrAccountId] = useState<string | null>(null)
   const [linkingAccountId, setLinkingAccountId] = useState<string | null>(null)
   const [linkingQrCode, setLinkingQrCode] = useState<string | null>(null)
@@ -610,6 +611,7 @@ export default function AccountsPage() {
                             >
                               Test
                             </Button>
+                            {canDeleteAccount && (
                             <Button
                               size="sm"
                               variant="destructive"
@@ -617,6 +619,7 @@ export default function AccountsPage() {
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -651,6 +654,7 @@ export default function AccountsPage() {
           </DialogContent>
         </Dialog>
 
+        {canDeleteAccount && (
         <AlertDialog open={!!accountToDelete} onOpenChange={(open) => !open && setAccountToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -673,6 +677,7 @@ export default function AccountsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        )}
       </div>
     </AppLayout>
   )

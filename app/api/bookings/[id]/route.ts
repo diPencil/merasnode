@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
+import { requireAuthWithScope, requireDeleteAllowed, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
 
 async function canAccessBooking(scope: { role: string; userId: string; branchIds: string[] }, booking: { agentId: string | null; branch: string | null }) {
     if (scope.role === "ADMIN") return true
@@ -102,7 +102,6 @@ export async function DELETE(
     props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const scope = await requireAuthWithScope(request)
         const params = await props.params
         const { id } = params
 
@@ -115,6 +114,10 @@ export async function DELETE(
                 { status: 404 }
             )
         }
+        const prevState = { bookingNumber: existingBooking.bookingNumber, status: existingBooking.status, agentId: existingBooking.agentId }
+        const deleteAllowed = await requireDeleteAllowed(request, "Booking", id, prevState)
+        if (deleteAllowed instanceof NextResponse) return deleteAllowed
+        const { scope } = deleteAllowed
         const allowed = await canAccessBooking(scope, existingBooking)
         if (!allowed) {
             return NextResponse.json(

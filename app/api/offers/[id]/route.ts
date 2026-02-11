@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { requireDeleteAllowed, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
 
 // GET /api/offers/[id]
 export async function GET(
@@ -65,12 +66,17 @@ export async function PUT(
     }
 }
 
-// DELETE /api/offers/[id]
+// DELETE /api/offers/[id] (ADMIN only; Supervisor blocked and audited)
 export async function DELETE(
-    request: Request,
+    request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
+        const offer = await prisma.offer.findUnique({ where: { id: params.id } })
+        const prevState = offer ? { title: offer.title, status: offer.isActive } : undefined
+        const allowed = await requireDeleteAllowed(request, "Offer", params.id, prevState)
+        if (allowed instanceof NextResponse) return allowed
+
         await prisma.offer.delete({
             where: { id: params.id },
         })
@@ -80,6 +86,10 @@ export async function DELETE(
             message: "Offer deleted successfully",
         })
     } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return unauthorizedResponse()
+            if (error.message === "Forbidden") return forbiddenResponse()
+        }
         console.error("Error deleting offer:", error)
         return NextResponse.json(
             { success: false, error: "Failed to delete offer" },

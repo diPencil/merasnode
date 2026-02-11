@@ -20,7 +20,9 @@ import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
 import { Search, Plus, MoreVertical, Shield, User as UserIcon, AlertCircle, ChevronDown } from "lucide-react"
 import { format } from "date-fns"
-import { authenticatedFetch } from "@/lib/auth"
+import { authenticatedFetch, getUserRole } from "@/lib/auth"
+import { hasPermission } from "@/lib/permissions"
+import type { UserRole } from "@/lib/permissions"
 
 interface User {
   id: string
@@ -52,6 +54,7 @@ export default function UsersPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false)
+  const canDeleteUser = hasPermission((getUserRole() || "AGENT") as UserRole, "delete_user")
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -418,9 +421,11 @@ export default function UsersPage() {
                           <DropdownMenuItem onClick={() => openEditDialog(user)}>
                             {t("editUser")}
                           </DropdownMenuItem>
+                          {canDeleteUser && (
                           <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
                             {t("delete")} {t("userLabel")}
                           </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -507,9 +512,11 @@ export default function UsersPage() {
                               <DropdownMenuItem onClick={() => openEditDialog(user)}>
                                 {t("editUser")}
                               </DropdownMenuItem>
+                              {canDeleteUser && (
                               <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
                                 {t("delete")} {t("userLabel")}
                               </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -813,7 +820,7 @@ export default function UsersPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
+        {canDeleteUser && (
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent className="sm:max-w-[400px]" fullScreenMobile>
             <DialogHeader>
@@ -836,6 +843,7 @@ export default function UsersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
 
         {/* Deactivate/Activate Confirmation Dialog */}
         <Dialog open={isDeactivateDialogOpen} onOpenChange={setIsDeactivateDialogOpen}>

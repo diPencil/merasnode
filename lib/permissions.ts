@@ -83,14 +83,14 @@ const rolePermissions: Record<UserRole, Permission[]> = {
         'view_bot_flows', 'create_bot_flow', 'edit_bot_flow', 'delete_bot_flow',
     ],
     SUPERVISOR: [
-        // Management access (no users/accounts/whatsapp)
+        // Management access; NO delete permissions (delete hidden and API returns 403)
         'view_dashboard',
         'view_inbox',
-        'view_contacts', 'create_contact', 'edit_contact', 'delete_contact',
-        'view_bookings', 'create_booking', 'edit_booking', 'delete_booking',
-        'view_templates', // Can use but not create/delete
-        'view_offers', 'create_offer', 'edit_offer', 'delete_offer',
-        'view_invoices', 'create_invoice', 'edit_invoice', 'delete_invoice',
+        'view_contacts', 'create_contact', 'edit_contact',
+        'view_bookings', 'create_booking', 'edit_booking',
+        'view_templates',
+        'view_offers', 'create_offer', 'edit_offer',
+        'view_invoices', 'create_invoice', 'edit_invoice',
         'view_branches', // Read only
         'view_users', // Read only
         'view_settings', // Profile only

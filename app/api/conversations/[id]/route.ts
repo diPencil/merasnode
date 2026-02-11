@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import {
   requireAuthWithScope,
+  requireDeleteAllowed,
   buildConversationScopeFilter,
   unauthorizedResponse,
   forbiddenResponse,
@@ -133,20 +134,18 @@ export async function PUT(
   }
 }
 
-// DELETE - Delete conversation (admin only)
+// DELETE - Delete conversation (ADMIN only; Supervisor blocked and audited)
 export async function DELETE(
   request: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const scope = await requireAuthWithScope(request)
-
-    // Only ADMIN can delete conversations
-    if (scope.role !== 'ADMIN') {
-      return forbiddenResponse('Only admins can delete conversations')
-    }
-
     const params = await props.params
+    const conv = await prisma.conversation.findUnique({ where: { id: params.id }, include: { contact: true } })
+    const prevState = conv ? { contactId: conv.contactId, status: conv.status } : undefined
+    const allowed = await requireDeleteAllowed(request, "Conversation", params.id, prevState)
+    if (allowed instanceof NextResponse) return allowed
+
     await prisma.conversation.delete({
       where: { id: params.id }
     })

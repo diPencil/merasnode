@@ -4,6 +4,7 @@ import { updateUserSchema, validateBody } from "@/lib/validations"
 import {
     requireAuthWithScope,
     requireRoleWithScope,
+    requireDeleteAllowed,
     unauthorizedResponse,
     forbiddenResponse,
 } from "@/lib/api-auth"
@@ -221,29 +222,30 @@ export async function PUT(
     }
 }
 
-// DELETE - Delete user (ADMIN only)
+// DELETE - Delete user (ADMIN only; Supervisor blocked and audited)
 export async function DELETE(
     request: NextRequest,
     props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const scope = await requireRoleWithScope(request, ['ADMIN'])
         const params = await props.params
         const { id } = params
-
-        // Prevent self-deletion
-        if (id === scope.userId) {
-            return NextResponse.json(
-                { success: false, error: "Cannot delete your own account" },
-                { status: 400 }
-            )
-        }
-
         const existingUser = await prisma.user.findUnique({ where: { id } })
         if (!existingUser) {
             return NextResponse.json(
                 { success: false, error: "User not found" },
                 { status: 404 }
+            )
+        }
+        const prevState = { name: existingUser.name, email: existingUser.email, role: existingUser.role }
+        const allowed = await requireDeleteAllowed(request, "User", id, prevState)
+        if (allowed instanceof NextResponse) return allowed
+        const { scope } = allowed
+
+        if (id === scope.userId) {
+            return NextResponse.json(
+                { success: false, error: "Cannot delete your own account" },
+                { status: 400 }
             )
         }
 

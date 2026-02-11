@@ -40,7 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Smartphone, CheckCircle2, XCircle, Clock, Copy, QrCode, RefreshCw, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
-import { authenticatedFetch } from "@/lib/auth"
+import { authenticatedFetch, getUserRole } from "@/lib/auth"
 
 interface WhatsAppAccount {
   id: string
@@ -64,6 +64,7 @@ export default function AccountsPage() {
   })
   const [createdAccountId, setCreatedAccountId] = useState<string | null>(null)
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null)
+  const canDeleteAccount = getUserRole() === "ADMIN"
   const { toast } = useToast()
   const { t, language } = useI18n()
 
@@ -557,6 +558,7 @@ export default function AccountsPage() {
                         >
                           Test
                         </Button>
+                        {canDeleteAccount && (
                         <Button
                           size="sm"
                           variant="destructive"
@@ -565,6 +567,7 @@ export default function AccountsPage() {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -625,6 +628,7 @@ export default function AccountsPage() {
                               >
                                 Test
                               </Button>
+                              {canDeleteAccount && (
                               <Button
                                 size="sm"
                                 variant="destructive"
@@ -632,6 +636,7 @@ export default function AccountsPage() {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -644,6 +649,7 @@ export default function AccountsPage() {
           </CardContent>
         </Card>
 
+        {canDeleteAccount && (
         <AlertDialog open={!!accountToDelete} onOpenChange={(open) => !open && setAccountToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -666,6 +672,7 @@ export default function AccountsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        )}
       </div>
     </AppLayout>
   )

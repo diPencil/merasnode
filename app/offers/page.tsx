@@ -20,7 +20,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
-import { authenticatedFetch } from "@/lib/auth"
+import { authenticatedFetch, getUserRole } from "@/lib/auth"
+import { hasPermission } from "@/lib/permissions"
+import type { UserRole } from "@/lib/permissions"
 import { format } from "date-fns"
 import {
     Select,
@@ -80,6 +82,7 @@ export default function OffersPage() {
     const [sendMode, setSendMode] = useState<"single" | "bulk">("single")
     const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+    const canDeleteOffer = hasPermission((getUserRole() || "AGENT") as UserRole, "delete_offer")
 
     useEffect(() => {
         fetchOffers()
@@ -345,6 +348,7 @@ export default function OffersPage() {
 
     return (
         <AppLayout title={t("offers")}>
+            {canDeleteOffer && (
             <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -359,6 +363,7 @@ export default function OffersPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            )}
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -496,6 +501,7 @@ export default function OffersPage() {
                                             >
                                                 <Edit className="h-4 w-4" />
                                             </Button>
+                                            {canDeleteOffer && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -504,6 +510,7 @@ export default function OffersPage() {
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
+                                            )}
                                         </div>
                                     </div>
                                 </CardHeader>

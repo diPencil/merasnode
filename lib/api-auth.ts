@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken, extractTokenFromHeader, JWTPayload } from './jwt'
 import { prisma } from './db'
+import { logActivity } from './logger'
 
 export interface AuthenticatedRequest extends NextRequest {
     user?: JWTPayload & { isActive: boolean }
@@ -196,6 +197,34 @@ export function buildConversationScopeFilter(scope: UserScope): Record<string, a
             agentVisibility,
         ],
     }
+}
+
+/**
+ * Delete allowed only for ADMIN. SUPERVISOR gets 403 and attempt is audited.
+ * Returns NextResponse (403) to return to client, or { scope } to proceed with delete.
+ */
+export async function requireDeleteAllowed(
+    request: NextRequest,
+    entityType: string,
+    entityId?: string,
+    prevState?: Record<string, unknown>
+): Promise<NextResponse | { scope: UserScope }> {
+    const scope = await requireAuthWithScope(request)
+    if (scope.role === 'SUPERVISOR') {
+        await logActivity({
+            userId: scope.userId,
+            action: 'DELETE_BLOCKED',
+            entityType,
+            entityId: entityId || null,
+            oldValues: prevState || null,
+            description: `Supervisor delete attempt blocked: ${entityType}${entityId ? ` ${entityId}` : ''}`,
+        })
+        return forbiddenResponse('Delete is not allowed for your role.')
+    }
+    if (scope.role !== 'ADMIN') {
+        return forbiddenResponse('Only Admin can delete.')
+    }
+    return { scope }
 }
 
 /**

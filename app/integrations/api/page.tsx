@@ -34,7 +34,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { authenticatedFetch } from "@/lib/auth"
+import { authenticatedFetch, getUserRole } from "@/lib/auth"
 import { useI18n } from "@/lib/i18n"
 
 interface ApiKey {
@@ -54,6 +54,7 @@ export default function ApiKeysPage() {
     const [newKeyName, setNewKeyName] = useState("")
     const [expiresIn, setExpiresIn] = useState("never")
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+    const canDeleteApiKey = getUserRole() === "ADMIN"
     const { toast } = useToast()
     const { t } = useI18n()
 
@@ -147,6 +148,7 @@ export default function ApiKeysPage() {
 
     return (
         <AppLayout title={t("apiKeys")}>
+            {canDeleteApiKey && (
             <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -161,6 +163,7 @@ export default function ApiKeysPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            )}
             <div className="max-w-4xl space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -244,6 +247,7 @@ export default function ApiKeysPage() {
                                                 )}
                                             </CardDescription>
                                         </div>
+                                        {canDeleteApiKey && (
                                         <Button
                                             variant="ghost"
                                             size="icon"
@@ -251,6 +255,7 @@ export default function ApiKeysPage() {
                                         >
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
+                                        )}
                                     </div>
                                 </CardHeader>
                                 <CardContent>

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
-import { authenticatedFetch } from "@/lib/auth"
+import { authenticatedFetch, getUserRole } from "@/lib/auth"
 import { Loader2, Plus, Link as LinkIcon, Trash2 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { formatDistanceToNow } from "date-fns"
@@ -54,6 +54,8 @@ export default function CrmIntegrationPage() {
     const [provider, setProvider] = useState("salesforce")
     const [apiKey, setApiKey] = useState("")
     const [apiSecret, setApiSecret] = useState("")
+    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+    const canDeleteIntegration = getUserRole() === "ADMIN"
     const { toast } = useToast()
     const { t } = useI18n()
 
@@ -207,6 +209,7 @@ export default function CrmIntegrationPage() {
 
     return (
         <AppLayout title={t("crmIntegration")}>
+            {canDeleteIntegration && (
             <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -221,6 +224,7 @@ export default function CrmIntegrationPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            )}
             <div className="max-w-4xl space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -325,13 +329,15 @@ export default function CrmIntegrationPage() {
                                                 checked={integration.isActive}
                                                 onCheckedChange={(checked) => handleToggleActive(integration.id, checked)}
                                             />
+                                            {canDeleteIntegration && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => handleDeleteIntegration(integration.id)}
+                                                onClick={() => handleDeleteIntegrationClick(integration.id)}
                                             >
                                                 <Trash2 className="h-4 w-4 text-destructive" />
                                             </Button>
+                                            )}
                                         </div>
                                     </div>
                                 </CardHeader>

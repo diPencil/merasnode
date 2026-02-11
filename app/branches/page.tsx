@@ -26,7 +26,9 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { authenticatedFetch } from "@/lib/auth"
+import { authenticatedFetch, getUserRole } from "@/lib/auth"
+import { hasPermission } from "@/lib/permissions"
+import type { UserRole } from "@/lib/permissions"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -83,6 +85,7 @@ export default function BranchesPage() {
     })
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [branchToDelete, setBranchToDelete] = useState<string | null>(null)
+    const canDeleteBranch = hasPermission((getUserRole() || "AGENT") as UserRole, "delete_branch")
     const [searchQuery, setSearchQuery] = useState("")
 
     useEffect(() => {
@@ -469,6 +472,8 @@ export default function BranchesPage() {
                                                             <Edit className="me-2 h-4 w-4" />
                                                             {t("edit")}
                                                         </DropdownMenuItem>
+                                                        {canDeleteBranch && (
+                                                        <>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem
                                                             onClick={() => handleDelete(branch.id)}
@@ -477,6 +482,8 @@ export default function BranchesPage() {
                                                             <Trash2 className="me-2 h-4 w-4" />
                                                             {t("delete")}
                                                         </DropdownMenuItem>
+                                                        </>
+                                                        )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </TableCell>
@@ -489,7 +496,7 @@ export default function BranchesPage() {
                 </Card>
             </div>
 
-            {/* Delete Confirmation Dialog */}
+            {canDeleteBranch && (
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -506,6 +513,7 @@ export default function BranchesPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            )}
         </AppLayout>
     )
 }

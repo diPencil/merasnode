@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { requireDeleteAllowed, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
 
 // GET /api/invoices/[id]
 export async function GET(
@@ -75,12 +76,17 @@ export async function PUT(
     }
 }
 
-// DELETE /api/invoices/[id]
+// DELETE /api/invoices/[id] (ADMIN only; Supervisor blocked and audited)
 export async function DELETE(
-    request: Request,
+    request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
+        const invoice = await prisma.invoice.findUnique({ where: { id: params.id } })
+        const prevState = invoice ? { invoiceNumber: invoice.invoiceNumber, amount: invoice.amount, status: invoice.status } : undefined
+        const allowed = await requireDeleteAllowed(request, "Invoice", params.id, prevState)
+        if (allowed instanceof NextResponse) return allowed
+
         await prisma.invoice.delete({
             where: { id: params.id },
         })
@@ -90,6 +96,10 @@ export async function DELETE(
             message: "Invoice deleted successfully",
         })
     } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return unauthorizedResponse()
+            if (error.message === "Forbidden") return forbiddenResponse()
+        }
         console.error("Error deleting invoice:", error)
         return NextResponse.json(
             { success: false, error: "Failed to delete invoice" },
