@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
 // POST - Receive incoming WhatsApp message from service
+// Auto-assign branch + agent based on WhatsApp account mapping
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
@@ -25,14 +26,26 @@ export async function POST(request: NextRequest) {
             externalId = identifier
         }
 
-        // Resolve branch from WhatsApp account so we can assign contact to that branch
+        // Resolve branch + assigned agent from WhatsApp account so we can scope conversation correctly
         let branchId: string | null = null
+        let assignedAgentId: string | null = null
         if (accountId) {
             const waAccount = await prisma.whatsAppAccount.findUnique({
                 where: { id: accountId },
-                select: { branchId: true },
+                select: {
+                    branchId: true,
+                    users: {
+                        select: { id: true, role: true, isActive: true },
+                    },
+                },
             })
             if (waAccount?.branchId) branchId = waAccount.branchId
+
+            // Pick the first active AGENT linked to this WhatsApp account (auto-assignment)
+            const activeAgent = waAccount?.users.find(
+                (u) => u.role === 'AGENT' && u.isActive,
+            )
+            if (activeAgent) assignedAgentId = activeAgent.id
         }
 
         // 1. Try to find contact by externalId or phone
@@ -91,22 +104,30 @@ export async function POST(request: NextRequest) {
         })
 
         if (!conversation) {
-            // Create new conversation
+            // Create new conversation with auto-assigned agent when available
             console.log('🆕 Creating NEW conversation');
             conversation = await prisma.conversation.create({
                 data: {
                     contactId: contact.id,
                     status: 'ACTIVE',
-                    isRead: false
+                    isRead: false,
+                    ...(assignedAgentId && { assignedToId: assignedAgentId }),
                 }
             })
         } else {
-            // If exists, ensure it's ACTIVE
+            // If exists, ensure it's ACTIVE and auto-assign agent if not already assigned
+            const updateData: any = {}
             if (conversation.status === 'RESOLVED') {
                 console.log(`♻️ Reactivating RESOLVED conversation ${conversation.id}`);
+                updateData.status = 'ACTIVE'
+            }
+            if (!conversation.assignedToId && assignedAgentId) {
+                updateData.assignedToId = assignedAgentId
+            }
+            if (Object.keys(updateData).length > 0) {
                 conversation = await prisma.conversation.update({
                     where: { id: conversation.id },
-                    data: { status: 'ACTIVE' }
+                    data: updateData,
                 });
             }
         }

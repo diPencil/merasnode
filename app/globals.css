@@ -483,18 +483,19 @@ body {
 /* Bubble: WhatsApp-like width — natural from content, min so text doesn’t collapse to one word per line */
 .chat-bubble {
   text-align: start;
-  display: block;
-  width: fit-content;
+  display: inline-block;
   max-inline-size: 85%;
-  min-inline-size: min(8rem, 50%);
-  word-break: normal;
+  width: auto;
+  /* Ensure long Arabic/English text wraps nicely */
+  word-break: break-word;
   overflow-wrap: break-word;
+  white-space: pre-wrap;
   line-height: 1.5;
 }
 @media (min-width: 768px) {
   .chat-bubble {
-    max-inline-size: 78%;
-    min-inline-size: min(10rem, 55%);
+    /* Desktop: slightly narrower bubbles */
+    max-inline-size: 70%;
   }
 }
 /* Incoming: light bg, flat corner at start-bottom */

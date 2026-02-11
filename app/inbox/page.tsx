@@ -485,25 +485,15 @@ export default function InboxPage() {
 
         setConversations(enrichedConversations)
 
-        // Selection logic differs for mobile vs desktop:
-        // - Mobile: URL id drives selection; /inbox (no id) = list-only
-        // - Desktop: always keep a conversation selected (first or previous)
+        // Selection logic:
+        // - If URL has ?id=... → open that conversation explicitly
+        // - Otherwise (visiting /inbox) → do NOT auto-select any conversation
         if (conversationIdParam) {
           const target = enrichedConversations.find(
             (c: Conversation) => c.id === conversationIdParam,
           )
           setSelectedConversation(target ?? null)
-        } else if (!isMobile) {
-          if (selectedConversation) {
-            const existing = enrichedConversations.find(
-              (c: Conversation) => c.id === selectedConversation.id,
-            )
-            setSelectedConversation(existing ?? enrichedConversations[0] ?? null)
-          } else {
-            setSelectedConversation(enrichedConversations[0] ?? null)
-          }
         } else {
-          // Mobile + no id: list-only, no auto-open
           setSelectedConversation(null)
         }
       } else {
