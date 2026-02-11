@@ -485,6 +485,8 @@ body {
   text-align: start;
   display: inline-block;
   max-inline-size: 85%;
+  /* Prevent extremely narrow bubbles (one letter per line) */
+  min-inline-size: 5.5rem;
   width: auto;
   /* Ensure long Arabic/English text wraps nicely */
   word-break: break-word;
