@@ -12,8 +12,8 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Meras CRM - WhatsApp Customer Management",
-  description: "Modern WhatsApp-based CRM for managing customer conversations and support",
+  title: "Omnichannel System - Meras Holding Company",
+  description: "Omnichannel System by Meras Holding Company - Customer engagement and support",
   generator: "v0.app",
   icons: {
     icon: [

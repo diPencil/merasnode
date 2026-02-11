@@ -69,8 +69,8 @@ export default function LoginPage() {
                             />
                         </svg>
                     </div>
-                    <CardTitle className="text-2xl font-bold">{t("merasCrm")}</CardTitle>
-                    <CardDescription>{t("signInToAccount")}</CardDescription>
+                    <CardTitle className="text-2xl font-bold">{t("systemTitle")}</CardTitle>
+                    <CardDescription>{t("systemSubtitle")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -112,28 +112,11 @@ export default function LoginPage() {
                             )}
                         </Button>
                     </form>
-                    <div className="mt-6 text-center text-sm text-muted-foreground">
-                        <p className="mb-2">{t("defaultCredentials")}</p>
-                        <div className="flex items-center justify-center gap-2">
-                            <p className="font-mono text-xs">
-                                admin@meras.com or admin / admin123
-                            </p>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    setEmail("admin@meras.com")
-                                    setPassword("admin123")
-                                }}
-                                className="h-7 text-xs"
-                            >
-                                {t("autoFill")}
-                            </Button>
-                        </div>
-                    </div>
                 </CardContent>
             </Card>
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+                {t("copyright").replace("{year}", String(new Date().getFullYear()))}
+            </p>
         </div>
     )
 }

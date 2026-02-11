@@ -235,6 +235,8 @@ const translations: Translations = {
   invalidCredentials: { en: "Invalid email, username or password", ar: "البريد أو اسم المستخدم أو كلمة المرور غير صحيحة" },
   logout: { en: "Log out", ar: "تسجيل الخروج" },
   merasCrm: { en: "Meras CRM", ar: "مراس CRM" },
+  systemTitle: { en: "Omnichannel System", ar: "نظام القنوات المتعددة" },
+  systemSubtitle: { en: "Meras Holding Company", ar: "شركة مراس القابضة" },
   signInToAccount: { en: "Sign in to your account to continue", ar: "سجّل الدخول إلى حسابك للمتابعة" },
   defaultCredentials: { en: "Default credentials:", ar: "بيانات الدخول الافتراضية:" },
   autoFill: { en: "Auto-fill", ar: "تعبئة تلقائية" },
@@ -244,6 +246,7 @@ const translations: Translations = {
   error: { en: "Error", ar: "خطأ" },
   unexpectedError: { en: "An unexpected error occurred", ar: "حدث خطأ غير متوقع" },
   welcomeBack: { en: "Welcome back", ar: "مرحباً بعودتك" },
+  copyright: { en: "© {year} Meras Holding Company. All rights reserved.", ar: "© {year} شركة مراس القابضة. جميع الحقوق محفوظة." },
 
   // Inbox / Chat
   failedToSendMessage: { en: "Failed to send message", ar: "فشل إرسال الرسالة" },
