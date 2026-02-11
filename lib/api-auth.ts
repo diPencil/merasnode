@@ -25,26 +25,26 @@ export async function authenticateRequest(request: NextRequest): Promise<JWTPayl
     try {
         const authHeader = request.headers.get('authorization')
         const token = extractTokenFromHeader(authHeader)
-        
+
         if (!token) {
             return null
         }
-        
+
         const payload = verifyToken(token)
         if (!payload) {
             return null
         }
-        
+
         // Verify user still exists and is active
         const user = await prisma.user.findUnique({
             where: { id: payload.userId },
             select: { id: true, isActive: true }
         })
-        
+
         if (!user || !user.isActive) {
             return null
         }
-        
+
         return payload
     } catch (error) {
         console.error('Authentication error:', error)
@@ -58,11 +58,11 @@ export async function authenticateRequest(request: NextRequest): Promise<JWTPayl
  */
 export async function requireAuth(request: NextRequest): Promise<JWTPayload> {
     const user = await authenticateRequest(request)
-    
+
     if (!user) {
         throw new Error('Unauthorized')
     }
-    
+
     return user
 }
 
@@ -81,11 +81,11 @@ export async function requireRole(
     allowedRoles: string[]
 ): Promise<JWTPayload> {
     const user = await requireAuth(request)
-    
+
     if (!hasRole(user, allowedRoles)) {
         throw new Error('Forbidden')
     }
-    
+
     return user
 }
 
@@ -199,7 +199,10 @@ export function buildConversationScopeFilter(scope: UserScope): Record<string, a
     // ملاحظة: لا نقيّد بالـbranch هنا (حتى لو للـAgent فروع)،
     // لأن بعض الـcontacts القديمة قد لا يكون لها branchId.
     // وبالتالي نفضّل أن تكون رؤية الـInbox متسقة مع الداشبورد والـscope الفعلي للتعيين.
+    // AGENT: (assigned to user OR conversation has messages from user's WA accounts OR contact is in user's branch)
+    // We explicitly include branch-based visibility so that agents in a branch can see "Unassigned" or shared conversations for that branch.
     const hasWaScope = scope.whatsappAccountIds && scope.whatsappAccountIds.length > 0
+    const hasBranchScope = scope.branchIds && scope.branchIds.length > 0
 
     const agentVisibility = {
         OR: [
@@ -207,15 +210,17 @@ export function buildConversationScopeFilter(scope: UserScope): Record<string, a
             ...(hasWaScope
                 ? [{ messages: { some: { whatsappAccountId: { in: scope.whatsappAccountIds } } } }]
                 : []),
+            ...(hasBranchScope
+                ? [{ contact: { branchId: { in: scope.branchIds } } }]
+                : [])
         ],
     }
 
-    // لو مفيش فروع ولا حسابات واتساب → fallback بسيط على التعيين المباشر
-    if (!hasWaScope && (!scope.branchIds || scope.branchIds.length === 0)) {
+    // Fallback: if no scope at all, only show assigned
+    if (!hasWaScope && !hasBranchScope) {
         return { assignedToId: scope.userId }
     }
 
-    // بشكل افتراضي: نستخدم رؤية الـAgent بدون تقييد بالـbranch
     return agentVisibility
 }
 
@@ -287,7 +292,7 @@ export function withAuth(
                     return forbiddenResponse()
                 }
             }
-            
+
             return NextResponse.json(
                 { success: false, error: 'Internal server error' },
                 { status: 500 }
@@ -316,7 +321,7 @@ export function withRole(
                     return forbiddenResponse('You do not have permission to access this resource')
                 }
             }
-            
+
             return NextResponse.json(
                 { success: false, error: 'Internal server error' },
                 { status: 500 }
