@@ -24,7 +24,12 @@ export async function GET(request: NextRequest) {
 
         // Build where clause
         const where: any = {}
-        if (roleFilter) where.role = roleFilter
+        // Supervisors must NOT see Admin users (strict RBAC)
+        if (currentUser.role === 'SUPERVISOR') {
+            where.role = { in: ['SUPERVISOR', 'AGENT'] }
+        } else if (roleFilter) {
+            where.role = roleFilter
+        }
         if (statusFilter) where.status = statusFilter
         
         // Add search filter

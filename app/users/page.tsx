@@ -54,7 +54,11 @@ export default function UsersPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false)
-  const canDeleteUser = hasPermission((getUserRole() || "AGENT") as UserRole, "delete_user")
+  const currentRole = (getUserRole() || "AGENT") as UserRole
+  const canDeleteUser = hasPermission(currentRole, "delete_user")
+  const canEditUser = hasPermission(currentRole, "edit_user")
+  const canAddUser = currentRole === "ADMIN"
+  const canDeactivateUser = currentRole === "ADMIN"
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -319,10 +323,13 @@ export default function UsersPage() {
     setIsEditDialogOpen(true)
   }
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (user.username?.toLowerCase() ?? '').includes(searchQuery.toLowerCase())
+  // Supervisors must NOT see Admin users (defense in depth; API already excludes them)
+  const visibleUsers = currentRole === "SUPERVISOR" ? users.filter((u) => u.role !== "ADMIN") : users
+  const filteredUsers = visibleUsers.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (user.username?.toLowerCase() ?? "").includes(searchQuery.toLowerCase())
   )
 
   const getRoleBadge = (role: string) => {
@@ -341,7 +348,7 @@ export default function UsersPage() {
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold tracking-tight">{t("userManagement")}</h2>
             <Badge variant="outline" className="text-sm px-2.5 py-0.5 h-7">
-              {t("total")}: {users.length}
+              {t("total")}: {visibleUsers.length}
             </Badge>
           </div>
 
@@ -356,10 +363,12 @@ export default function UsersPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            {canAddUser && (
             <Button size="sm" className="h-9" onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
               <Plus className="me-2 h-4 w-4" />
               {t("addUser")}
             </Button>
+            )}
           </div>
         </div>
 
@@ -400,6 +409,7 @@ export default function UsersPage() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t">
+                      {canDeactivateUser && (
                       <Switch
                         checked={user.isActive !== false}
                         onCheckedChange={() => {
@@ -408,6 +418,7 @@ export default function UsersPage() {
                         }}
                         className="data-[state=checked]:bg-green-600"
                       />
+                      )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="sm" className="min-h-[44px] min-w-[44px]">
@@ -418,9 +429,11 @@ export default function UsersPage() {
                           <DropdownMenuItem onClick={() => { setSelectedUser(user); setIsDetailsDialogOpen(true); }}>
                             {t("userDetails")}
                           </DropdownMenuItem>
+                          {canEditUser && (
                           <DropdownMenuItem onClick={() => openEditDialog(user)}>
                             {t("editUser")}
                           </DropdownMenuItem>
+                          )}
                           {canDeleteUser && (
                           <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
                             {t("delete")} {t("userLabel")}
@@ -489,6 +502,7 @@ export default function UsersPage() {
                           {format(new Date(user.createdAt), "MMM dd, yyyy")}
                         </TableCell>
                         <TableCell>
+                          {canDeactivateUser ? (
                           <Switch
                             checked={user.isActive !== false}
                             onCheckedChange={() => {
@@ -497,6 +511,9 @@ export default function UsersPage() {
                             }}
                             className="data-[state=checked]:bg-green-600"
                           />
+                          ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
@@ -509,9 +526,11 @@ export default function UsersPage() {
                               <DropdownMenuItem onClick={() => { setSelectedUser(user); setIsDetailsDialogOpen(true); }}>
                                 {t("userDetails")}
                               </DropdownMenuItem>
+                              {canEditUser && (
                               <DropdownMenuItem onClick={() => openEditDialog(user)}>
                                 {t("editUser")}
                               </DropdownMenuItem>
+                              )}
                               {canDeleteUser && (
                               <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
                                 {t("delete")} {t("userLabel")}

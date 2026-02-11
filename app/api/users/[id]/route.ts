@@ -28,12 +28,18 @@ export async function GET(
                 return forbiddenResponse('Agents can only view their own profile')
             }
             if (scope.role === 'SUPERVISOR') {
-                // Verify the target user shares at least one branch with the supervisor
+                // Supervisors must NOT see Admin users at all
                 const targetUser = await prisma.user.findUnique({
                     where: { id },
-                    select: { branches: { select: { id: true } } },
+                    select: { role: true, branches: { select: { id: true } } },
                 })
                 if (!targetUser) {
+                    return NextResponse.json(
+                        { success: false, error: "User not found" },
+                        { status: 404 }
+                    )
+                }
+                if (targetUser.role === 'ADMIN') {
                     return NextResponse.json(
                         { success: false, error: "User not found" },
                         { status: 404 }
@@ -114,8 +120,7 @@ export async function PUT(
         const body = await request.json()
         const { id } = params
 
-        // Only ADMIN can edit other users' roles/branches/whatsapp assignments
-        // Users can edit their own basic profile (name, email, status)
+        // Only ADMIN can edit other users. Supervisors must not edit any user (including Admins).
         if (id !== scope.userId && scope.role !== 'ADMIN') {
             return forbiddenResponse('Only admins can edit other users')
         }
@@ -143,6 +148,10 @@ export async function PUT(
                 { success: false, error: "User not found" },
                 { status: 404 }
             )
+        }
+        // Supervisors must not modify Admin users (backend enforcement)
+        if (scope.role === 'SUPERVISOR' && existingUser.role === 'ADMIN') {
+            return forbiddenResponse('Cannot modify admin users')
         }
 
         // Username uniqueness check
