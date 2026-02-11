@@ -12,10 +12,27 @@ export async function GET(request: NextRequest) {
     try {
         const scope = await requireAuthWithScope(request)
 
-        // Build where clause based on role
-        const where: any = {}
-        if (scope.role !== 'ADMIN') {
-            where.branchId = { in: scope.branchIds }
+        // Build where clause based on role (aligned with dashboard stats logic)
+        let where: any = {}
+
+        if (scope.role === 'ADMIN') {
+            where = {}
+        } else if (scope.role === 'SUPERVISOR') {
+            // Supervisors: contacts in their branches only
+            if (!scope.branchIds?.length) {
+                return NextResponse.json({
+                    success: true,
+                    data: [],
+                    count: 0
+                })
+            }
+            where = { branchId: { in: scope.branchIds } }
+        } else {
+            // AGENT: contacts that have at least one conversation assigned to this agent
+            // This matches the dashboard's contact visibility
+            where = {
+                conversations: { some: { assignedToId: scope.userId } }
+            }
         }
 
         const contacts = await prisma.contact.findMany({
