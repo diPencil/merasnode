@@ -25,7 +25,9 @@ export async function GET(request: NextRequest) {
     if (status) where.status = status
     if (isArchived !== null) where.isArchived = isArchived === 'true'
     if (isRead !== null) where.isRead = isRead === 'true'
-    if (branchId && branchId !== 'all') {
+    // فرز حسب الفرع (Admins فقط). للمشرفين والـAgents نعتمد على buildConversationScopeFilter
+    // لأن فيه منطق مخصص للفروع وحسابات الواتساب بالفعل.
+    if (branchId && branchId !== 'all' && scope.role === 'ADMIN') {
       where.AND = where.AND || []
       where.AND.push({ contact: { branchId } })
     }
