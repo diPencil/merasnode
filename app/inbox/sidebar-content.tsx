@@ -245,7 +245,9 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                             <div className="overflow-hidden">
                                 <p className="text-xs text-muted-foreground">{t("metaId")}</p>
                                 <p className="text-sm font-medium truncate">
-                                    {conversation.contact.externalId || "-"}
+                                    {conversation.contact.externalId && conversation.contact.externalId !== conversation.contact.phone
+                                        ? conversation.contact.externalId
+                                        : "-"}
                                 </p>
                             </div>
                         </div>
