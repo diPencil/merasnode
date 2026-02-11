@@ -530,20 +530,24 @@ body {
 .chat-bubble {
   text-align: start;
 
-  /* Sizing: Fit content naturally, respect max-width */
-  display: block;
-  width: fit-content;
-  max-width: 85%;
+  /* Sizing: Auto width with inline-block naturally fits content */
+  display: inline-block;
+  width: auto;
 
-  /* Text Wrapping: conservative, only break when necessary */
+  /* Constraints */
+  max-width: 85%;
+  min-width: 2rem;
+  /* Ensure very short messages have a visible bubble */
+
+  /* Text Wrapping: Standard logic */
   white-space: pre-wrap;
   /* Preserve explicit newlines, wrap otherwise */
   word-wrap: break-word;
   /* Legacy support */
-  overflow-wrap: anywhere;
-  /* Break long URLs/words only if they overflow container */
-  word-break: normal;
-  /* NEVER break distinct words aggressively */
+  overflow-wrap: break-word;
+  /* Break long words only if they overflow container */
+  word-break: break-word;
+  /* Ensure long words break correctly */
 
   line-height: 1.5;
 }
