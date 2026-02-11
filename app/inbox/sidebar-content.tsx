@@ -245,7 +245,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                             <div className="overflow-hidden">
                                 <p className="text-xs text-muted-foreground">{t("metaId")}</p>
                                 <p className="text-sm font-medium truncate">
-                                    {conversation.contact.externalId || (conversation.contact.phone?.length >= 15 ? conversation.contact.phone : "-")}
+                                    {conversation.contact.externalId || "-"}
                                 </p>
                             </div>
                         </div>
@@ -256,7 +256,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                             <div className="overflow-hidden">
                                 <p className="text-xs text-muted-foreground">{t("phone")}</p>
                                 <p className="text-sm font-medium truncate">
-                                    {conversation.contact.phone?.length >= 15 ? "-" : conversation.contact.phone}
+                                    {conversation.contact.phone || "-"}
                                 </p>
                             </div>
                         </div>
