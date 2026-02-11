@@ -125,9 +125,11 @@ export default function DashboardPage() {
     agentEfficiency: string
     agentEfficiencyPercentage: number
   } | null>(null)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe']
   const userRole = getUserRole()
+  const isSuperAdmin = userRole === 'ADMIN'
 
   useEffect(() => {
     setMounted(true)
@@ -142,21 +144,34 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true)
+      setFetchError(null)
       const response = await authenticatedFetch(`/api/dashboard/stats?range=${timeRange}`)
       const result = await response.json()
 
-      if (result.success) {
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/login')
+          return
+        }
+        setFetchError(result?.error || t("errorLoadingDashboard"))
+        return
+      }
+
+      if (result.success && result.data) {
         setStats(result.data.stats)
-        setMessagesByDay(result.data.charts.messagesByDay)
-        setMessageTypes(result.data.charts.messageTypes)
-        setRecentConversations(result.data.recentConversations)
-        setWhatsappAccounts(result.data.whatsappAccounts)
+        setMessagesByDay(result.data.charts.messagesByDay || [])
+        setMessageTypes(result.data.charts.messageTypes || [])
+        setRecentConversations(result.data.recentConversations || [])
+        setWhatsappAccounts(result.data.whatsappAccounts || [])
         setTeamPerformance(result.data.teamPerformance || [])
         setAiInsights(result.data.aiInsights || null)
         setLiveSupportStatus(result.data.liveSupportStatus || null)
+      } else {
+        setFetchError(result?.error || t("errorLoadingDashboard"))
       }
     } catch (err) {
       console.error('Error fetching dashboard data:', err)
+      setFetchError(t("errorLoadingDashboard"))
     } finally {
       setIsLoading(false)
     }
@@ -206,9 +221,18 @@ export default function DashboardPage() {
               <p className="mt-4 text-sm text-muted-foreground">{t("loadingDashboard")}</p>
             </div>
           </div>
+        ) : fetchError ? (
+          <div className="flex h-64 flex-col items-center justify-center gap-4 text-center">
+            <p className="text-sm text-destructive">{fetchError}</p>
+            <Button variant="outline" onClick={() => fetchDashboardData()}>
+              {t("retry")}
+            </Button>
+          </div>
         ) : (
           <>
-            {userRole !== 'ADMIN' && (
+            {isSuperAdmin ? (
+              <p className="text-sm text-muted-foreground">{t("analyticsScopeSuperAdmin")}</p>
+            ) : (
               <p className="text-sm text-muted-foreground">
                 {userRole === 'AGENT' ? t("analyticsScopeAgent") : t("analyticsScopeSupervisor")}
               </p>

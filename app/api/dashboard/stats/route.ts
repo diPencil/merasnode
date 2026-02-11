@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import {
     requireAuthWithScope,
-    buildConversationScopeFilter,
     unauthorizedResponse,
     UserScope,
 } from '@/lib/api-auth'
 
 // ─── Scope helpers (role-based, account-scoped analytics) ────────────
-// ADMIN: global. SUPERVISOR: branches + WA + agents in those branches. AGENT: only own data.
+// Super Admin (ADMIN): full system-wide visibility — no filters. Single source of truth.
+// SUPERVISOR: branches + WA + agents in those branches. AGENT: only own data.
 
-// Build a Prisma `where` for messages. For AGENT: only messages they sent.
+/** Super Admin sees global data; no branch/user/channel filters applied. */
+function isGlobalScope(scope: UserScope): boolean {
+    const role = String(scope.role || '').toUpperCase()
+    return role === 'ADMIN'
+}
+
+// Build a Prisma `where` for messages. For ADMIN: global. For AGENT: only messages they sent.
 function messageWhere(scope: UserScope, extra: Record<string, any> = {}): Record<string, any> {
-    if (scope.role === 'ADMIN') return { ...extra }
+    if (isGlobalScope(scope)) return { ...extra }
     if (scope.role === 'SUPERVISOR') {
         return {
             ...extra,
@@ -29,9 +34,9 @@ function messageWhere(scope: UserScope, extra: Record<string, any> = {}): Record
     }
 }
 
-// Build a Prisma `where` for conversations. For AGENT: only conversations they handled (assigned to them).
+// Build a Prisma `where` for conversations. For ADMIN: global. For AGENT: only conversations assigned to them.
 function conversationWhere(scope: UserScope, extra: Record<string, any> = {}): Record<string, any> {
-    if (scope.role === 'ADMIN') return { ...extra }
+    if (isGlobalScope(scope)) return { ...extra }
     if (scope.role === 'SUPERVISOR') {
         if (!scope.branchIds?.length) return { id: { in: [] }, ...extra }
         return {
@@ -43,18 +48,18 @@ function conversationWhere(scope: UserScope, extra: Record<string, any> = {}): R
     return { ...extra, assignedToId: scope.userId }
 }
 
-// Build a Prisma `where` for WhatsApp accounts.
+// Build a Prisma `where` for WhatsApp accounts. ADMIN: all accounts.
 function waAccountWhere(scope: UserScope): Record<string, any> {
-    if (scope.role === 'ADMIN') return {}
+    if (isGlobalScope(scope)) return {}
     if (scope.role === 'SUPERVISOR') {
         return { branchId: { in: scope.branchIds } }
     }
     return { id: { in: scope.whatsappAccountIds } }
 }
 
-// Build a Prisma `where` for contacts. SUPERVISOR: their branches. AGENT: contacts in conversations they handle.
+// Build a Prisma `where` for contacts. ADMIN: all contacts. SUPERVISOR: their branches. AGENT: contacts in assigned convos.
 function contactWhere(scope: UserScope): Record<string, any> {
-    if (scope.role === 'ADMIN') return {}
+    if (isGlobalScope(scope)) return {}
     if (scope.role === 'SUPERVISOR') {
         if (!scope.branchIds?.length) return { id: { in: [] } }
         return { branchId: { in: scope.branchIds } }
@@ -67,7 +72,7 @@ function contactWhere(scope: UserScope): Record<string, any> {
 
 // ─── Raw-SQL filter fragments (for $queryRaw) ───────────────────────
 function messageRawJoinFilter(scope: UserScope, messageAlias: string = 'm'): string {
-    if (scope.role === 'ADMIN') return ''
+    if (isGlobalScope(scope)) return ''
     if (scope.role === 'SUPERVISOR') {
         // Join through conversation -> contact to filter by branch
         return `
@@ -82,7 +87,7 @@ function messageRawJoinFilter(scope: UserScope, messageAlias: string = 'm'): str
 }
 
 function messageRawWhereFilter(scope: UserScope, messageAlias: string = 'm'): string {
-    if (scope.role === 'ADMIN') return ''
+    if (isGlobalScope(scope)) return ''
     if (scope.role === 'SUPERVISOR') {
         const ids = scope.branchIds.map(id => `'${id}'`).join(',')
         return ids.length > 0 ? `AND ct.branchId IN (${ids})` : 'AND 1=0'
