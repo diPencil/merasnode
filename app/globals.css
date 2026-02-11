@@ -529,22 +529,21 @@ body {
 /* Bubble: WhatsApp-like width — natural from content, min so text doesn’t collapse to one word per line */
 .chat-bubble {
   text-align: start;
-  display: inline-block;
 
-  /* Constraints */
+  /* Sizing: Fit content naturally, respect max-width */
+  display: block;
+  width: fit-content;
   max-width: 85%;
-  min-width: 5rem;
-  /* Ensure very short messages have a minimum width */
 
-  /* Text Wrapping Logic */
-  overflow-wrap: break-word;
-  /* Standard property for breaking long words/URLs */
+  /* Text Wrapping: conservative, only break when necessary */
+  white-space: pre-wrap;
+  /* Preserve explicit newlines, wrap otherwise */
   word-wrap: break-word;
   /* Legacy support */
-  word-break: break-word;
-  /* Breaks words if line is too long, keeps normal flow otherwise */
-  white-space: pre-wrap;
-  /* Preserves newlines but wraps text */
+  overflow-wrap: anywhere;
+  /* Break long URLs/words only if they overflow container */
+  word-break: normal;
+  /* NEVER break distinct words aggressively */
 
   line-height: 1.5;
 }
@@ -552,7 +551,6 @@ body {
 @media (min-width: 768px) {
   .chat-bubble {
     max-width: 65%;
-    /* Desktop: Reduce max-width slightly for better readability */
   }
 }
 
