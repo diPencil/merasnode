@@ -21,7 +21,18 @@ export async function POST(request: NextRequest) {
 
         // Check if account exists
         const account = await prisma.whatsAppAccount.findUnique({
-            where: { id: accountId }
+        where: { id: accountId },
+        select: {
+            id: true,
+            branchId: true,
+            users: {
+                select: {
+                    id: true,
+                    role: true,
+                    isActive: true,
+                },
+            },
+        },
         })
 
         if (!account) {
@@ -32,6 +43,13 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`🔄 Starting sync for account ${accountId}...`)
+
+        // Resolve branch + default assigned agent from WhatsApp account
+        const branchId = account.branchId || null
+        const activeAgent = account.users.find(
+            (u) => u.role === 'AGENT' && u.isActive
+        )
+        const assignedAgentId = activeAgent ? activeAgent.id : null
 
         // Get chats from WhatsApp service
         const chatsResponse = await fetch(`${WHATSAPP_SERVICE_URL}/chats/${accountId}`)
@@ -61,18 +79,35 @@ export async function POST(request: NextRequest) {
                     continue
                 }
 
-                // Create or update contact
-                const contact = await prisma.contact.upsert({
-                    where: { phone: phoneNumber },
-                    update: {
-                        name: chat.name || phoneNumber,
-                        updatedAt: new Date()
-                    },
-                    create: {
-                        phone: phoneNumber,
-                        name: chat.name || phoneNumber
-                    }
+                // Create or update contact and attach to branch (if account has branch)
+                let contact = await prisma.contact.findUnique({
+                    where: { phone: phoneNumber }
                 })
+
+                if (!contact) {
+                    contact = await prisma.contact.create({
+                        data: {
+                            phone: phoneNumber,
+                            name: chat.name || phoneNumber,
+                            ...(branchId && { branchId }),
+                        }
+                    })
+                } else {
+                    const contactUpdateData: any = {
+                        name: chat.name || contact.name || phoneNumber,
+                        updatedAt: new Date()
+                    }
+
+                    // If contact has no branch yet, inherit from WhatsApp account
+                    if (!contact.branchId && branchId) {
+                        contactUpdateData.branchId = branchId
+                    }
+
+                    contact = await prisma.contact.update({
+                        where: { id: contact.id },
+                        data: contactUpdateData
+                    })
+                }
 
                 syncedContacts++
 
@@ -87,19 +122,28 @@ export async function POST(request: NextRequest) {
                             contactId: contact.id,
                             status: 'ACTIVE',
                             lastMessageAt: new Date(chat.timestamp * 1000),
-                            isRead: chat.unreadCount === 0
+                            isRead: chat.unreadCount === 0,
+                            // Auto-assign to agent linked with this WhatsApp account, if available
+                            ...(assignedAgentId && { assignedToId: assignedAgentId })
                         }
                     })
                     syncedConversations++
                 } else {
                     // Update existing conversation
+                    const conversationUpdateData: any = {
+                        lastMessageAt: new Date(chat.timestamp * 1000),
+                        isRead: chat.unreadCount === 0,
+                        updatedAt: new Date()
+                    }
+
+                    // If conversation is unassigned, auto-assign to agent linked with this account
+                    if (!existingConversation.assignedToId && assignedAgentId) {
+                        conversationUpdateData.assignedToId = assignedAgentId
+                    }
+
                     await prisma.conversation.update({
                         where: { id: existingConversation.id },
-                        data: {
-                            lastMessageAt: new Date(chat.timestamp * 1000),
-                            isRead: chat.unreadCount === 0,
-                            updatedAt: new Date()
-                        }
+                        data: conversationUpdateData
                     })
                     syncedConversations++
                 }
