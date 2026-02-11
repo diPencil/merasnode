@@ -171,8 +171,9 @@ export function buildConversationScopeFilter(scope: UserScope): Record<string, a
     }
 
     // AGENT: (assigned to user OR conversation has messages from user's WA accounts)
-    //        AND if user has branches, contact must be in one of those branches
-    const hasBranchScope = scope.branchIds && scope.branchIds.length > 0
+    // ملاحظة: لا نقيّد بالـbranch هنا (حتى لو للـAgent فروع)،
+    // لأن الداشبورد يعتمد فقط على assignedToId، وبعض الـcontacts القديمة قد لا يكون لها branchId.
+    // وبالتالي نفضّل أن تكون رؤية الـInbox متسقة مع الداشبورد والـscope الفعلي للتعيين.
     const hasWaScope = scope.whatsappAccountIds && scope.whatsappAccountIds.length > 0
 
     const agentVisibility = {
@@ -184,19 +185,13 @@ export function buildConversationScopeFilter(scope: UserScope): Record<string, a
         ],
     }
 
-    if (!hasBranchScope && !hasWaScope) {
+    // لو مفيش فروع ولا حسابات واتساب → fallback بسيط على التعيين المباشر
+    if (!hasWaScope && (!scope.branchIds || scope.branchIds.length === 0)) {
         return { assignedToId: scope.userId }
     }
-    if (!hasBranchScope) {
-        return agentVisibility
-    }
 
-    return {
-        AND: [
-            { contact: { branchId: { in: scope.branchIds } } },
-            agentVisibility,
-        ],
-    }
+    // بشكل افتراضي: نستخدم رؤية الـAgent بدون تقييد بالـbranch
+    return agentVisibility
 }
 
 /**
