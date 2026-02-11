@@ -5,6 +5,7 @@ import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
 import { QrCode, CheckCircle2, Loader2, RefreshCw } from "lucide-react"
@@ -18,12 +19,16 @@ export default function WhatsAppPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isInitializing, setIsInitializing] = useState(false)
     const [isSyncing, setIsSyncing] = useState(false)
-    const [accountInfo, setAccountInfo] = useState<{ name: string; phone: string; accountId?: string } | null>(null)
+    const [accountInfo, setAccountInfo] = useState<{ name: string; phone: string; accountId?: string; branchId?: string | null } | null>(null)
     const [waitingForQr, setWaitingForQr] = useState(false)
+    const [branches, setBranches] = useState<Array<{ id: string; name: string }>>([])
+    const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(undefined)
+    const [isSyncingBranch, setIsSyncingBranch] = useState(false)
 
     useEffect(() => {
         checkStatus()
         fetchAccountInfo()
+        fetchBranches()
     }, [])
 
     useEffect(() => {
@@ -42,12 +47,26 @@ export default function WhatsAppPage() {
                     setAccountInfo({
                         name: account.name,
                         phone: account.phone,
-                        accountId: account.id
+                        accountId: account.id,
+                        branchId: account.branchId || null,
                     })
+                    setSelectedBranchId(account.branchId || undefined)
                 }
             }
         } catch (error) {
             console.error('Error fetching account info:', error)
+        }
+    }
+
+    const fetchBranches = async () => {
+        try {
+            const res = await authenticatedFetch('/api/branches')
+            const data = await res.json()
+            if (data.success && Array.isArray(data.branches)) {
+                setBranches(data.branches.map((b: any) => ({ id: b.id, name: b.name })))
+            }
+        } catch (error) {
+            console.error('Error fetching branches for WhatsApp page:', error)
         }
     }
 
@@ -66,10 +85,13 @@ export default function WhatsAppPage() {
                     // Get account ID from accounts list
                     if (data.accounts && data.accounts.length > 0) {
                         const connectedAccount = data.accounts[0]
+                        const branchId = connectedAccount.branchId || null
                         setAccountInfo({
                             ...data.userInfo,
-                            accountId: connectedAccount.accountId
+                            accountId: connectedAccount.accountId,
+                            branchId,
                         })
+                        setSelectedBranchId(branchId || undefined)
                     } else {
                         setAccountInfo(data.userInfo)
                     }
@@ -167,6 +189,54 @@ export default function WhatsAppPage() {
         }
     }
 
+    const handleSyncBranch = async () => {
+        if (!accountInfo?.accountId || !selectedBranchId) {
+            toast({
+                title: "Error",
+                description: t("pleaseSelectBranch") || "Please select a branch first",
+                variant: "destructive"
+            })
+            return
+        }
+
+        try {
+            setIsSyncingBranch(true)
+            const response = await authenticatedFetch('/api/whatsapp/sync-branch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ accountId: accountInfo.accountId, branchId: selectedBranchId })
+            })
+
+            const data = await response.json()
+
+            if (data.success) {
+                toast({
+                    title: t("success") || "Success",
+                    description: data.message || `Branch synced. Updated ${data.data?.updatedContacts ?? 0} contacts.`
+                })
+                // Update local state
+                setAccountInfo(prev => prev ? { ...prev, branchId: selectedBranchId } : prev)
+            } else {
+                toast({
+                    title: t("error") || "Error",
+                    description: data.error,
+                    variant: "destructive"
+                })
+            }
+        } catch (err) {
+            console.error('Error syncing WhatsApp branch:', err)
+            toast({
+                title: t("error") || "Error",
+                description: "Failed to sync branch",
+                variant: "destructive"
+            })
+        } finally {
+            setIsSyncingBranch(false)
+        }
+    }
+
     return (
         <AppLayout title={t("whatsappIntegration")}>
             <div className="space-y-6">
@@ -203,7 +273,7 @@ export default function WhatsAppPage() {
 
                             {/* Account Info */}
                             {accountInfo && (
-                                <div className="space-y-3 rounded-lg bg-green-50/50 p-4 border border-green-100 dark:bg-green-900/10 dark:border-green-900/30">
+                                <div className="space-y-4 rounded-lg bg-green-50/50 p-4 border border-green-100 dark:bg-green-900/10 dark:border-green-900/30">
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center dark:bg-green-900/30 dark:text-green-400">
                                             <QrCode className="h-5 w-5" />
@@ -220,6 +290,52 @@ export default function WhatsAppPage() {
                                             <p className="text-xs text-muted-foreground">{accountInfo.phone?.startsWith('+') ? accountInfo.phone : `+${accountInfo.phone || ''}`}</p>
                                         </div>
                                     </div>
+                                    {branches.length > 0 && (
+                                        <div className="space-y-2">
+                                            <p className="text-xs font-medium text-muted-foreground">
+                                                {t("branch") || "Branch"}
+                                            </p>
+                                            <div className="flex flex-col sm:flex-row gap-2">
+                                                <Select
+                                                    value={selectedBranchId || ""}
+                                                    onValueChange={(v) => setSelectedBranchId(v || undefined)}
+                                                >
+                                                    <SelectTrigger className="w-full sm:w-48">
+                                                        <SelectValue placeholder={t("selectBranch") || "Select branch"} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {branches.map((branch) => (
+                                                            <SelectItem key={branch.id} value={branch.id}>
+                                                                {branch.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    disabled={!selectedBranchId || isSyncingBranch}
+                                                    onClick={handleSyncBranch}
+                                                    className="sm:flex-1"
+                                                >
+                                                    {isSyncingBranch ? (
+                                                        <>
+                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                            {t("syncing") || "Syncing..."}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <RefreshCw className="mr-2 h-4 w-4" />
+                                                            {t("syncToBranch") || "Sync to Branch"}
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground">
+                                                {t("syncBranchHelp") || "Use this to ensure contacts from this WhatsApp number are attached to the correct branch."}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
