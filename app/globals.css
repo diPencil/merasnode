@@ -527,19 +527,20 @@ body {
 }
 
 /* Bubble: shared desktop + mobile behavior */
+/* Bubble: shared desktop + mobile behavior */
 .chat-bubble {
   display: inline-block;
   width: fit-content;
-  max-width: 90%; /* mobile default */
+  max-width: 90%;
+  /* mobile default */
 
   /* Text wrapping */
   white-space: normal;
   word-break: break-word;
   overflow-wrap: break-word;
 
-  /* Base alignment (overridden for RTL below) */
+  /* Base alignment */
   text-align: left;
-
   line-height: 1.6;
 }
 
