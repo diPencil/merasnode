@@ -483,22 +483,23 @@ body {
 /* Bubble: WhatsApp-like width — natural from content, min so text doesn’t collapse to one word per line */
 .chat-bubble {
   text-align: start;
-  display: inline-block;
-  /* Mobile / small screens: allow bubble to be أوسع عشان الجملة القصيرة تظهر مدمجة */
-  max-inline-size: 92%;
-  /* Prevent extremely narrow bubbles (one letter per line) */
-  min-inline-size: 5.5rem;
-  width: auto;
-  /* Ensure long Arabic/English text wraps nicely */
-  word-break: break-word;
+  /* Use fit-content for natural sizing that respects text length without premature wrapping */
+  display: block;
+  width: fit-content;
+  
+  /* consistent max width constraints */
+  max-width: 90%;
+  
+  /* Ensure long words break, but normal text keeps its flow */
   overflow-wrap: break-word;
+  word-wrap: break-word;
   white-space: pre-wrap;
   line-height: 1.5;
 }
+
 @media (min-width: 768px) {
   .chat-bubble {
-    /* Desktop: بابل أوسع شوية عشان الكلمات العربية ما تتكسرش زيادة */
-    max-inline-size: 80%;
+    max-width: 75%;
   }
 }
 /* Incoming: light bg, flat corner at start-bottom */
