@@ -171,50 +171,59 @@ export async function GET(request: NextRequest) {
         })
         const activeContacts = activeContactsData.length
 
-        // ── 4. Average Response Time ────────────────────────────────
-        const joinFrag = messageRawJoinFilter(scope, 'incoming')
-        const whereFrag = messageRawWhereFilter(scope, 'incoming')
-
-        const responseTimeConv = responseTimeConvFilter(scope)
-        const responseTimeOut = responseTimeOutgoingFilter(scope)
-        const responseTimeWhereExtra = scope.role === 'AGENT' ? `${responseTimeConv} ${responseTimeOut}` : whereFrag
-        const responseTimeData = await prisma.$queryRawUnsafe<Array<{ avgMinutes: number }>>(
-            `SELECT AVG(TIMESTAMPDIFF(MINUTE, incoming.createdAt, outgoing.createdAt)) as avgMinutes
-             FROM \`Message\` incoming
-             JOIN \`Message\` outgoing ON incoming.conversationId = outgoing.conversationId
-             ${joinFrag}
-             ${scope.role === 'AGENT' ? 'JOIN \`Conversation\` conv ON incoming.conversationId = conv.id' : ''}
-             WHERE incoming.direction = 'INCOMING'
-               AND outgoing.direction = 'OUTGOING'
-               AND outgoing.createdAt > incoming.createdAt
-               AND incoming.createdAt >= ?
-               AND TIMESTAMPDIFF(MINUTE, incoming.createdAt, outgoing.createdAt) <= 60
-               ${responseTimeWhereExtra}`,
-            startDateStr,
-        )
-
-        const avgMinutes = responseTimeData[0]?.avgMinutes || 2.5
+        // ── 4. Average Response Time (raw SQL in try-catch; fallback 2.5m) ────────────────────────────────
+        let avgMinutes = 2.5
+        try {
+            const joinFrag = messageRawJoinFilter(scope, 'incoming')
+            const responseTimeConv = responseTimeConvFilter(scope)
+            const responseTimeOut = responseTimeOutgoingFilter(scope)
+            const responseTimeWhereExtra = scope.role === 'AGENT' ? `${responseTimeConv} ${responseTimeOut}` : messageRawWhereFilter(scope, 'incoming')
+            const responseTimeData = await prisma.$queryRawUnsafe<Array<{ avgMinutes: number }>>(
+                `SELECT AVG(TIMESTAMPDIFF(MINUTE, incoming.createdAt, outgoing.createdAt)) as avgMinutes
+                 FROM \`Message\` incoming
+                 JOIN \`Message\` outgoing ON incoming.conversationId = outgoing.conversationId
+                 ${joinFrag}
+                 ${scope.role === 'AGENT' ? 'JOIN \`Conversation\` conv ON incoming.conversationId = conv.id' : ''}
+                 WHERE incoming.direction = 'INCOMING'
+                   AND outgoing.direction = 'OUTGOING'
+                   AND outgoing.createdAt > incoming.createdAt
+                   AND incoming.createdAt >= ?
+                   AND TIMESTAMPDIFF(MINUTE, incoming.createdAt, outgoing.createdAt) <= 60
+                   ${responseTimeWhereExtra}`,
+                startDateStr,
+            )
+            if (responseTimeData[0]?.avgMinutes != null) avgMinutes = Number(responseTimeData[0].avgMinutes)
+        } catch (_) {
+            // use default 2.5m if raw SQL fails (e.g. table naming)
+        }
         const avgResponseTime = `${avgMinutes.toFixed(1)}m`
 
-        // ── 5. Messages by Day ──────────────────────────────────────
-        const msgJoin = messageRawJoinFilter(scope, 'Message')
-        const msgWhere = messageRawWhereFilter(scope, 'Message')
-
-        const messagesByDay = await prisma.$queryRawUnsafe<Array<{
-            day: string; incoming: number; outgoing: number
-        }>>(
-            `SELECT 
-                DATE_FORMAT(\`Message\`.createdAt, '%a') as day,
-                SUM(CASE WHEN \`Message\`.direction = 'INCOMING' THEN 1 ELSE 0 END) as incoming,
-                SUM(CASE WHEN \`Message\`.direction = 'OUTGOING' THEN 1 ELSE 0 END) as outgoing
-             FROM \`Message\`
-             ${msgJoin}
-             WHERE \`Message\`.createdAt >= ?
-             ${msgWhere}
-             GROUP BY DATE(\`Message\`.createdAt), day
-             ORDER BY DATE(\`Message\`.createdAt)`,
-            startDateStr,
-        )
+        // ── 5. Messages by Day (Prisma-only: no raw SQL) ──────────────────────────────────────
+        const messagesInRange = await prisma.message.findMany({
+            where: { ...messageWhere(scope), createdAt: { gte: startDate } },
+            select: { createdAt: true, direction: true },
+            take: 10000,
+        })
+        const dayMap = new Map<string, { incoming: number; outgoing: number }>()
+        const dayOrder: string[] = []
+        for (const msg of messagesInRange) {
+            const d = new Date(msg.createdAt)
+            const key = d.toISOString().slice(0, 10)
+            if (!dayMap.has(key)) {
+                dayMap.set(key, { incoming: 0, outgoing: 0 })
+                dayOrder.push(key)
+            }
+            const row = dayMap.get(key)!
+            if (msg.direction === 'INCOMING') row.incoming += 1
+            else row.outgoing += 1
+        }
+        dayOrder.sort()
+        const dayNamesShort: Record<string, string> = { Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat', Sun: 'Sun' }
+        const messagesByDay = dayOrder.map((key) => {
+            const dayName = dayNamesShort[new Date(key + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' })] || key
+            const row = dayMap.get(key)!
+            return { day: dayName, incoming: row.incoming, outgoing: row.outgoing }
+        })
 
         // ── 6. Message Types Distribution ───────────────────────────
         const messageTypesRaw = await prisma.message.groupBy({
@@ -296,48 +305,35 @@ export async function GET(request: NextRequest) {
             { name: "SLA Compliance", current: slaScore > 100 ? 100 : slaScore, target: 95, percentage: slaScore > 100 ? 100 : slaScore },
         ]
 
-        // ── 10. AI Insights ─────────────────────────────────────────
-        const peakJoin = messageRawJoinFilter(scope, 'Message')
-        const peakWhere = messageRawWhereFilter(scope, 'Message')
-
-        const peakActivityData = await prisma.$queryRawUnsafe<Array<{
-            day: string; hour: number; count: bigint
-        }>>(
-            `SELECT 
-                DATE_FORMAT(\`Message\`.createdAt, '%a') as day,
-                HOUR(\`Message\`.createdAt) as hour,
-                COUNT(*) as count
-             FROM \`Message\`
-             ${peakJoin}
-             WHERE \`Message\`.createdAt >= ?
-             ${peakWhere}
-             GROUP BY DATE(\`Message\`.createdAt), HOUR(\`Message\`.createdAt), day
-             ORDER BY count DESC
-             LIMIT 1`,
-            startDateStr,
-        )
-
-        const peakActivity = peakActivityData[0] || null
-        const dayNames: Record<string, string> = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' }
-        const peakDay = peakActivity ? (dayNames[peakActivity.day] || peakActivity.day) : null
-        const peakHour = peakActivity ? peakActivity.hour : null
-        const peakTime = peakHour != null ? (peakHour < 12 ? `${peakHour}:00 AM` : peakHour === 12 ? '12:00 PM' : `${peakHour - 12}:00 PM`) : null
-
-        const avgMessagesPerHour = await prisma.$queryRawUnsafe<Array<{ avgCount: number }>>(
-            `SELECT AVG(hourly_count) as avgCount
-             FROM (
-                 SELECT COUNT(*) as hourly_count
-                 FROM \`Message\`
-                 ${peakJoin}
-                 WHERE \`Message\`.createdAt >= ?
-                 ${peakWhere}
-                 GROUP BY DATE(\`Message\`.createdAt), HOUR(\`Message\`.createdAt)
-             ) as hourly_stats`,
-            startDateStr,
-        )
-        const avgCount = avgMessagesPerHour[0]?.avgCount || 0
-        const peakCount = peakActivity ? Number(peakActivity.count) : 0
+        // ── 10. AI Insights (Prisma-only: use messagesInRange) ─────────────────────────────────────────
+        const hourCounts = new Map<string, number>()
+        for (const msg of messagesInRange) {
+            const d = new Date(msg.createdAt)
+            const key = `${d.toISOString().slice(0, 10)}-${d.getHours()}`
+            hourCounts.set(key, (hourCounts.get(key) || 0) + 1)
+        }
+        let peakKey: string | null = null
+        let peakCount = 0
+        let totalHourCount = 0
+        for (const [k, count] of hourCounts) {
+            totalHourCount += count
+            if (count > peakCount) {
+                peakCount = count
+                peakKey = k
+            }
+        }
+        const hourSlotCount = hourCounts.size || 1
+        const avgCount = totalHourCount / hourSlotCount
         const peakVsAvg = avgCount > 0 ? Math.round(((peakCount - avgCount) / avgCount) * 100) : 14
+        const dayNames: Record<string, string> = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' }
+        let peakDay: string | null = null
+        let peakTime: string | null = null
+        if (peakKey) {
+            const [datePart, hourPart] = peakKey.split('-')
+            const hour = parseInt(hourPart, 10)
+            peakDay = dayNames[new Date(datePart + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' })] || datePart
+            peakTime = hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`
+        }
 
         const topTemplate = await prisma.template.findFirst({
             where: { status: 'APPROVED' },
