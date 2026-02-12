@@ -54,43 +54,48 @@ export default function LoginPage() {
         <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-purple-200 via-purple-300 to-indigo-300 p-4 font-sans" dir={isRtl ? "rtl" : "ltr"}>
             <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-[30px] bg-white shadow-2xl md:flex-row md:h-[650px]">
 
-                {/* Left Side: Dark Astronaut Theme - Exactly matching provided CSS structure */}
-                <div className="relative w-full md:w-1/2 p-0 bg-[#171717]">
-                    <div className="card">
-                        {/* CSS Effects Layers */}
-                        <div className="heading"></div>
-                        <div className="icons"></div>
+                {/* Left Side: Dark Astronaut Theme - Matching Reference Layout */}
+                <div className="relative w-full md:w-1/2 bg-[#171717]">
+                    <div className="card w-full h-full flex flex-col justify-between p-8 relative">
+                        {/* Moon/Stars Effects via CSS ::after/before */}
+                        <div className="heading absolute top-0 left-0 w-full h-full pointer-events-none z-0"></div>
+                        <div className="icons absolute top-0 left-0 w-full h-full pointer-events-none z-0"></div>
 
-                        {/* Astronaut Image - Fluent 3D applied with Purple Hue Filter to match reference */}
-                        <img
-                            src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/People/Astronaut.png"
-                            alt="Astronaut"
-                            className="astronaut-img"
-                            style={{
-                                filter: "hue-rotate(260deg) saturate(1.2) drop-shadow(0 0 15px rgba(139,92,246,0.5))",
-                                maxWidth: "70%"
-                            }}
-                        />
-
-                        {/* Text Overlay */}
-                        <div className="z-10 text-center space-y-4 mt-6 relative max-w-md px-6">
-                            <div className="space-y-1">
-                                <h2 className="text-3xl font-black tracking-widest text-white uppercase drop-shadow-lg">MERAS UNIVERSE</h2>
-                                <p className="text-purple-300 font-bold tracking-[0.2em] text-sm uppercase">NEXT GEN PLATFORM</p>
-                            </div>
-
-                            <p className="text-gray-300 text-xs md:text-sm leading-relaxed font-medium opacity-90 max-w-xs mx-auto text-balance">
-                                Welcome to your centralized command center. Manage operations for Kayan, Bura, and Mozdanh with seamlessly integrated tools designed to elevate efficiency and customer experience.
-                            </p>
+                        {/* Top Section: Moon (CSS) & Astronaut */}
+                        <div className="flex-1 flex items-center justify-center relative z-10 w-full">
+                            <img
+                                src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/People/Astronaut.png"
+                                alt="Astronaut"
+                                className="astronaut-img w-64 md:w-80 object-contain drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]"
+                                style={{
+                                    filter: "hue-rotate(260deg) saturate(1.2)",
+                                    transform: "translateY(-20px)"
+                                }}
+                            />
                         </div>
 
-                        {/* Footer Logos */}
-                        <div className="mt-12 w-full px-8 z-10 flex justify-center items-center opacity-90 hover:opacity-100 transition-opacity">
-                            <img
-                                src="/meraslogos.png"
-                                alt="Meras Companies"
-                                className="h-8 md:h-8 w-auto object-contain brightness-0 invert"
-                            />
+                        {/* Bottom Section: Text Overlay - Left Aligned */}
+                        <div className="z-20 w-full space-y-4 text-left">
+                            <div className="inline-block rounded-full bg-purple-600 px-3 py-1 text-[10px] font-bold tracking-wider text-white uppercase shadow-[0_0_15px_rgba(147,51,234,0.6)] border border-purple-500/50">
+                                NEXT GEN PLATFORM
+                            </div>
+
+                            <h2 className="text-4xl font-black tracking-normal text-white uppercase leading-none drop-shadow-xl md:text-5xl">
+                                MERAS <br /> UNIVERSE
+                            </h2>
+
+                            <p className="text-gray-400 text-xs leading-relaxed font-medium max-w-sm">
+                                Welcome to your centralized command center. Manage operations for Kayan, Bura, and Mozdanh with seamlessly integrated tools designed to elevate efficiency and customer experience.
+                            </p>
+
+                            {/* Footer Logos - Row at bottom left */}
+                            <div className="pt-6 flex items-center justify-start opacity-100">
+                                <img
+                                    src="/meraslogos.png"
+                                    alt="Meras Companies"
+                                    className="h-8 md:h-10 w-auto object-contain brightness-0 invert opacity-90 hover:opacity-100 transition-opacity"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
