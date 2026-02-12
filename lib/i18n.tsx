@@ -288,6 +288,7 @@ const translations: Translations = {
   comingSoonDesc: { en: "integration is coming soon!", ar: "التكامل قريباً!" },
   allBranches: { en: "All Branches", ar: "جميع الفروع" },
   groups: { en: "Groups", ar: "المجموعات" },
+  whatsappGroup: { en: "WhatsApp Group", ar: "مجموعة واتساب" },
   group: { en: "Group", ar: "مجموعة" },
   "whatsapp-contact": { en: "WhatsApp Contact", ar: "عميل واتساب" },
   noGroupsFound: { en: "No groups found", ar: "لم يتم العثور على مجموعات" },

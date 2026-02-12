@@ -16,8 +16,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, message: 'Status broadcast ignored' })
         }
 
-        // Format phone number (remove @ suffix if exists)
-        let identifier = from.split('@')[0]
+        // Format identifier (keep full JID for groups, strip for private)
+        let identifier = from
+        if (!isGroup && from.includes('@')) {
+            identifier = from.split('@')[0]
+        }
         let phoneNumber = identifier
         let externalId: string | null = null
 
@@ -182,7 +185,11 @@ export async function POST(request: NextRequest) {
                 direction: 'INCOMING',
                 status: 'DELIVERED',
                 mediaUrl: mediaUrl,
-                whatsappAccountId: accountId || null
+                whatsappAccountId: accountId || null,
+                metadata: {
+                    mentions: body.mentions || [],
+                    quotedMsg: body.quotedMsg || null
+                }
             }
         })
 

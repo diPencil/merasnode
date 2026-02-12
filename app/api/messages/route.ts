@@ -150,15 +150,19 @@ export async function POST(request: NextRequest) {
                 console.log('Development mode: Skipping WhatsApp send');
             } else {
                 try {
-                    // Extract clean phone for WA
+                    // Extract clean phone/JID for WA
                     let waPhone = phoneNumber;
-                    const isGroup = phoneNumber.includes('@g.us');
+                    let isGroup = phoneNumber.includes('@g.us') || (phoneNumber.length > 15 && !phoneNumber.includes('@'));
 
-                    if (!isGroup) {
+                    if (isGroup) {
+                        // Ensure group ID ends with @g.us for the WhatsApp service
+                        waPhone = phoneNumber.includes('@g.us') ? phoneNumber : `${phoneNumber}@g.us`;
+                    } else {
                         waPhone = phoneNumber.replace(/[^0-9]/g, '');
                         // Double check if it looks like a Facebook ID (very long string of digits)
-                        if (waPhone.length > 15) {
-                            throw new Error('This looks like a Facebook ID, not a WhatsApp phone number.');
+                        // Note: Only complain if we're sure it's not a WhatsApp group (length > 15 checked above)
+                        if (waPhone.length > 20) {
+                            throw new Error('This looks like a platform ID that doesn\'t support outgoing WhatsApp messages.');
                         }
                     }
 

@@ -127,6 +127,7 @@ model Message {
   direction         Direction
   status            MessageStatus    @default(SENT)
   mediaUrl          String?
+  metadata          Json?
   createdAt         DateTime         @default(now())
 
   @@index([conversationId])
@@ -155,17 +156,17 @@ enum MessageStatus {
 
 // القوالب (Quick Reply style: scoped per WhatsApp number, trigger keywords)
 model Template {
-  id                 String           @id @default(uuid())
-  name               String
-  content            String           @db.Text
-  category           String
-  language           String
-  status             TemplateStatus   @default(PENDING)
-  whatsappAccountId  String?
-  whatsappAccount    WhatsAppAccount? @relation(fields: [whatsappAccountId], references: [id], onDelete: SetNull)
-  triggerKeywords    Json?            // array of trigger phrases e.g. ["Hi", "Hello", "مرحبا"]
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  id                String           @id @default(uuid())
+  name              String
+  content           String           @db.Text
+  category          String
+  language          String
+  status            TemplateStatus   @default(PENDING)
+  whatsappAccountId String?
+  whatsappAccount   WhatsAppAccount? @relation(fields: [whatsappAccountId], references: [id], onDelete: SetNull)
+  triggerKeywords   Json? // array of trigger phrases e.g. ["Hi", "Hello", "مرحبا"]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@index([whatsappAccountId])
 }

@@ -98,7 +98,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
     }
 
     const fetchGroupParticipants = async () => {
-        if (!conversation?.contact?.phone?.includes('@g.us')) return
+        if (!conversation?.contact?.phone?.includes('@g.us') && (conversation?.contact?.phone?.length || 0) <= 15) return
 
         setLoadingParticipants(true)
         try {
@@ -240,6 +240,8 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
         ? (agents.find(a => a.id === conversation.assignedToId)?.name ?? (conversation as any).assignedTo?.name ?? t("unassigned"))
         : t("unassigned")
 
+    const isGroup = conversation.contact.phone.includes("@g.us") || conversation.contact.phone.length > 15 || (conversation.contact as any).tags?.includes("group")
+
     return (
         <div className="flex flex-col h-full bg-card">
             {/* Profile */}
@@ -251,8 +253,8 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                 </Avatar>
                 <h2 className="font-bold text-lg">{conversation.contact.name}</h2>
                 <p className="text-sm text-muted-foreground">
-                    {(conversation.contact.phone.includes("@g.us") || (conversation.contact as any).tags?.includes("group"))
-                        ? t("group") || "Group"
+                    {isGroup
+                        ? t("whatsappGroup")
                         : conversation.contact.tags?.includes("whatsapp-contact")
                             ? t("whatsapp-contact") || "WhatsApp Contact"
                             : t("leadCustomer")}
@@ -326,9 +328,9 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                                 <Phone className="h-4 w-4" />
                             </div>
                             <div className="overflow-hidden">
-                                <p className="text-xs text-muted-foreground">{t("phone")}</p>
+                                <p className="text-xs text-muted-foreground">{isGroup ? "Group ID" : t("phone")}</p>
                                 <p className="text-sm font-medium truncate">
-                                    {conversation.contact.phone.includes("@g.us") ? "-" : (conversation.contact.phone || "-")}
+                                    {isGroup ? conversation.contact.phone.replace('@g.us', '') : (conversation.contact.phone || "-")}
                                 </p>
                             </div>
                         </div>

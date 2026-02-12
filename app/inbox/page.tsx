@@ -79,6 +79,7 @@ interface Message {
   type?: "TEXT" | "IMAGE" | "AUDIO" | "VIDEO" | "DOCUMENT" | "LOCATION"
   mediaUrl?: string
   whatsappAccountId?: string | null
+  metadata?: any // Added for mentions
   sender?: {
     id: string
     name: string | null
@@ -846,7 +847,7 @@ export default function InboxPage() {
     const matchesFilter =
       filterType === 'all' ? true :
         filterType === 'unread' ? !conv.isRead :
-          filterType === 'groups' ? (conv.contact.phone.includes('@g.us') || (conv.contact as any).tags?.includes('group')) : true
+          filterType === 'groups' ? (conv.contact.phone.includes('@g.us') || conv.contact.phone.length > 15 || (conv.contact as any).tags?.includes('group')) : true
 
     return matchesSearch && matchesBranch && matchesFilter
   })
@@ -936,6 +937,30 @@ export default function InboxPage() {
       case 'instagram': return <Instagram className="h-3 w-3 text-pink-600" />
       default: return <WhatsAppIcon className="h-3 w-3 text-green-500" />
     }
+  }
+
+  const formatMessageContent = (content: string) => {
+    if (!content) return ""
+    // Regex to find JIDs like @12036...
+    const mentionRegex = /@(\d+)(?:@g\.us|@c\.us)?/g
+    const parts = content.split(mentionRegex)
+
+    if (parts.length === 1) return content
+
+    return parts.map((part, i) => {
+      // If part matches a phone number (simple check, or use the captured group)
+      // Actually split with capturing group returns [text, captured, text, captured...]
+      // So odd indices are the captured phone numbers
+      if (i % 2 === 1) {
+        // This is a phone number from the mention
+        const phone = part
+        // Normalize phone for lookup
+        const knownContact = conversations.find(c => c.contact.phone.replace(/\D/g, '').includes(phone))
+        const name = knownContact ? knownContact.contact.name : phone
+        return <span key={i} className="text-blue-500 font-medium mx-0.5">@{name}</span>
+      }
+      return part
+    })
   }
 
   return (
@@ -1085,7 +1110,7 @@ export default function InboxPage() {
                             {conversation.leadStatus === "New" ? t("leadStatusNew") : conversation.leadStatus === "Booked" ? t("leadStatusBooked") : t("leadStatusInProgress")}
                           </Badge>
                         )}
-                        {(conversation.contact.phone.includes('@g.us') || (conversation.contact as any).tags?.includes('group')) && (
+                        {(conversation.contact.phone.includes('@g.us') || conversation.contact.phone.length > 15 || (conversation.contact as any).tags?.includes('group')) && (
                           <Badge variant="outline" className="h-5 px-1.5 text-[10px] uppercase tracking-wider rounded-md font-medium text-pink-600 border-pink-200 bg-pink-50 shrink-0">
                             {t("group")}
                           </Badge>
@@ -1431,7 +1456,9 @@ export default function InboxPage() {
                               </div>
                             </a>
                           ) : (
-                            <span className="block text-start whitespace-pre-wrap leading-relaxed" dir="auto">{message.content}</span>
+                            <div className="block text-start whitespace-pre-wrap leading-relaxed break-words" dir="auto">
+                              {formatMessageContent(message.content)}
+                            </div>
                           )}
                         </div>
                         <div className="chat-bubble-meta mt-1 ms-1 text-[10px] text-gray-500 flex items-center gap-1">
