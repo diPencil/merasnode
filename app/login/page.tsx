@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
 import { Loader2, Eye, EyeOff } from "lucide-react"
+import "./astronaut.css"
 
 export default function LoginPage() {
     const router = useRouter()
@@ -50,50 +51,53 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="flex min-h-screen flex-col md:flex-row">
-            {/* Left: Branding panel (desktop) / Top strip (mobile) — after form on mobile via order */}
-            <section
-                className="relative order-2 flex shrink-0 flex-col justify-center px-6 py-6 md:order-1 md:w-[45%] md:min-h-screen md:px-12 md:py-16 lg:w-[48%] lg:px-16"
-                aria-hidden
-            >
-                <div className="absolute inset-0 bg-linear-to-br from-violet-600/95 via-indigo-600/90 to-blue-700/95" />
-                <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-                    <div className="absolute bottom-1/4 right-0 h-48 w-48 rounded-full bg-indigo-400/20 blur-2xl" />
-                    <div className="absolute left-1/3 top-1/2 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
-                </div>
-                <div className="relative z-10 text-white">
-                    <h1 className="text-2xl font-semibold tracking-tight md:text-3xl lg:text-[2rem]">
-                        {t("systemTitle")}
-                    </h1>
-                    <p className="mt-2 max-w-sm text-sm font-medium text-white/90 md:mt-4 md:text-base">
-                        {t("brandTagline")}
-                    </p>
-                    <p className="mt-4 text-xs font-medium text-white/70 md:mt-6 md:text-sm">
-                        {t("systemSubtitle")}
-                    </p>
-                </div>
-            </section>
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-200 via-purple-300 to-indigo-300 p-4 font-sans" dir={isRtl ? "rtl" : "ltr"}>
+            <div className="flex w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl md:flex-row md:h-[600px]">
 
-            {/* Right: Login form — first on mobile */}
-            <main
-                className="order-1 flex min-h-[70vh] flex-1 flex-col items-center justify-center px-4 py-10 md:order-2 md:min-h-screen md:px-8 md:py-12"
-                role="main"
-            >
-                <div className="w-full max-w-[400px] animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
-                    <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-lg shadow-black/5 dark:shadow-black/20 sm:p-8 md:rounded-[16px] md:p-10">
-                        <div className="mb-6 sm:mb-8">
-                            <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                                {t("systemTitle")}
-                            </h2>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                {t("systemSubtitle")}
-                            </p>
+                {/* Left Side: Dark Astronaut Theme */}
+                <div className="relative w-full md:w-1/2 bg-[#171717]">
+                    <div className="astronaut-card">
+                        {/* Moon/Planet glow effect via CSS ::after/before */}
+                        <div className="heading">
+                            {/* Stars added via CSS ::before */}
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-5">
+                        {/* Astronaut Image - Replacing local img with a high-quality 3D one */}
+                        <img
+                            src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/People/Astronaut.png"
+                            alt="Astronaut"
+                            className="image"
+                        />
+
+                        <div className="z-10 mt-8 text-center space-y-1">
+                            <h2 className="text-xl font-bold tracking-wider text-white">OMNICHANNEL SYSTEM</h2>
+                            <p className="text-sm text-gray-400">Meras Holding Company</p>
+                        </div>
+
+                        {/* Footer Logos Placeholder */}
+                        <div className="mt-auto pt-8 flex items-center justify-center gap-6 opacity-80 icons z-10 w-full px-8 pb-4">
+                            {/* Using text for logos based on reference, styled to look like brands */}
+                            <div className="text-white text-xs font-bold font-serif">Kayan</div>
+                            <div className="text-white text-xs font-bold">BURA</div>
+                            <div className="text-white text-xs font-bold">mozdanh</div>
+                            <div className="text-white text-xs font-bold flex items-center gap-1">
+                                <span>MERAS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Side: Login Form */}
+                <div className="flex w-full flex-col items-center justify-center bg-white p-8 md:w-1/2 md:p-12">
+                    <div className="w-full max-w-sm space-y-8">
+                        <div className="text-center space-y-2">
+                            <h1 className="text-3xl font-bold text-gray-900">{t("systemTitle")}</h1>
+                            <p className="text-sm text-purple-600 font-semibold">{t("systemSubtitle")}</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-6 mt-8">
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-sm font-medium">
+                                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                                     {t("emailOrUsernameLabel")}
                                 </Label>
                                 <Input
@@ -105,13 +109,12 @@ export default function LoginPage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                     disabled={isLoading}
-                                    className="h-12 rounded-xl border-border/80 bg-background px-4 transition-colors focus-visible:ring-2 disabled:opacity-60"
-                                    aria-invalid={false}
+                                    className="h-12 rounded-lg border-gray-200 bg-gray-50 px-4 focus:border-purple-500 focus:ring-purple-500 transition-all shadow-sm"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password" className="text-sm font-medium">
+                                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
                                     {t("passwordLabel")}
                                 </Label>
                                 <div className="relative">
@@ -124,22 +127,21 @@ export default function LoginPage() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
                                         disabled={isLoading}
-                                        className="h-12 rounded-xl border-border/80 bg-background pe-12 ps-4 transition-colors focus-visible:ring-2 disabled:opacity-60"
-                                        aria-invalid={false}
+                                        className="h-12 rounded-lg border-gray-200 bg-gray-50 px-4 focus:border-purple-500 focus:ring-purple-500 transition-all shadow-sm pe-12"
                                     />
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        className="absolute end-1 top-1/2 h-9 w-9 -translate-y-1/2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2"
+                                        className="absolute end-1 top-1/2 h-9 w-9 -translate-y-1/2 text-gray-400 hover:text-purple-600"
                                         onClick={() => setShowPassword((p) => !p)}
                                         disabled={isLoading}
                                         aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                                     >
                                         {showPassword ? (
-                                            <EyeOff className="h-4 w-4" aria-hidden />
+                                            <EyeOff className="h-4 w-4" />
                                         ) : (
-                                            <Eye className="h-4 w-4" aria-hidden />
+                                            <Eye className="h-4 w-4" />
                                         )}
                                     </Button>
                                 </div>
@@ -147,12 +149,12 @@ export default function LoginPage() {
 
                             <Button
                                 type="submit"
-                                className="h-12 w-full rounded-xl text-base font-medium shadow-sm transition-all hover:opacity-95 focus-visible:ring-2 disabled:opacity-70"
+                                className="h-12 w-full rounded-full bg-[#52449F] hover:bg-[#433785] text-white text-base font-medium shadow-lg shadow-purple-200 transition-all mt-6"
                                 disabled={isLoading}
                             >
                                 {isLoading ? (
                                     <>
-                                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         {t("signingIn")}
                                     </>
                                 ) : (
@@ -160,16 +162,15 @@ export default function LoginPage() {
                                 )}
                             </Button>
                         </form>
-                    </div>
 
-                    <p
-                        className="mt-8 text-center text-xs text-muted-foreground"
-                        dir={isRtl ? "rtl" : "ltr"}
-                    >
-                        {t("copyright").replace("{year}", String(new Date().getFullYear()))}
-                    </p>
+                        <div className="mt-8 text-center">
+                            <p className="text-xs text-gray-400">
+                                {t("copyright").replace("{year}", String(new Date().getFullYear()))}
+                            </p>
+                        </div>
+                    </div>
                 </div>
-            </main>
+            </div>
         </div>
     )
 }
