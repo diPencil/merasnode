@@ -215,3 +215,51 @@ export async function POST(request: NextRequest) {
         )
     }
 }
+
+// DELETE - Bulk delete contacts
+export async function DELETE(request: NextRequest) {
+    try {
+        const scope = await requireAuthWithScope(request)
+        const body = await request.json()
+
+        if (!Array.isArray(body.ids) || body.ids.length === 0) {
+            return NextResponse.json(
+                { success: false, error: "No contact IDs provided" },
+                { status: 400 }
+            )
+        }
+
+        if (scope.role !== 'ADMIN') {
+            return forbiddenResponse("Only Admins can perform bulk deletion")
+        }
+
+        const result = await prisma.contact.deleteMany({
+            where: {
+                id: { in: body.ids }
+            }
+        })
+
+        await logActivity({
+            action: "BULK_DELETE",
+            entityType: "Contact",
+            entityId: "bulk",
+            description: `Deleted ${result.count} contacts`
+        })
+
+        return NextResponse.json({
+            success: true,
+            count: result.count,
+            message: `Successfully deleted ${result.count} contacts`
+        })
+
+    } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === 'Unauthorized') return unauthorizedResponse()
+        }
+        console.error('Error deleting contacts:', error)
+        return NextResponse.json(
+            { success: false, error: "Failed to delete contacts" },
+            { status: 500 }
+        )
+    }
+}

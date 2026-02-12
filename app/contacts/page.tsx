@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
-import { Search, Plus, MoreVertical, Mail, Phone, Tag, Download, Upload, ShieldOff, Users } from "lucide-react"
+import { Search, Plus, MoreVertical, Mail, Phone, Tag, Download, Upload, ShieldOff, Users, Trash2 } from "lucide-react"
 import { authenticatedFetch, getUserRole } from "@/lib/auth"
 import { hasPermission } from "@/lib/permissions"
 import type { UserRole } from "@/lib/permissions"
@@ -53,6 +54,7 @@ export default function ContactsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"all" | "blocked" | "groups">("all")
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   // Add Contact Dialog
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -510,6 +512,68 @@ export default function ContactsPage() {
     return true
   })
 
+  // Bulk Selection Logic
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(filteredContacts.map(c => c.id))
+      setSelectedIds(allIds)
+    } else {
+      setSelectedIds(new Set())
+    }
+  }
+
+  const toggleSelection = (id: string) => {
+    const newSelected = new Set(selectedIds)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelectedIds(newSelected)
+  }
+
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false)
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+
+    try {
+      setIsSubmitting(true)
+      const response = await authenticatedFetch('/api/contacts', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setContacts(contacts.filter(c => !selectedIds.has(c.id)))
+        setSelectedIds(new Set())
+        setIsBulkDeleteDialogOpen(false)
+        toast({
+          title: t("success"),
+          description: t("contactsDeletedSuccessfully") || `Deleted ${data.count} contacts`
+        })
+      } else {
+        toast({
+          title: t("error"),
+          description: data.error || t("failedToDeleteContacts"),
+          variant: "destructive"
+        })
+      }
+    } catch (err) {
+      console.error('Error deleting contacts:', err)
+      toast({
+        title: t("error"),
+        description: t("failedToConnectToServer"),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <AppLayout title={t("contacts")}>
       <div className="space-y-6">
@@ -549,6 +613,20 @@ export default function ContactsPage() {
             <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
               {getUserRole() === "ADMIN" && (
                 <>
+                  {selectedIds.size > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-9 gap-2 shrink-0 bg-red-600 hover:bg-red-700 text-white animate-in fade-in slide-in-from-left-5"
+                      onClick={() => setIsBulkDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>
+                        {t("deleteSelected") || "Delete"} ({selectedIds.size})
+                      </span>
+                    </Button>
+                  )}
+
                   <Button
                     variant={viewMode === "groups" ? "default" : "outline"}
                     size="sm"
@@ -737,7 +815,13 @@ export default function ContactsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border/50">
-                      <TableHead className="w-[50px]">#</TableHead>
+                      <TableHead className="w-[50px]">
+                        <Checkbox
+                          checked={filteredContacts.length > 0 && selectedIds.size === filteredContacts.length}
+                          onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       <TableHead>{t("contactLabel")}</TableHead>
                       <TableHead>{t("phone")}</TableHead>
                       <TableHead>{t("email")}</TableHead>
@@ -763,8 +847,14 @@ export default function ContactsPage() {
                           className={`cursor-pointer border-border/30 hover:bg-accent/50 ${isBlocked ? 'bg-red-50/50 hover:bg-red-100/50 dark:bg-red-950/20' : ''}`}
                           onClick={() => setSelectedContact(contact)}
                         >
-                          <TableCell className="text-muted-foreground font-medium">
-                            {index + 1}
+                          <TableCell className="w-[50px]">
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                checked={selectedIds.has(contact.id)}
+                                onCheckedChange={() => toggleSelection(contact.id)}
+                                aria-label="Select row"
+                              />
+                            </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-3">
@@ -1197,6 +1287,29 @@ export default function ContactsPage() {
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Processing...' : (contactToToggle?.tags?.includes('blocked') ? 'Unblock' : 'Block')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <AlertDialogContent className="rounded-2xl border-border bg-card shadow-soft-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl">{t("deleteSelectedContacts") || "Delete Selected Contacts"}</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              {t("bulkDeleteConfirm") || `Are you sure you want to delete ${selectedIds.size} contacts? This action cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full border-border bg-transparent hover:bg-accent">
+              {t("cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg"
+              onClick={handleBulkDelete}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? t("deleting") || "Deleting..." : t("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
