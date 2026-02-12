@@ -52,13 +52,20 @@ export async function POST(request: NextRequest) {
         }
 
         // 1. Try to find contact by externalId or phone
+        // Fix: Search for both formats (with/without @g.us) to prevent duplicates
+        const searchPhones = [identifier];
+        if (isGroup && identifier.includes('@g.us')) {
+            searchPhones.push(identifier.replace('@g.us', ''));
+        }
+
         let contact = await prisma.contact.findFirst({
             where: {
                 OR: [
                     { externalId: identifier },
-                    { phone: identifier }
+                    { phone: { in: searchPhones } }
                 ]
-            }
+            },
+            orderBy: { createdAt: 'asc' } // Prefer oldest (original) contact if multiple exist
         })
 
         if (!contact) {
