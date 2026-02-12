@@ -14,6 +14,7 @@ export const createUserSchema = z.object({
     email: z.string().email('Invalid email address'),
     password: z.string().min(6, 'Password must be at least 6 characters').max(100),
     role: z.enum(['ADMIN', 'SUPERVISOR', 'AGENT']).optional(),
+    gender: z.enum(['MALE', 'FEMALE']).optional(),
     branchIds: z.array(z.string().uuid()).optional(),
     whatsappAccountIds: z.array(z.string().uuid()).optional(),
 })
@@ -23,6 +24,7 @@ export const updateUserSchema = z.object({
     username: usernameSchema.optional().nullable(),
     email: z.string().email().optional(),
     role: z.enum(['ADMIN', 'SUPERVISOR', 'AGENT']).optional(),
+    gender: z.enum(['MALE', 'FEMALE']).optional(),
     status: z.enum(['ONLINE', 'OFFLINE', 'AWAY']).optional(),
     isActive: z.boolean().optional(),
     branchIds: z.array(z.string().uuid()).optional(),
@@ -185,15 +187,15 @@ export function validateFileUpload(file: File, allowedTypes: string[], maxSize: 
     if (!file) {
         return { valid: false, error: 'No file provided' }
     }
-    
+
     if (file.size > maxSize) {
         return { valid: false, error: `File size exceeds ${maxSize / 1024 / 1024}MB limit` }
     }
-    
+
     if (!allowedTypes.includes(file.type)) {
         return { valid: false, error: 'File type not allowed' }
     }
-    
+
     return { valid: true }
 }
 

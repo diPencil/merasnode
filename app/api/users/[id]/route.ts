@@ -62,6 +62,7 @@ export async function GET(
                 name: true,
                 username: true,
                 email: true,
+                gender: true,
                 role: true,
                 status: true,
                 createdAt: true,
@@ -177,6 +178,7 @@ export async function PUT(
                     username: data.username === '' || data.username === null ? null : data.username.trim().toLowerCase()
                 }),
                 ...(data.role != null && { role: data.role }),
+                ...(data.gender != null && { gender: data.gender }),
                 ...(data.status != null && { status: data.status }),
                 ...(data.branchIds && {
                     branches: { set: data.branchIds.map((bid: string) => ({ id: bid })) }
@@ -190,6 +192,7 @@ export async function PUT(
                 name: true,
                 username: true,
                 email: true,
+                gender: true,
                 role: true,
                 status: true,
                 createdAt: true,

@@ -561,6 +561,10 @@ const translations: Translations = {
 
   // Users page
   userManagement: { en: "User Management", ar: "إدارة المستخدمين" },
+  gender: { en: "Gender", ar: "الجنس" },
+  male: { en: "Male", ar: "ذكر" },
+  female: { en: "Female", ar: "أنثى" },
+  selectGender: { en: "Select Gender", ar: "اختار الجنس" },
   addUser: { en: "Add User", ar: "إضافة مستخدم" },
   addNewUser: { en: "Add New User", ar: "إضافة مستخدم جديد" },
   createNewUserDescription: { en: "Create a new user account with specific permissions.", ar: "إنشاء حساب مستخدم جديد بصلاحيات محددة." },

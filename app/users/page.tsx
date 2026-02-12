@@ -29,6 +29,7 @@ interface User {
   name: string
   username?: string | null
   email: string
+  gender?: 'MALE' | 'FEMALE'
   role: 'ADMIN' | 'SUPERVISOR' | 'AGENT'
   status: 'ONLINE' | 'OFFLINE' | 'AWAY'
   isActive?: boolean
@@ -70,6 +71,7 @@ export default function UsersPage() {
     username: "",
     email: "",
     password: "",
+    gender: "MALE",
     role: "AGENT",
     status: "OFFLINE",
     branchIds: [] as string[],
@@ -196,6 +198,7 @@ export default function UsersPage() {
           name: formData.name,
           username: formData.username || null,
           email: formData.email,
+          gender: formData.gender,
           role: formData.role,
           status: formData.status,
           branchIds: formData.branchIds,
@@ -301,6 +304,7 @@ export default function UsersPage() {
       username: "",
       email: "",
       password: "",
+      gender: "MALE",
       role: "AGENT",
       status: "OFFLINE",
       branchIds: [],
@@ -315,6 +319,7 @@ export default function UsersPage() {
       username: user.username ?? "",
       email: user.email,
       password: "",
+      gender: user.gender || "MALE",
       role: user.role,
       status: user.status,
       branchIds: user.branches?.map(b => b.id) || [],
@@ -364,10 +369,10 @@ export default function UsersPage() {
               />
             </div>
             {canAddUser && (
-            <Button size="sm" className="h-9" onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
-              <Plus className="me-2 h-4 w-4" />
-              {t("addUser")}
-            </Button>
+              <Button size="sm" className="h-9" onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
+                <Plus className="me-2 h-4 w-4" />
+                {t("addUser")}
+              </Button>
             )}
           </div>
         </div>
@@ -393,8 +398,8 @@ export default function UsersPage() {
                     className="rounded-xl border bg-card p-4 space-y-4"
                   >
                     <div className="flex items-start gap-3">
-                      <Avatar className="h-12 w-12 shrink-0">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} />
+                      <Avatar className="h-12 w-12 shrink-0 border">
+                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}&gender=${user.gender === 'FEMALE' ? 'female' : 'male'}`} />
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
@@ -410,14 +415,14 @@ export default function UsersPage() {
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t">
                       {canDeactivateUser && (
-                      <Switch
-                        checked={user.isActive !== false}
-                        onCheckedChange={() => {
-                          setSelectedUser(user)
-                          setIsDeactivateDialogOpen(true)
-                        }}
-                        className="data-[state=checked]:bg-green-600"
-                      />
+                        <Switch
+                          checked={user.isActive !== false}
+                          onCheckedChange={() => {
+                            setSelectedUser(user)
+                            setIsDeactivateDialogOpen(true)
+                          }}
+                          className="data-[state=checked]:bg-green-600"
+                        />
                       )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -430,14 +435,14 @@ export default function UsersPage() {
                             {t("userDetails")}
                           </DropdownMenuItem>
                           {canEditUser && (
-                          <DropdownMenuItem onClick={() => openEditDialog(user)}>
-                            {t("editUser")}
-                          </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                              {t("editUser")}
+                            </DropdownMenuItem>
                           )}
                           {canDeleteUser && (
-                          <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
-                            {t("delete")} {t("userLabel")}
-                          </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
+                              {t("delete")} {t("userLabel")}
+                            </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -469,8 +474,8 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                              <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} />
+                            <Avatar className="h-9 w-9 border">
+                              <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}&gender=${user.gender === 'FEMALE' ? 'female' : 'male'}`} />
                               <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="flex flex-col">
@@ -503,16 +508,16 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell>
                           {canDeactivateUser ? (
-                          <Switch
-                            checked={user.isActive !== false}
-                            onCheckedChange={() => {
-                              setSelectedUser(user)
-                              setIsDeactivateDialogOpen(true)
-                            }}
-                            className="data-[state=checked]:bg-green-600"
-                          />
+                            <Switch
+                              checked={user.isActive !== false}
+                              onCheckedChange={() => {
+                                setSelectedUser(user)
+                                setIsDeactivateDialogOpen(true)
+                              }}
+                              className="data-[state=checked]:bg-green-600"
+                            />
                           ) : (
-                          <span className="text-muted-foreground text-sm">—</span>
+                            <span className="text-muted-foreground text-sm">—</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -527,14 +532,14 @@ export default function UsersPage() {
                                 {t("userDetails")}
                               </DropdownMenuItem>
                               {canEditUser && (
-                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
-                                {t("editUser")}
-                              </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                  {t("editUser")}
+                                </DropdownMenuItem>
                               )}
                               {canDeleteUser && (
-                              <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
-                                {t("delete")} {t("userLabel")}
-                              </DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
+                                  {t("delete")} {t("userLabel")}
+                                </DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -594,16 +599,26 @@ export default function UsersPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("status")}</Label>
-                  <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                  <Label>{t("gender") || "Gender"}</Label>
+                  <Select value={formData.gender || "MALE"} onValueChange={(val) => setFormData({ ...formData, gender: val as any })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ONLINE">{t("online")}</SelectItem>
-                      <SelectItem value="AWAY">{t("away")}</SelectItem>
-                      <SelectItem value="OFFLINE">{t("offline")}</SelectItem>
+                      <SelectItem value="MALE">{t("male") || "Male"}</SelectItem>
+                      <SelectItem value="FEMALE">{t("female") || "Female"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("status")}</Label>
+                <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ONLINE">{t("online")}</SelectItem>
+                    <SelectItem value="AWAY">{t("away")}</SelectItem>
+                    <SelectItem value="OFFLINE">{t("offline")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Branch Selection */}
@@ -737,16 +752,26 @@ export default function UsersPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("status")}</Label>
-                  <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                  <Label>{t("gender") || "Gender"}</Label>
+                  <Select value={formData.gender || "MALE"} onValueChange={(val) => setFormData({ ...formData, gender: val as any })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ONLINE">{t("online")}</SelectItem>
-                      <SelectItem value="AWAY">{t("away")}</SelectItem>
-                      <SelectItem value="OFFLINE">{t("offline")}</SelectItem>
+                      <SelectItem value="MALE">{t("male") || "Male"}</SelectItem>
+                      <SelectItem value="FEMALE">{t("female") || "Female"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("status")}</Label>
+                <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ONLINE">{t("online")}</SelectItem>
+                    <SelectItem value="AWAY">{t("away")}</SelectItem>
+                    <SelectItem value="OFFLINE">{t("offline")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Branch Selection */}
@@ -840,28 +865,28 @@ export default function UsersPage() {
         </Dialog>
 
         {canDeleteUser && (
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-[400px]" fullScreenMobile>
-            <DialogHeader>
-              <DialogTitle className="text-red-600 flex items-center gap-2">
-                <AlertCircle className="h-5 w-5" />
-                {t("deleteUserConfirm")}
-              </DialogTitle>
-              <DialogDescription>
-                {selectedUser?.name != null
-                  ? t("deleteUserConfirmQuestion").replace("{name}", selectedUser.name) + " "
-                  : ""}
-                {t("deleteUserConfirmDesc")}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>{t("cancel")}</Button>
-              <Button variant="destructive" onClick={handleDeleteUser} disabled={isSubmitting}>
-                {isSubmitting ? t("deleting") : t("yesDeleteUser")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogContent className="sm:max-w-[400px]" fullScreenMobile>
+              <DialogHeader>
+                <DialogTitle className="text-red-600 flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  {t("deleteUserConfirm")}
+                </DialogTitle>
+                <DialogDescription>
+                  {selectedUser?.name != null
+                    ? t("deleteUserConfirmQuestion").replace("{name}", selectedUser.name) + " "
+                    : ""}
+                  {t("deleteUserConfirmDesc")}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>{t("cancel")}</Button>
+                <Button variant="destructive" onClick={handleDeleteUser} disabled={isSubmitting}>
+                  {isSubmitting ? t("deleting") : t("yesDeleteUser")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
 
         {/* Deactivate/Activate Confirmation Dialog */}
