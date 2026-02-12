@@ -52,7 +52,7 @@ export default function LoginPage() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-purple-200 via-purple-300 to-indigo-300 p-4 font-sans" dir={isRtl ? "rtl" : "ltr"}>
             {/* Main Container: Rounded-3xl on mobile, Rounded-[40px] on desktop to match reference */}
-            <div className="flex w-full max-w-[1100px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl md:flex-row md:h-[700px] md:rounded-[40px]">
+            <div className="flex w-full max-w-[850px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl md:flex-row md:h-[550px] md:rounded-[40px]">
 
                 {/* 
                    LEFT SIDE: Astronaut & Universe Theme 
@@ -60,36 +60,34 @@ export default function LoginPage() {
                    but we apply RTL flip to the image if needed.
                    For strict adherence to image: Text seems left-aligned English.
                 */}
-                <div className="card relative hidden w-full bg-[#171717] md:flex md:h-full md:w-[45%] lg:w-[45%] flex-col overflow-hidden">
+                <div className="card relative hidden w-full bg-[#171717] md:flex md:h-full md:w-[40%] lg:w-[40%] flex-col overflow-hidden">
                     {/* Astronaut Image Section */}
                     <div className="image flex-1 flex items-center justify-center z-10">
                         <img
                             src="/astronaut.webp"
                             alt="Astronaut"
-                            className="w-[70%] object-contain filter drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]"
+                            className="astronaut-image w-[65%] object-contain filter drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]"
                         />
                     </div>
 
                     {/* Bottom Content Section */}
-                    <div className="heading z-10 px-10 pb-12 space-y-5 text-left" dir="ltr">
+                    <div className="heading z-10 px-8 pb-10 space-y-4 text-left" dir="ltr">
                         <div className="space-y-4">
                             {/* Badge */}
-                            <div className="inline-block rounded-full bg-[#8B5CF6] px-4 py-1.5 text-[10px] font-extrabold tracking-widest text-white uppercase shadow-[0_0_15px_rgba(139,92,246,0.5)]">
+                            <div className="inline-block rounded-full bg-[#8B5CF6] px-3 py-1 text-[9px] font-extrabold tracking-widest text-white uppercase shadow-[0_0_15px_rgba(139,92,246,0.5)]">
                                 {t("nextGenPlatform")}
                             </div>
 
                             {/* Titles */}
-                            <div className="space-y-0 leading-[0.85]">
-                                <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-white uppercase">
-                                    {t("meras")}
-                                </h1>
-                                <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-white uppercase">
-                                    {t("universe")}
+                            <div className="space-y-0">
+                                <h1 className="text-xl lg:text-2xl font-black tracking-tighter text-white uppercase flex gap-2">
+                                    <span>{t("meras")}</span>
+                                    <span>{t("universe")}</span>
                                 </h1>
                             </div>
 
                             {/* Description */}
-                            <p className="max-w-[340px] text-[10px] lg:text-[11px] font-bold leading-relaxed text-gray-400">
+                            <p className="max-w-[280px] text-[9px] lg:text-[10px] font-bold leading-relaxed text-gray-400">
                                 {t("brandDescription")}
                             </p>
                         </div>
@@ -100,7 +98,7 @@ export default function LoginPage() {
                                 <img
                                     src="/meraslogos.png"
                                     alt="Meras Companies"
-                                    className="h-7 lg:h-8 w-auto object-contain brightness-0 invert opacity-90"
+                                    className="h-6 lg:h-7 w-auto object-contain brightness-0 invert opacity-90"
                                 />
                             </div>
                             <div className="x"></div>
@@ -114,19 +112,18 @@ export default function LoginPage() {
                     Background: Gradient Purple/Indigo
                     Content: White rounded card floating in center
                 */}
-                <div className="flex w-full flex-col items-center justify-center bg-linear-to-br from-[#E0CCF7] to-[#9F87FF] p-6 md:w-[55%] lg:w-[55%] relative">
+                <div className="flex w-full flex-col items-center justify-center bg-linear-to-br from-[#E0CCF7] to-[#9F87FF] p-10 md:w-[60%] lg:w-[60%] relative">
 
                     {/* The White Card Container */}
-                    <div className="w-full max-w-[420px] bg-white rounded-[32px] shadow-2xl p-8 md:p-12 space-y-6">
+                    <div className="w-full max-w-[340px] bg-white rounded-[32px] shadow-2xl p-6 md:p-8 space-y-4">
 
                         {/* Header */}
                         <div className="text-center space-y-1">
                             {/* Large Arabic Title */}
-                            <h2 className="text-2xl font-black text-[#1F1F1F] tracking-tight">
+                            <h2 className="text-xl font-black text-[#1F1F1F] tracking-tight">
                                 {t("systemTitle")}
                             </h2>
-                            {/* Subtitle */}
-                            <p className="text-sm font-bold text-[#9333EA]">
+                            <p className="text-xs font-bold text-[#9333EA]">
                                 {t("systemSubtitle")}
                             </p>
                         </div>
@@ -183,7 +180,7 @@ export default function LoginPage() {
 
                             <Button
                                 type="submit"
-                                className="mt-4 h-12 w-full rounded-full bg-[#5B4ADB] hover:bg-[#4C3EB8] text-white text-base font-bold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all active:scale-[0.98]"
+                                className="mt-2 h-10 w-full rounded-full bg-[#5B4ADB] hover:bg-[#4C3EB8] text-white text-sm font-bold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all active:scale-[0.98]"
                                 disabled={isLoading}
                             >
                                 {isLoading ? (
@@ -218,7 +215,7 @@ export default function LoginPage() {
                     z-index: 1;
                 }
 
-                .card img {
+                .card .astronaut-image {
                     animation: move 10s ease-in-out infinite;
                     z-index: 5;
                 }
