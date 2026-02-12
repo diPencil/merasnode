@@ -101,7 +101,7 @@ export default function LoginPage() {
                 </div>
 
                 {/* Right Side: Login Form - Matching new reference with inner white card */}
-                <div className="flex w-full flex-col items-center justify-center p-6 md:w-1/2 md:p-8 relative z-20 bg-purple-50/50 backdrop-blur-sm">
+                <div className="flex w-full flex-col items-center justify-center p-6 md:w-1/2 md:p-8 relative z-20 bg-linear-to-br from-purple-200 to-indigo-300">
 
                     {/* Inner White Card */}
                     <div className="w-full max-w-sm bg-white rounded-[32px] shadow-xl p-8 md:p-10 space-y-6">
