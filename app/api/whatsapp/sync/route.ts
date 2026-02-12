@@ -21,18 +21,18 @@ export async function POST(request: NextRequest) {
 
         // Check if account exists
         const account = await prisma.whatsAppAccount.findUnique({
-        where: { id: accountId },
-        select: {
-            id: true,
-            branchId: true,
-            users: {
-                select: {
-                    id: true,
-                    role: true,
-                    isActive: true,
+            where: { id: accountId },
+            select: {
+                id: true,
+                branchId: true,
+                users: {
+                    select: {
+                        id: true,
+                        role: true,
+                        isActive: true,
+                    },
                 },
             },
-        },
         })
 
         if (!account) {
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
         // Get chats from WhatsApp service
         const chatsResponse = await fetch(`${WHATSAPP_SERVICE_URL}/chats/${accountId}`)
-        
+
         if (!chatsResponse.ok) {
             throw new Error('Failed to fetch chats from WhatsApp service')
         }
@@ -69,32 +69,36 @@ export async function POST(request: NextRequest) {
         // Process each chat
         for (const chat of chats) {
             try {
-                // Extract phone number from chat ID
-                const phoneMatch = chat.id.match(/^(\d+)@/)
-                const phoneNumber = phoneMatch ? phoneMatch[1] : null
+                // Extract phone number or group ID
+                let contactPhone = ""
+                if (chat.id.includes('@g.us')) {
+                    contactPhone = chat.id // Use full JID for groups
+                } else {
+                    const phoneMatch = chat.id.match(/^(\d+)@/)
+                    contactPhone = phoneMatch ? phoneMatch[1] : ""
+                }
 
-                // Skip groups for now (they don't have direct phone numbers)
-                if (chat.isGroup || !phoneNumber) {
-                    console.log(`⏭️ Skipping group or invalid chat: ${chat.name}`)
+                if (!contactPhone) {
+                    console.log(`⏭️ Skipping invalid chat: ${chat.name || chat.id}`)
                     continue
                 }
 
                 // Create or update contact and attach to branch (if account has branch)
                 let contact = await prisma.contact.findUnique({
-                    where: { phone: phoneNumber }
+                    where: { phone: contactPhone }
                 })
 
                 if (!contact) {
                     contact = await prisma.contact.create({
                         data: {
-                            phone: phoneNumber,
-                            name: chat.name || phoneNumber,
+                            phone: contactPhone,
+                            name: chat.name || contactPhone,
                             ...(branchId && { branchId }),
                         }
                     })
                 } else {
                     const contactUpdateData: any = {
-                        name: chat.name || contact.name || phoneNumber,
+                        name: chat.name || contact.name || contactPhone,
                         updatedAt: new Date()
                     }
 
@@ -148,7 +152,7 @@ export async function POST(request: NextRequest) {
                     syncedConversations++
                 }
 
-                console.log(`✅ Synced: ${chat.name} (${phoneNumber})`)
+                console.log(`✅ Synced: ${chat.name} (${contactPhone})`)
             } catch (error) {
                 console.error(`❌ Error syncing chat ${chat.name}:`, error)
             }
