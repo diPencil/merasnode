@@ -178,10 +178,9 @@ class MultiClientManager extends EventEmitter {
             const chat = await message.getChat();
             const contact = await message.getContact();
 
-            let senderName = contact.pushname || contact.name || contact.number;
-            if (chat.isGroup) {
-                senderName = chat.name;
-            }
+            const senderName = contact.pushname || contact.name || contact.number;
+            const authorName = senderName; // Capture the real person's name
+            const displaySenderName = chat.isGroup ? chat.name : senderName;
 
             // Handle Media
             let mediaData = null;
@@ -216,13 +215,15 @@ class MultiClientManager extends EventEmitter {
             const payload = {
                 accountId,
                 from: message.from,
-                to: message.to, // Added 'to' for outgoing messages
+                to: message.to,
                 body: message.body,
                 timestamp: message.timestamp,
                 isGroup: chat.isGroup,
-                senderName: senderName,
+                senderName: displaySenderName, // The Group Name or Contact Name
+                authorName: authorName,       // Always the person's name
+                authorId: message.author || message.from,
                 senderId: message.author || message.from,
-                fromMe: message.fromMe, // Added flag
+                fromMe: message.fromMe,
                 hasMedia: message.hasMedia,
                 media: mediaData,
                 location: locationData,

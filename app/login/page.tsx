@@ -60,67 +60,51 @@ export default function LoginPage() {
                    but we apply RTL flip to the image if needed.
                    For strict adherence to image: Text seems left-aligned English.
                 */}
-                <div className="relative hidden w-full bg-[#101010] md:block md:h-full md:w-[45%] lg:w-[45%]">
-                    {/* Background Elements */}
-                    <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
-                        {/* Huge Moon/Planet Glow Top Left */}
-                        <div className="absolute -top-20 -left-20 w-64 h-64 bg-gray-200/10 rounded-full blur-3xl"></div>
-                        <div className="absolute top-10 left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl"></div>
-
-                        {/* Stars (Static dots for performance/cleanliness) */}
-                        <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-white rounded-full opacity-60"></div>
-                        <div className="absolute top-1/3 right-1/4 w-0.5 h-0.5 bg-white rounded-full opacity-40"></div>
-                        <div className="absolute bottom-1/3 left-1/3 w-1 h-1 bg-white rounded-full opacity-50"></div>
-                        <div className="absolute top-10 right-10 w-0.5 h-0.5 bg-white rounded-full opacity-80"></div>
+                <div className="card relative hidden w-full bg-[#171717] md:flex md:h-full md:w-[45%] lg:w-[45%] flex-col overflow-hidden">
+                    {/* Astronaut Image Section */}
+                    <div className="image flex-1 flex items-center justify-center z-10">
+                        <img
+                            src="/astronaut.webp"
+                            alt="Astronaut"
+                            className="w-[70%] object-contain filter drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]"
+                        />
                     </div>
 
-                    <div className="relative z-10 flex h-full flex-col justify-between p-10 lg:p-12">
-                        {/* Spacer for top alignment */}
-                        <div></div>
-
-                        {/* Astronaut Image - Centered vertically in the available space */}
-                        <div className="flex justify-center items-center py-4">
-                            <img
-                                src="/astronaut.webp"
-                                alt="Astronaut"
-                                className="w-56 lg:w-72 object-contain drop-shadow-[0_0_40px_rgba(168,85,247,0.3)] animate-float"
-                                style={{
-                                    animation: 'float 6s ease-in-out infinite',
-                                    ...(isRtl && { transform: 'scaleX(-1)' })
-                                }}
-                            />
-                        </div>
-
-                        {/* Bottom Text Content */}
-                        <div className="space-y-5 text-left" dir="ltr">
+                    {/* Bottom Content Section */}
+                    <div className="heading z-10 px-10 pb-12 space-y-5 text-left" dir="ltr">
+                        <div className="space-y-4">
                             {/* Badge */}
                             <div className="inline-block rounded-full bg-[#8B5CF6] px-4 py-1.5 text-[10px] font-extrabold tracking-widest text-white uppercase shadow-[0_0_15px_rgba(139,92,246,0.5)]">
-                                NEXT GEN PLATFORM
+                                {t("nextGenPlatform")}
                             </div>
 
-                            {/* Main Title - Stacked for impact as per reference */}
-                            <div className="space-y-0 leading-[0.9]">
-                                <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-white uppercase drop-shadow-lg">
-                                    MERAS
+                            {/* Titles */}
+                            <div className="space-y-0 leading-[0.85]">
+                                <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-white uppercase">
+                                    {t("meras")}
                                 </h1>
-                                <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-white uppercase drop-shadow-lg">
-                                    UNIVERSE
+                                <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-white uppercase">
+                                    {t("universe")}
                                 </h1>
                             </div>
 
                             {/* Description */}
-                            <p className="max-w-[340px] text-xs lg:text-sm font-medium leading-relaxed text-gray-400">
-                                Welcome to your centralized command center. Manage operations for Kayan, Bura, and Mozdanh with seamlessly integrated tools designed to elevate efficiency and customer experience.
+                            <p className="max-w-[340px] text-[10px] lg:text-[11px] font-bold leading-relaxed text-gray-400">
+                                {t("brandDescription")}
                             </p>
+                        </div>
 
-                            {/* Logos */}
-                            <div className="pt-6">
+                        {/* Logos & Icons Area */}
+                        <div className="icons pt-4 flex items-center justify-start gap-6">
+                            <div className="instagram">
                                 <img
                                     src="/meraslogos.png"
                                     alt="Meras Companies"
-                                    className="h-8 lg:h-9 w-auto object-contain brightness-0 invert opacity-90"
+                                    className="h-7 lg:h-8 w-auto object-contain brightness-0 invert opacity-90"
                                 />
                             </div>
+                            <div className="x"></div>
+                            <div className="discord"></div>
                         </div>
                     </div>
                 </div>
@@ -133,10 +117,10 @@ export default function LoginPage() {
                 <div className="flex w-full flex-col items-center justify-center bg-linear-to-br from-[#E0CCF7] to-[#9F87FF] p-6 md:w-[55%] lg:w-[55%] relative">
 
                     {/* The White Card Container */}
-                    <div className="w-full max-w-[420px] bg-white rounded-[32px] shadow-2xl p-8 md:p-12 space-y-8">
+                    <div className="w-full max-w-[420px] bg-white rounded-[32px] shadow-2xl p-8 md:p-12 space-y-6">
 
                         {/* Header */}
-                        <div className="text-center space-y-2">
+                        <div className="text-center space-y-1">
                             {/* Large Arabic Title */}
                             <h2 className="text-2xl font-black text-[#1F1F1F] tracking-tight">
                                 {t("systemTitle")}
@@ -223,11 +207,277 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            {/* Inline CSS for specific animations if plain Tailwind isn't enough */}
+            {/* FULL CSS FROM UIVERSE - STRICT REPRODUCTION */}
             <style jsx global>{`
-                @keyframes float {
-                    0%, 100% { transform: translateY(0px) ${isRtl ? 'scaleX(-1)' : ''}; }
-                    50% { transform: translateY(-20px) ${isRtl ? 'scaleX(-1)' : ''}; }
+                .card {
+                    position: relative;
+                    background-color: #171717;
+                    color: white;
+                    font-family: inherit;
+                    font-weight: bold;
+                    z-index: 1;
+                }
+
+                .card img {
+                    animation: move 10s ease-in-out infinite;
+                    z-index: 5;
+                }
+
+                .image:hover {
+                    cursor: -webkit-grab;
+                    cursor: grab;
+                }
+
+                .card::before {
+                    content: "";
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    inset: -3px;
+                    border-radius: 10px;
+                    background: radial-gradient(#858585, transparent, transparent);
+                    transform: translate(-5px, 250px);
+                    transition: 0.4s ease-in-out;
+                    z-index: -1;
+                }
+
+                .card:hover::before {
+                    width: 150%;
+                    height: 100%;
+                    margin-left: -4.25em;
+                }
+
+                .card::after {
+                    content: "";
+                    position: absolute;
+                    inset: 2px;
+                    border-radius: 20px;
+                    background: rgb(23, 23, 23, 0.7);
+                    transition: all 0.4s ease-in-out;
+                    z-index: -1;
+                }
+
+                .heading {
+                    z-index: 2;
+                    transition: 0.4s ease-in-out;
+                }
+
+                .card:hover .heading {
+                    letter-spacing: 0.025em;
+                }
+
+                .heading::before {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 2px;
+                    height: 2px;
+                    border-radius: 50%;
+                    opacity: 1;
+                    box-shadow: 220px 118px #fff, 280px 176px #fff, 40px 50px #fff,
+                        60px 180px #fff, 120px 130px #fff, 180px 176px #fff, 220px 290px #fff,
+                        520px 250px #fff, 400px 220px #fff, 50px 350px #fff, 10px 230px #fff;
+                    z-index: -1;
+                    transition: 1s ease;
+                    animation: 1s glowing-stars linear alternate infinite;
+                    animation-delay: 0s;
+                }
+
+                .icons::before {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 2px;
+                    height: 2px;
+                    border-radius: 50%;
+                    opacity: 1;
+                    box-shadow: 140px 20px #fff, 425px 20px #fff, 70px 120px #fff, 20px 130px #fff,
+                        110px 80px #fff, 280px 80px #fff, 250px 350px #fff, 280px 230px #fff,
+                        220px 190px #fff, 450px 100px #fff, 380px 80px #fff, 520px 50px #fff;
+                    z-index: -1;
+                    transition: 1.5s ease;
+                    animation: 1s glowing-stars linear alternate infinite;
+                    animation-delay: 0.4s;
+                }
+
+                .icons::after {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 2px;
+                    height: 2px;
+                    border-radius: 50%;
+                    opacity: 1;
+                    box-shadow: 490px 330px #fff, 420px 300px #fff, 320px 280px #fff,
+                        380px 350px #fff, 546px 170px #fff, 420px 180px #fff, 370px 150px #fff,
+                        200px 250px #fff, 80px 20px #fff, 190px 50px #fff, 270px 20px #fff,
+                        120px 230px #fff, 350px -1px #fff, 150px 369px #fff;
+                    z-index: -1;
+                    transition: 2s ease;
+                    animation: 1s glowing-stars linear alternate infinite;
+                    animation-delay: 0.8s;
+                }
+
+                .card:hover .heading::before,
+                .card:hover .icons::before,
+                .card:hover .icons::after {
+                    filter: blur(3px);
+                }
+
+                .image:active {
+                    cursor: -webkit-grabbing;
+                    cursor: grabbing;
+                }
+
+                .image:active + .heading::before {
+                    box-shadow: 240px 20px #9b40fc, 240px 25px #9b40fc, 240px 30px #9b40fc,
+                        240px 35px #9b40fc, 240px 40px #9b40fc, 242px 45px #9b40fc,
+                        246px 48px #9b40fc, 251px 49px #9b40fc, 256px 48px #9b40fc,
+                        260px 45px #9b40fc, 262px 40px #9b40fc;
+                    animation: none;
+                    filter: blur(0);
+                    border-radius: 2px;
+                    width: 0.45em;
+                    height: 0.45em;
+                    scale: 0.65;
+                    transform: translateX(9em) translateY(1em);
+                }
+
+                .image:active ~ .icons::before {
+                    box-shadow: 262px 35px #9b40fc, 262px 30px #9b40fc, 262px 25px #9b40fc,
+                        262px 20px #9b40fc, 275px 20px #9b40fc, 275px 24px #9b40fc,
+                        275px 28px #9b40fc, 275px 32px #9b40fc, 275px 36px #9b40fc,
+                        275px 40px #9b40fc, 275px 44px #9b40fc, 275px 48px #9b40fc;
+                    animation: none;
+                    filter: blur(0);
+                    border-radius: 2px;
+                    width: 0.45em;
+                    height: 0.45em;
+                    scale: 0.65;
+                    transform: translateX(9em) translateY(1em);
+                }
+
+                .image:active ~ .icons::after {
+                    box-shadow: 238px 60px #9b40fc, 242px 60px #9b40fc, 246px 60px #9b40fc,
+                        250px 60px #9b40fc, 254px 60px #9b40fc, 258px 60px #9b40fc,
+                        262px 60px #9b40fc, 266px 60px #9b40fc, 270px 60px #9b40fc,
+                        274px 60px #9b40fc, 278px 60px #9b40fc, 282px 60px #9b40fc,
+                        234px 60px #9b40fc, 234px 60px #9b40fc;
+                    animation: none;
+                    filter: blur(0);
+                    border-radius: 2px;
+                    width: 0.45em;
+                    height: 0.45em;
+                    scale: 0.65;
+                    transform: translateX(9em) translateY(1.25em);
+                }
+
+                .heading::after {
+                    content: "";
+                    top: -100px;
+                    left: -100px;
+                    position: absolute;
+                    width: 15em;
+                    height: 15em;
+                    border: none;
+                    outline: none;
+                    border-radius: 50%;
+                    background: #f9f9fb;
+                    box-shadow: 0px 0px 100px rgba(193, 119, 241, 0.8),
+                        0px 0px 100px rgba(135, 42, 211, 0.8), inset #9b40fc 0px 0px 40px -12px;
+                    transition: 0.4s ease-in-out;
+                    z-index: -1;
+                }
+
+                .card:hover .heading::after {
+                    box-shadow: 0px 0px 200px rgba(193, 119, 241, 1),
+                        0px 0px 200px rgba(135, 42, 211, 1), inset #9b40fc 0px 0px 40px -12px;
+                }
+
+                .icons {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-direction: row;
+                    column-gap: 1em;
+                    z-index: 1;
+                }
+
+                .instagram::before {
+                    content: "";
+                    position: absolute;
+                    top: -700%;
+                    left: 1050%;
+                    rotate: -45deg;
+                    width: 5em;
+                    height: 1px;
+                    background: linear-gradient(90deg, #ffffff, transparent);
+                    animation: 4s shootingStar ease-in-out infinite;
+                    transition: 1s ease;
+                    animation-delay: 1s;
+                }
+
+                .x::before {
+                    content: "";
+                    position: absolute;
+                    top: -1300%;
+                    left: 850%;
+                    rotate: -45deg;
+                    width: 5em;
+                    height: 1px;
+                    background: linear-gradient(90deg, #ffffff, transparent);
+                    animation: 4s shootingStar ease-in-out infinite;
+                    animation-delay: 3s;
+                }
+
+                .discord::before {
+                    content: "";
+                    position: absolute;
+                    top: -2100%;
+                    left: 850%;
+                    rotate: -45deg;
+                    width: 5em;
+                    height: 1px;
+                    background: linear-gradient(90deg, #ffffff, transparent);
+                    animation: 4s shootingStar ease-in-out infinite;
+                    animation-delay: 5s;
+                }
+
+                .card:hover .instagram::before,
+                .card:hover .x::before,
+                .card:hover .discord::before {
+                    filter: blur(3px);
+                }
+
+                .image:active ~ .icons .instagram::before,
+                .image:active ~ .icons .x::before,
+                .image:active ~ .icons .discord::before {
+                    animation: none;
+                    opacity: 0;
+                }
+
+                @keyframes shootingStar {
+                    0% { transform: translateX(0) translateY(0); opacity: 1; }
+                    50% { transform: translateX(-55em) translateY(0); opacity: 1; }
+                    70% { transform: translateX(-70em) translateY(0); opacity: 0; }
+                    100% { transform: translateX(0) translateY(0); opacity: 0; }
+                }
+
+                @keyframes move {
+                    0% { transform: translateX(0em) translateY(0em); }
+                    25% { transform: translateY(-1em) translateX(-1em); rotate: -10deg; }
+                    50% { transform: translateY(1em) translateX(-1em); }
+                    75% { transform: translateY(-1.25em) translateX(1em); rotate: 10deg; }
+                    100% { transform: translateX(0em) translateY(0em); }
+                }
+
+                @keyframes glowing-stars {
+                    0% { opacity: 0; }
+                    50% { opacity: 1; }
+                    100% { opacity: 0; }
                 }
             `}</style>
         </div>

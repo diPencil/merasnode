@@ -1406,6 +1406,11 @@ export default function InboxPage() {
                               )
                           )}
                         >
+                          {!isOutgoing && (message as any).metadata?.authorName && (
+                            <div className="text-[10px] font-bold text-teal-600 dark:text-teal-400 mb-1 leading-none uppercase tracking-tighter">
+                              {(message as any).metadata.authorName}
+                            </div>
+                          )}
                           {message.type === 'IMAGE' && message.mediaUrl ? (
                             <div className="rounded-lg overflow-hidden max-w-sm relative group">
                               <img

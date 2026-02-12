@@ -257,6 +257,13 @@ const translations: Translations = {
   error: { en: "Error", ar: "خطأ" },
   unexpectedError: { en: "An unexpected error occurred", ar: "حدث خطأ غير متوقع" },
   welcomeBack: { en: "Welcome back", ar: "مرحباً بعودتك" },
+  brandDescription: {
+    en: "Welcome to your centralized command center. Manage operations for Kayan, Bura, and Mozdanh with seamlessly integrated tools designed to elevate efficiency and customer experience.",
+    ar: "مرحباً بك في مركز القيادة الموحد. أدر عمليات كيان، بورا، ومزدنة بأدوات متكاملة مصممة لرفع الكفاءة وتجربة العملاء."
+  },
+  nextGenPlatform: { en: "NEXT GEN PLATFORM", ar: "منصة الجيل القادم" },
+  meras: { en: "MERAS", ar: "مراس" },
+  universe: { en: "UNIVERSE", ar: "يونيفرس" },
   copyright: { en: "© {year} Meras Holding Company. All rights reserved.", ar: "© {year} شركة مراس القابضة. جميع الحقوق محفوظة." },
 
   // Inbox / Chat
@@ -285,7 +292,7 @@ const translations: Translations = {
   bookingConfirmedDesc: { en: "Successfully booked with Agent.", ar: "تم الحجز بنجاح مع الموظف." },
   failedToCreateBooking: { en: "Failed to create booking. Please try again.", ar: "فشل إنشاء الحجز. يرجى المحاولة مرة أخرى." },
   comingSoon: { en: "Coming Soon", ar: "قريباً" },
-  comingSoonDesc: { en: "integration is coming soon!", ar: "التكامل قريباً!" },
+  comingSoonDesc: { en: "integration is coming soon!", ar: "التكام4ل قريباً!" },
   allBranches: { en: "All Branches", ar: "جميع الفروع" },
   groups: { en: "Groups", ar: "المجموعات" },
   whatsappGroup: { en: "WhatsApp Group", ar: "مجموعة واتساب" },

@@ -199,7 +199,9 @@ export async function POST(request: NextRequest) {
                 whatsappAccountId: accountId || null,
                 metadata: {
                     mentions: body.mentions || [],
-                    quotedMsg: body.quotedMsg || null
+                    quotedMsg: body.quotedMsg || null,
+                    authorName: body.authorName || null,
+                    authorId: body.authorId || null
                 }
             }
         })
