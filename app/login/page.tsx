@@ -64,11 +64,10 @@ export default function LoginPage() {
                         {/* Top Section: Moon (CSS) & Astronaut */}
                         <div className="flex-1 flex items-center justify-center relative z-10 w-full">
                             <img
-                                src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/People/Astronaut.png"
+                                src="/astronaut.webp"
                                 alt="Astronaut"
                                 className="astronaut-img w-64 md:w-80 object-contain drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]"
                                 style={{
-                                    filter: "hue-rotate(260deg) saturate(1.2)",
                                     transform: "translateY(-20px)"
                                 }}
                             />
