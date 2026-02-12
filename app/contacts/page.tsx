@@ -54,7 +54,432 @@ export default function ContactsPage() {
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"all" | "blocked" | "groups">("all")
 
-  // ... (existing code)
+  // Add Contact Dialog
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [newContact, setNewContact] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    tags: "",
+    notes: ""
+  })
+
+  // Delete Confirmation Dialog
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [contactToDelete, setContactToDelete] = useState<string | null>(null)
+  const canDeleteContact = hasPermission((getUserRole() || "AGENT") as UserRole, "delete_contact")
+
+  // Block/Unblock Confirmation Dialog
+  const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false)
+  const [contactToToggle, setContactToToggle] = useState<Contact | null>(null)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Define fetchContacts early so it's available for other handlers
+  const fetchContacts = async () => {
+    try {
+      setIsLoading(true)
+      const response = await authenticatedFetch('/api/contacts')
+      const data = await response.json()
+
+      if (data.success) {
+        setContacts(data.data)
+      } else {
+        setError(data.error || 'Failed to fetch contacts')
+      }
+    } catch (err) {
+      setError('Failed to connect to server')
+      console.error('Error fetching contacts:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Edit Contact Dialog
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [editContact, setEditContact] = useState({
+    id: "",
+    name: "",
+    phone: "",
+    email: "",
+    tags: "",
+    notes: ""
+  })
+
+
+  const handleExport = () => {
+    if (contacts.length === 0) {
+      toast({
+        title: t("noData"),
+        description: t("noContactsToExport"),
+        variant: "destructive"
+      })
+      return
+    }
+
+    const headers = [t("nameLabel"), t("phone"), t("email"), t("tags"), t("notes")]
+    const csvContent = [
+      headers.join(','),
+      ...contacts.map(contact => [
+        `"${contact.name}"`,
+        `"${contact.phone}"`,
+        `"${contact.email || ''}"`,
+        `"${Array.isArray(contact.tags) ? contact.tags.join(';') : (contact.tags || '')}"`,
+        `"${contact.notes || ''}"`
+      ].join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `contacts_export_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    toast({
+      title: t("exportSuccessful"),
+      description: t("contactsExportedToCsv"),
+    })
+  }
+
+  const handleImport = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string
+        const lines = text.split('\n')
+        const headers = lines[0].split(',')
+
+        // Basic CSV parsing (assuming simple format)
+        const parsedContacts = lines.slice(1)
+          .filter(line => line.trim() !== '')
+          .map(line => {
+            // Handle quotes if needed, simplified for now
+            const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.trim().replace(/^"|"$/g, ''))
+
+            // Map values based on expected order: Name, Phone, Email, Tags, Notes
+            // Or verify headers, but assuming standard format for now
+            const [name, phone, email, tags, notes] = values
+
+            return {
+              name,
+              phone: phone?.replace(/[^0-9+]/g, ''),
+              email,
+              tags: tags ? tags.split(';').map(t => t.trim()) : [],
+              notes
+            }
+          })
+          .filter(c => c.name && c.phone) // Ensure required fields
+
+        if (parsedContacts.length === 0) {
+          toast({
+            title: t("importError"),
+            description: t("noValidContactsInCsv"),
+            variant: "destructive"
+          })
+          return
+        }
+
+        setIsLoading(true)
+        const response = await authenticatedFetch('/api/contacts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(parsedContacts)
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+          fetchContacts()
+          toast({
+            title: t("importSuccessful"),
+            description: data.message || `${t("importedCount")} ${parsedContacts.length}`
+          })
+        } else {
+          toast({
+            title: t("importError"),
+            description: data.error || t("failedToImportContacts"),
+            variant: "destructive"
+          })
+        }
+      } catch (err) {
+        console.error('Error parsing CSV:', err)
+        toast({
+          title: t("importFailed"),
+          description: t("couldNotParseCsv"),
+          variant: "destructive"
+        })
+      } finally {
+        setIsLoading(false)
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  const handleSendMessage = async (contactId: string) => {
+    try {
+      const response = await authenticatedFetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contactId })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        router.push(`/inbox?conversation=${data.data.id}`)
+      } else {
+        toast({
+          title: t("error"),
+          description: data.error || t("failedToCreateConversation"),
+          variant: "destructive"
+        })
+      }
+    } catch (err) {
+      console.error(err)
+      toast({
+        title: t("error"),
+        description: t("failedToCreateConversation"),
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleDeleteContact = async (contactId: string) => {
+    try {
+      const response = await authenticatedFetch(`/api/contacts/${contactId}`, {
+        method: 'DELETE'
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setContacts(contacts.filter(c => c.id !== contactId))
+        setSelectedContact(null)
+        setIsDeleteDialogOpen(false)
+        setContactToDelete(null)
+        toast({
+          title: t("success"),
+          description: t("contactDeletedSuccessfully")
+        })
+      } else {
+        toast({
+          title: t("error"),
+          description: data.error || t("failedToDeleteContact"),
+          variant: "destructive"
+        })
+      }
+    } catch (err) {
+      toast({
+        title: t("error"),
+        description: t("failedToConnectToServer"),
+        variant: "destructive"
+      })
+      console.error('Error deleting contact:', err)
+    }
+  }
+
+  const handleEditContact = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!editContact.name || !editContact.phone) {
+      toast({
+        title: t("validationError"),
+        description: t("nameAndPhoneRequired"),
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+
+      // Handle tags - could be string or array
+      const tagsArray = editContact.tags
+        ? (Array.isArray(editContact.tags)
+          ? editContact.tags
+          : editContact.tags.split(',').map(t => t.trim()))
+        : [];
+
+      const response = await authenticatedFetch(`/api/contacts/${editContact.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editContact.name,
+          phone: editContact.phone,
+          email: editContact.email || null,
+          tags: tagsArray,
+          notes: editContact.notes || null
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setContacts(contacts.map(c => c.id === editContact.id ? data.data : c))
+        setSelectedContact(data.data)
+        setIsEditDialogOpen(false)
+        toast({
+          title: t("success"),
+          description: t("contactUpdatedSuccessfully")
+        })
+      } else {
+        toast({
+          title: t("error"),
+          description: data.error || t("failedToUpdateContact"),
+          variant: "destructive"
+        })
+      }
+    } catch (err) {
+      toast({
+        title: t("error"),
+        description: t("failedToConnectToServer"),
+        variant: "destructive"
+      })
+      console.error('Error updating contact:', err)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleToggleBlock = (contact: Contact) => {
+    setContactToToggle(contact)
+    setIsBlockDialogOpen(true)
+  }
+
+  const confirmToggleBlock = async () => {
+    if (!contactToToggle) return
+
+    const contact = contactToToggle
+    try {
+      // Parse current tags
+      const currentTags = contact.tags
+        ? (Array.isArray(contact.tags) ? contact.tags : String(contact.tags).split(',').map(t => t.trim()))
+        : []
+
+      const isBlocked = currentTags.includes('blocked')
+      const newTags = isBlocked
+        ? currentTags.filter(t => t !== 'blocked')
+        : [...currentTags, 'blocked']
+
+      setIsSubmitting(true)
+      const response = await authenticatedFetch(`/api/contacts/${contact.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: contact.name,
+          phone: contact.phone,
+          email: contact.email || null,
+          notes: contact.notes || null,
+          tags: newTags
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setContacts(contacts.map(c => c.id === contact.id ? data.data : c))
+        if (selectedContact?.id === contact.id) {
+          setSelectedContact(data.data)
+        }
+        toast({
+          title: t("success"),
+          description: isBlocked ? t("contactUnblocked") : t("contactBlockedSuccess")
+        })
+      } else {
+        toast({
+          title: t("error"),
+          description: data.error || t("failedToUpdateContact"),
+          variant: "destructive"
+        })
+      }
+    } catch (err) {
+      console.error('Error toggling block:', err)
+      toast({
+        title: t("error"),
+        description: t("failedToConnectToServer"),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false)
+      setIsBlockDialogOpen(false)
+      setContactToToggle(null)
+    }
+  }
+
+
+  // جلب جهات الاتصال من API
+  useEffect(() => {
+    fetchContacts()
+  }, [])
+
+
+  const handleAddContact = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!newContact.name || !newContact.phone) {
+      toast({
+        title: t("validationError"),
+        description: t("nameAndPhoneRequired"),
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      const response = await authenticatedFetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newContact.name,
+          phone: newContact.phone,
+          email: newContact.email || null,
+          tags: newContact.tags ? newContact.tags.split(',').map(t => t.trim()) : [],
+          notes: newContact.notes || null
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setContacts([...contacts, data.data])
+        setIsAddDialogOpen(false)
+        setNewContact({ name: "", phone: "", email: "", tags: "", notes: "" })
+        toast({
+          title: t("success"),
+          description: t("contactAddedSuccessfully")
+        })
+      } else {
+        toast({
+          title: t("error"),
+          description: data.error || t("failedToAddContact"),
+          variant: "destructive"
+        })
+      }
+    } catch (err) {
+      toast({
+        title: t("error"),
+        description: t("failedToConnectToServer"),
+        variant: "destructive"
+      })
+      console.error('Error adding contact:', err)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const isGroupContact = (phone: string) => {
     return phone.includes("@g.us") || phone.length > 18;
