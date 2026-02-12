@@ -1456,7 +1456,7 @@ export default function InboxPage() {
                               </div>
                             </a>
                           ) : (
-                            <div className="block text-start whitespace-pre-wrap leading-relaxed break-words" dir="auto">
+                            <div className="whitespace-pre-wrap leading-relaxed break-words w-fit max-w-full" dir="auto">
                               {formatMessageContent(message.content)}
                             </div>
                           )}
