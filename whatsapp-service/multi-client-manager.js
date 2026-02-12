@@ -394,6 +394,35 @@ class MultiClientManager extends EventEmitter {
     }
 
     /**
+     * Get group details including participants
+     */
+    async getGroupInfo(accountId, groupId) {
+        const clientData = this.clients.get(accountId);
+        if (!clientData || !clientData.isReady) {
+            throw new Error(`Account ${accountId} is not ready`);
+        }
+
+        const chat = await clientData.client.getChatById(groupId);
+        if (!chat.isGroup) {
+            throw new Error('This chat is not a group');
+        }
+
+        const participants = chat.participants.map(p => ({
+            id: p.id._serialized,
+            phone: p.id.user,
+            isAdmin: p.isAdmin,
+            isSuperAdmin: p.isSuperAdmin
+        }));
+
+        return {
+            id: chat.id._serialized,
+            name: chat.name,
+            participantsCount: participants.length,
+            participants: participants
+        };
+    }
+
+    /**
      * Shutdown all clients
      */
     async shutdownAll() {

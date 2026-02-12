@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
-import { Search, Plus, MoreVertical, Mail, Phone, Tag, Download, Upload, ShieldOff, Users, Trash2 } from "lucide-react"
+import { Search, Plus, MoreVertical, Mail, Phone, Tag, Download, Upload, ShieldOff, Users, Trash2, Loader2 } from "lucide-react"
 import { authenticatedFetch, getUserRole } from "@/lib/auth"
 import { hasPermission } from "@/lib/permissions"
 import type { UserRole } from "@/lib/permissions"
@@ -49,7 +49,9 @@ export default function ContactsPage() {
   const { t, language, dir } = useI18n()
   const dateLocale = language === "ar" ? ar : undefined
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  const [selectedContact, setSelectedContact] = useState<any>(null)
+  const [groupInfo, setGroupInfo] = useState<any>(null)
+  const [isLoadingGroup, setIsLoadingGroup] = useState(false)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -486,6 +488,41 @@ export default function ContactsPage() {
   const isGroupContact = (phone: string) => {
     return phone.includes("@g.us") || phone.length > 18;
   }
+
+  const fetchGroupInfo = async (groupId: string) => {
+    try {
+      setIsLoadingGroup(true)
+      // We need an accountId. For now, fetch all accounts and use the first connected one.
+      // In a real scenario, we might want to store which account this group belongs to.
+      const accountsRes = await authenticatedFetch('/api/whatsapp/accounts')
+      const accountsData = await accountsRes.json()
+      const connectedAccount = accountsData.accounts?.find((a: any) => a.status === 'CONNECTED')
+
+      if (!connectedAccount) {
+        console.warn('No connected WhatsApp account found to fetch group info')
+        return
+      }
+
+      const response = await authenticatedFetch(`/api/whatsapp/group?accountId=${connectedAccount.id}&groupId=${groupId}`)
+      const data = await response.json()
+
+      if (data.success) {
+        setGroupInfo(data.group)
+      }
+    } catch (err) {
+      console.error('Error fetching group info:', err)
+    } finally {
+      setIsLoadingGroup(false)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedContact && isGroupContact(selectedContact.phone)) {
+      fetchGroupInfo(selectedContact.phone)
+    } else {
+      setGroupInfo(null)
+    }
+  }, [selectedContact])
 
   const filteredContacts = contacts.filter((contact) => {
     const query = searchQuery.toLowerCase()
@@ -1010,7 +1047,7 @@ export default function ContactsPage() {
                     <AvatarFallback className="text-2xl">
                       {selectedContact.name
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: string) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
@@ -1053,6 +1090,55 @@ export default function ContactsPage() {
                     <div className="rounded-xl bg-muted/50 p-4">
                       <div className="mb-2 text-sm font-medium">{t("notes")}</div>
                       <p className="text-sm text-muted-foreground">{selectedContact.notes}</p>
+                    </div>
+                  )}
+
+                  {/* Group Participants Section */}
+                  {isGroupContact(selectedContact.phone) && (
+                    <div className="rounded-xl border border-border/50 overflow-hidden">
+                      <div className="bg-muted/50 p-4 border-b border-border/50 flex items-center justify-between">
+                        <div className="flex items-center gap-2 font-medium text-sm">
+                          <Users className="h-4 w-4" />
+                          {t("groupParticipants") || "Group Members"}
+                        </div>
+                        {groupInfo && (
+                          <Badge variant="outline" className="text-[10px]">
+                            {groupInfo.participantsCount}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="max-h-[300px] overflow-y-auto p-2 space-y-1">
+                        {isLoadingGroup ? (
+                          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground gap-2">
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                            <span className="text-xs">{t("loading") || "Loading members..."}</span>
+                          </div>
+                        ) : groupInfo?.participants ? (
+                          groupInfo.participants.map((p: any) => (
+                            <div key={p.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback className="text-[10px]">
+                                    {p.phone.substring(0, 2)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium">{p.phone}</span>
+                                  {p.isAdmin && (
+                                    <span className="text-[10px] text-green-600 font-medium">
+                                      {t("groupAdmin") || "Group admin"}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-8 text-center text-sm text-muted-foreground">
+                            {t("noParticipantsFound") || "Could not load participants"}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
