@@ -52,11 +52,10 @@ export default function LoginPage() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-purple-200 via-purple-300 to-indigo-300 p-4 font-sans" dir={isRtl ? "rtl" : "ltr"}>
-            {/* Flex-col-reverse ensures Form is TOP on mobile, Astronaut BOTTOM. md:flex-row keeps Astronaut LEFT on desktop. */}
-            <div className="flex w-full max-w-6xl flex-col-reverse overflow-hidden rounded-[30px] bg-white shadow-2xl md:flex-row md:h-[650px]">
+            <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-[30px] bg-white shadow-2xl md:flex-row md:h-[650px]">
 
-                {/* Left Side: Dark Astronaut Theme - Matching Reference Layout */}
-                <div className="relative w-full md:w-1/2 bg-[#171717]">
+                {/* Left Side: Dark Astronaut Theme - Hidden on Mobile, Visible on Desktop */}
+                <div className="relative hidden w-full md:block md:w-1/2 bg-[#171717]">
                     <div className="card w-full h-full flex flex-col justify-between p-8 relative">
                         {/* Moon/Stars Effects via CSS ::after/before */}
                         <div className="heading absolute top-0 left-0 w-full h-full pointer-events-none z-0"></div>
