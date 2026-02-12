@@ -90,21 +90,22 @@ export async function POST(request: NextRequest) {
                     where: { phone: contactPhone }
                 });
 
-                const currentTags = contact?.tags ? (Array.isArray(contact.tags) ? contact.tags : []) : [];
-                if (isGroup && !currentTags.includes('group')) {
-                    currentTags.push('group');
-                }
-
                 if (!contact) {
                     contact = await prisma.contact.create({
                         data: {
                             phone: contactPhone,
                             name: chat.name || contactPhone,
-                            tags: isGroup ? ['group'] : [],
+                            tags: isGroup ? ['group'] : ['whatsapp-contact'],
                             ...(branchId && { branchId }),
                         }
                     });
                 } else {
+                    const currentTags = contact.tags ? (Array.isArray(contact.tags) ? [...contact.tags] : String(contact.tags).split(',')) : [];
+                    const tagToAdd = isGroup ? 'group' : 'whatsapp-contact';
+                    if (!currentTags.includes(tagToAdd)) {
+                        currentTags.push(tagToAdd);
+                    }
+
                     const contactUpdateData: any = {
                         name: chat.name || contact.name || contactPhone,
                         updatedAt: new Date(),

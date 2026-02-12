@@ -66,6 +66,9 @@ interface Branch {
     isActive: boolean
     createdAt: string
     updatedAt: string
+    _count?: {
+        whatsappAccounts: number
+    }
 }
 
 export default function BranchesPage() {
@@ -411,7 +414,15 @@ export default function BranchesPage() {
                                                         <Building2 className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <div className="font-semibold">{branch.name}</div>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="font-semibold">{branch.name}</div>
+                                                            {branch._count && branch._count.whatsappAccounts > 0 && (
+                                                                <Badge className="bg-green-500 hover:bg-green-600 text-white text-[10px] h-4 px-1 rounded flex items-center gap-1 border-none">
+                                                                    <div className="h-1.5 w-1.5 bg-white rounded-full animate-pulse" />
+                                                                    WhatsApp
+                                                                </Badge>
+                                                            )}
+                                                        </div>
                                                         <div className="text-xs text-muted-foreground">ID: {branch.id.slice(0, 8)}</div>
                                                     </div>
                                                 </div>
@@ -473,16 +484,16 @@ export default function BranchesPage() {
                                                             {t("edit")}
                                                         </DropdownMenuItem>
                                                         {canDeleteBranch && (
-                                                        <>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleDelete(branch.id)}
-                                                            className="text-destructive focus:text-destructive"
-                                                        >
-                                                            <Trash2 className="me-2 h-4 w-4" />
-                                                            {t("delete")}
-                                                        </DropdownMenuItem>
-                                                        </>
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem
+                                                                    onClick={() => handleDelete(branch.id)}
+                                                                    className="text-destructive focus:text-destructive"
+                                                                >
+                                                                    <Trash2 className="me-2 h-4 w-4" />
+                                                                    {t("delete")}
+                                                                </DropdownMenuItem>
+                                                            </>
                                                         )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -497,22 +508,22 @@ export default function BranchesPage() {
             </div>
 
             {canDeleteBranch && (
-            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {t("deleteBranchConfirmDesc")}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            {t("delete")}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {t("deleteBranchConfirmDesc")}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                {t("delete")}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             )}
         </AppLayout>
     )

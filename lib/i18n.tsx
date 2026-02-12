@@ -289,6 +289,7 @@ const translations: Translations = {
   allBranches: { en: "All Branches", ar: "جميع الفروع" },
   groups: { en: "Groups", ar: "المجموعات" },
   group: { en: "Group", ar: "مجموعة" },
+  "whatsapp-contact": { en: "WhatsApp Contact", ar: "عميل واتساب" },
   noGroupsFound: { en: "No groups found", ar: "لم يتم العثور على مجموعات" },
   groupParticipants: { en: "Group Members", ar: "أعضاء المجموعة" },
   groupAdmin: { en: "Group Admin", ar: "مسؤول المجموعة" },
@@ -326,7 +327,6 @@ const translations: Translations = {
   failedToSendFile: { en: "Failed to send file", ar: "فشل إرسال الملف" },
   typeYourMessage: { en: "Type your message...", ar: "اكتب رسالتك..." },
   sent: { en: "Sent", ar: "تم الإرسال" },
-  group: { en: "Group", ar: "مجموعة" },
   blockConfirm: { en: "Are you sure you want to block this contact? They will be marked as blocked and the conversation will be archived.", ar: "هل أنت متأكد من حظر جهة الاتصال؟ سيتم وضع علامة محظور عليها وأرشفة المحادثة." },
 
   // Contacts page

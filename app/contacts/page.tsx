@@ -1,4 +1,5 @@
 "use client"
+import { cn } from "@/lib/utils"
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -27,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
-import { Search, Plus, MoreVertical, Mail, Phone, Tag, Download, Upload, ShieldOff, Users, Trash2, Loader2 } from "lucide-react"
+import { Search, Plus, MoreVertical, Mail, Phone, Tag, Download, Upload, ShieldOff, Users, Trash2, Loader2, MessageSquare } from "lucide-react"
 import { authenticatedFetch, getUserRole } from "@/lib/auth"
 import { hasPermission } from "@/lib/permissions"
 import type { UserRole } from "@/lib/permissions"
@@ -232,18 +233,18 @@ export default function ContactsPage() {
     reader.readAsText(file)
   }
 
-  const handleSendMessage = async (contactId: string) => {
+  const handleSendMessage = async (contactId?: string, phone?: string) => {
     try {
       const response = await authenticatedFetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contactId })
+        body: JSON.stringify({ contactId, phone })
       })
 
       const data = await response.json()
 
       if (data.success) {
-        router.push(`/inbox?conversation=${data.data.id}`)
+        router.push(`/inbox?id=${data.data.id}`)
       } else {
         toast({
           title: t("error"),
@@ -790,6 +791,11 @@ export default function ContactsPage() {
                                 {t("group") || "Group"}
                               </Badge>
                             )}
+                            {contact.tags?.includes('whatsapp-contact') && (
+                              <Badge variant="secondary" className="text-[10px] h-5 bg-purple-100 text-purple-700 border-purple-200">
+                                {t("whatsapp-contact") || "whatsapp-contact"}
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground truncate">{contact.phone}</p>
                           {contact.email && (
@@ -934,8 +940,15 @@ export default function ContactsPage() {
                                     return (
                                       <>
                                         {tagsArray.slice(0, 2).map((tag: string, index: number) => (
-                                          <Badge key={index} variant={tag === 'blocked' ? 'destructive' : 'secondary'} className="rounded-full">
-                                            {tag.trim()}
+                                          <Badge
+                                            key={index}
+                                            variant={tag === 'blocked' ? 'destructive' : 'secondary'}
+                                            className={cn(
+                                              "rounded-full whitespace-nowrap",
+                                              tag === 'whatsapp-contact' && "bg-purple-100 text-purple-700 border-purple-200"
+                                            )}
+                                          >
+                                            {t(tag.trim())}
                                           </Badge>
                                         ))}
                                         {tagsArray.length > 2 && (
@@ -1076,8 +1089,15 @@ export default function ContactsPage() {
                     <div className="flex flex-wrap gap-2">
                       {selectedContact.tags ? (
                         (Array.isArray(selectedContact.tags) ? selectedContact.tags : String(selectedContact.tags).split(',')).map((tag: string) => (
-                          <Badge key={tag} variant="secondary" className="rounded-full">
-                            {tag.trim()}
+                          <Badge
+                            key={tag}
+                            variant="secondary"
+                            className={cn(
+                              "rounded-full",
+                              tag.trim() === 'whatsapp-contact' && "bg-purple-100 text-purple-700 border-purple-200"
+                            )}
+                          >
+                            {t(tag.trim())}
                           </Badge>
                         ))
                       ) : (
@@ -1131,6 +1151,15 @@ export default function ContactsPage() {
                                   )}
                                 </div>
                               </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
+                                onClick={() => handleSendMessage(undefined, p.phone)}
+                                title={t("sendMessageLabel")}
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                              </Button>
                             </div>
                           ))
                         ) : (

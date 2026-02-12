@@ -79,9 +79,32 @@ export async function POST(request: NextRequest) {
     const scope = await requireAuthWithScope(request)
     const body = await request.json()
 
-    if (!body.contactId) {
+    let contactId = body.contactId;
+
+    if (!contactId && body.phone) {
+      // Clean phone number
+      const phoneNumber = body.phone.replace(/[^0-9]/g, '');
+
+      // Find or create contact
+      let contact = await prisma.contact.findUnique({
+        where: { phone: phoneNumber }
+      });
+
+      if (!contact) {
+        contact = await prisma.contact.create({
+          data: {
+            name: body.phone,
+            phone: phoneNumber,
+            tags: ["whatsapp-contact"]
+          }
+        });
+      }
+      contactId = contact.id;
+    }
+
+    if (!contactId) {
       return NextResponse.json(
-        { success: false, error: "Contact ID is required" },
+        { success: false, error: "Contact ID or phone is required" },
         { status: 400 }
       )
     }
@@ -89,7 +112,7 @@ export async function POST(request: NextRequest) {
     // Non-admin users: verify contact belongs to their branch scope
     if (scope.role !== 'ADMIN') {
       const contact = await prisma.contact.findUnique({
-        where: { id: body.contactId },
+        where: { id: contactId },
         select: { branchId: true },
       })
       if (!contact) {
@@ -105,7 +128,7 @@ export async function POST(request: NextRequest) {
 
     const conversation = await prisma.conversation.create({
       data: {
-        contactId: body.contactId,
+        contactId: contactId,
         status: body.status || 'ACTIVE',
         assignedToId: scope.userId,
         lastMessageAt: new Date()

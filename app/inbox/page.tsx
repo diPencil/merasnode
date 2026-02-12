@@ -527,19 +527,29 @@ export default function InboxPage() {
     try {
       setIsSending(true)
 
-      // Get the first connected WhatsApp account
-      let whatsappAccountId = null
-      try {
-        const accountsRes = await authenticatedFetch('/api/whatsapp/accounts')
-        const accountsData = await accountsRes.json()
-        if (accountsData.success && accountsData.accounts && accountsData.accounts.length > 0) {
-          const connectedAccount = accountsData.accounts.find((acc: any) => acc.status === 'CONNECTED')
-          if (connectedAccount) {
-            whatsappAccountId = connectedAccount.id
+      // Determine which WhatsApp account to use
+      let whatsappAccountId = (selectedConversation as any).whatsappAccountId || null
+
+      // If not in conversation, try to find from messages
+      if (!whatsappAccountId && messages.length > 0) {
+        const messageWithAccount = [...messages].reverse().find(m => m.whatsappAccountId)
+        if (messageWithAccount) whatsappAccountId = messageWithAccount.whatsappAccountId
+      }
+
+      // Default to first connected account if still null
+      if (!whatsappAccountId) {
+        try {
+          const accountsRes = await authenticatedFetch('/api/whatsapp/accounts')
+          const accountsData = await accountsRes.json()
+          if (accountsData.success && accountsData.accounts && accountsData.accounts.length > 0) {
+            const connectedAccount = accountsData.accounts.find((acc: any) => acc.status === 'CONNECTED')
+            if (connectedAccount) {
+              whatsappAccountId = connectedAccount.id
+            }
           }
+        } catch (err) {
+          console.error('Error fetching WhatsApp accounts:', err)
         }
-      } catch (err) {
-        console.error('Error fetching WhatsApp accounts:', err)
       }
 
       const response = await authenticatedFetch('/api/messages', {
@@ -836,7 +846,7 @@ export default function InboxPage() {
     const matchesFilter =
       filterType === 'all' ? true :
         filterType === 'unread' ? !conv.isRead :
-          filterType === 'groups' ? (conv.contact.id.includes('@g.us') || (conv.contact as any).tags?.includes('whatsapp-group')) : true
+          filterType === 'groups' ? (conv.contact.phone.includes('@g.us') || (conv.contact as any).tags?.includes('group')) : true
 
     return matchesSearch && matchesBranch && matchesFilter
   })
@@ -867,7 +877,7 @@ export default function InboxPage() {
         body: JSON.stringify({
           contactId: selectedConversation.contactId,
           agentId,
-          branch: selectedConversation.branch || null,
+          branch: (selectedConversation.branch as any)?.name || null,
           date: bookingFormData.date,
           notes: bookingFormData.notes
         })
@@ -1075,7 +1085,7 @@ export default function InboxPage() {
                             {conversation.leadStatus === "New" ? t("leadStatusNew") : conversation.leadStatus === "Booked" ? t("leadStatusBooked") : t("leadStatusInProgress")}
                           </Badge>
                         )}
-                        {(conversation.contact.id.includes('@g.us') || (conversation.contact as any).tags?.includes('whatsapp-group')) && (
+                        {(conversation.contact.phone.includes('@g.us') || (conversation.contact as any).tags?.includes('group')) && (
                           <Badge variant="outline" className="h-5 px-1.5 text-[10px] uppercase tracking-wider rounded-md font-medium text-pink-600 border-pink-200 bg-pink-50 shrink-0">
                             {t("group")}
                           </Badge>

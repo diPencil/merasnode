@@ -53,6 +53,19 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // 1.1) Update Branch phone number if it's empty
+    const branch = await prisma.branch.findUnique({
+      where: { id: branchId },
+      select: { phone: true }
+    })
+
+    if (branch && (!branch.phone || branch.phone === "")) {
+      await prisma.branch.update({
+        where: { id: branchId },
+        data: { phone: account.phone }
+      })
+    }
+
     // 2) Propagate branch to contacts that came from this phone and have no branch yet
     // We rely on contact.phone matching the bare phone number used for the account
     const plainPhone = account.phone.replace(/[^0-9]/g, "")

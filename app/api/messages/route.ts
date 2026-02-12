@@ -151,11 +151,15 @@ export async function POST(request: NextRequest) {
             } else {
                 try {
                     // Extract clean phone for WA
-                    const waPhone = phoneNumber.replace(/[^0-9]/g, '');
+                    let waPhone = phoneNumber;
+                    const isGroup = phoneNumber.includes('@g.us');
 
-                    // Double check if it looks like a Facebook ID (very long string of digits)
-                    if (waPhone.length > 15) {
-                        throw new Error('This looks like a Facebook ID, not a WhatsApp phone number.');
+                    if (!isGroup) {
+                        waPhone = phoneNumber.replace(/[^0-9]/g, '');
+                        // Double check if it looks like a Facebook ID (very long string of digits)
+                        if (waPhone.length > 15) {
+                            throw new Error('This looks like a Facebook ID, not a WhatsApp phone number.');
+                        }
                     }
 
                     if (!accountId) {
@@ -189,7 +193,8 @@ export async function POST(request: NextRequest) {
                             accountId,
                             phoneNumber: waPhone,
                             message: content,
-                            mediaUrl
+                            mediaUrl,
+                            isGroup: isGroup
                         })
                     });
 
