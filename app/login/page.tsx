@@ -179,7 +179,7 @@ export default function LoginPage() {
                     </div>
 
                     <div className="mt-8 text-center">
-                        <p className="text-[10px] text-gray-400/80 font-medium tracking-wide">
+                        <p className="text-[10px] text-purple-950/40 font-bold tracking-wide">
                             {t("copyright").replace("{year}", String(new Date().getFullYear()))}
                         </p>
                     </div>
