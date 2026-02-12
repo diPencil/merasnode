@@ -506,7 +506,10 @@ export default function ContactsPage() {
     }
 
     if (viewMode === 'groups') {
-      return isGroupContact(contact.phone);
+      const hasGroupTag = contact.tags
+        ? (Array.isArray(contact.tags) ? contact.tags : String(contact.tags).split(',').map(t => t.trim())).includes('group')
+        : false
+      return hasGroupTag || isGroupContact(contact.phone);
     }
 
     return true

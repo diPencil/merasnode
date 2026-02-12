@@ -71,36 +71,45 @@ export async function POST(request: NextRequest) {
             try {
                 // Extract phone number or group ID
                 let contactPhone = ""
-                if (chat.id.includes('@g.us')) {
-                    contactPhone = chat.id // Use full JID for groups
+                let isGroup = chat.isGroup || chat.id.includes('@g.us');
+
+                if (isGroup) {
+                    contactPhone = chat.id; // Use full serialized JID for groups
                 } else {
-                    const phoneMatch = chat.id.match(/^(\d+)@/)
-                    contactPhone = phoneMatch ? phoneMatch[1] : ""
+                    const phoneMatch = chat.id.match(/^(\d+)@/);
+                    contactPhone = phoneMatch ? phoneMatch[1] : "";
                 }
 
                 if (!contactPhone) {
-                    console.log(`⏭️ Skipping invalid chat: ${chat.name || chat.id}`)
-                    continue
+                    console.log(`⏭️ Skipping invalid chat: ${chat.name || chat.id}`);
+                    continue;
                 }
 
-                // Create or update contact and attach to branch (if account has branch)
+                // Create or update contact and attach to branch
                 let contact = await prisma.contact.findUnique({
                     where: { phone: contactPhone }
-                })
+                });
+
+                const currentTags = contact?.tags ? (Array.isArray(contact.tags) ? contact.tags : []) : [];
+                if (isGroup && !currentTags.includes('group')) {
+                    currentTags.push('group');
+                }
 
                 if (!contact) {
                     contact = await prisma.contact.create({
                         data: {
                             phone: contactPhone,
                             name: chat.name || contactPhone,
+                            tags: isGroup ? ['group'] : [],
                             ...(branchId && { branchId }),
                         }
-                    })
+                    });
                 } else {
                     const contactUpdateData: any = {
                         name: chat.name || contact.name || contactPhone,
-                        updatedAt: new Date()
-                    }
+                        updatedAt: new Date(),
+                        tags: currentTags
+                    };
 
                     // If contact has no branch yet, inherit from WhatsApp account
                     if (!contact.branchId && branchId) {
