@@ -889,7 +889,7 @@ export default function InboxPage() {
       console.error('Error creating booking:', error)
       toast({
         title: t("error"),
-        description: t("failedToCreateBooking"),
+        description: error instanceof Error ? error.message : t("failedToCreateBooking"),
         variant: "destructive"
       })
     }
@@ -946,208 +946,208 @@ export default function InboxPage() {
       </AlertDialog>
       <div className="inbox-root bg-background md:border md:rounded-xl md:shadow-sm relative md:m-2">
         <div className="inbox-three-col flex-col md:flex-row">
-        {/* LEFT COLUMN: Conversations List — fixed width, own scroll */}
-        <div className={cn(
-          "inbox-col-left bg-muted/10",
-          "absolute md:relative z-0 w-full md:w-auto",
-          dir === "rtl" ? "border-s border-border/50" : "border-e border-border/50",
-          selectedConversation ? "hidden md:flex" : "flex"
-        )}>
-          {/* List Header */}
-          <div className="p-4 space-y-3 border-b bg-card sticky top-0 z-10">
-            {/* Branch Selector */}
-            <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-              <SelectTrigger className="w-full bg-muted/50 border-none shadow-none h-9 text-xs font-medium">
-                <SelectValue placeholder={t("selectBranch")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{getUserRole() === "ADMIN" ? t("allBranches") : t("myConversations")}</SelectItem>
-                {branches.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* LEFT COLUMN: Conversations List — fixed width, own scroll */}
+          <div className={cn(
+            "inbox-col-left bg-muted/10",
+            "absolute md:relative z-0 w-full md:w-auto",
+            dir === "rtl" ? "border-s border-border/50" : "border-e border-border/50",
+            selectedConversation ? "hidden md:flex" : "flex"
+          )}>
+            {/* List Header */}
+            <div className="p-4 space-y-3 border-b bg-card sticky top-0 z-10">
+              {/* Branch Selector */}
+              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                <SelectTrigger className="w-full bg-muted/50 border-none shadow-none h-9 text-xs font-medium">
+                  <SelectValue placeholder={t("selectBranch")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{getUserRole() === "ADMIN" ? t("allBranches") : t("myConversations")}</SelectItem>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder={t("searchNameOrPhone")}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="ps-9 bg-muted/50 border-none shadow-none"
-              />
-            </div>
-            <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant={filterType === 'all' ? "outline" : "default"} size="sm" className="gap-2 text-xs rounded-full h-8 shrink-0">
-                    <Filter className="h-3 w-3" />
-                    {filterType === 'all' ? t("filters") : filterType === 'unread' ? t("unread") : t("groupsOnly")}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuLabel>{t("filterConversations")}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setFilterType('all')}>
-                    {t("allChats")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterType('unread')}>
-                    {t("unreadOnly")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterType('groups')}>
-                    {t("groupsOnly")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <div className="flex gap-1 shrink-0">
-                <Button
-                  variant="ghost" size="icon"
-                  onClick={() => showComingSoon('Facebook')}
-                  className="h-8 w-8 rounded-full text-blue-600 bg-blue-50 hover:bg-blue-100"
-                >
-                  <Facebook className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost" size="icon"
-                  onClick={() => showComingSoon('Instagram')}
-                  className="h-8 w-8 rounded-full text-pink-600 bg-pink-50 hover:bg-pink-100"
-                >
-                  <Instagram className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost" size="icon"
-                  className="h-8 w-8 rounded-full text-green-600 bg-green-50 hover:bg-green-100 ring-2 ring-green-100"
-                >
-                  <WhatsAppIcon className="h-4 w-4" />
-                </Button>
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder={t("searchNameOrPhone")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="ps-9 bg-muted/50 border-none shadow-none"
+                />
               </div>
-            </div>
-          </div>
-
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
-              {isLoading ? (
-              <div className="flex items-center justify-center h-32 text-muted-foreground">{t("loading")}</div>
-            ) : filteredConversations.length === 0 ? (
-              <div className="flex items-center justify-center h-32 text-muted-foreground">{t("noConversations")}</div>
-            ) : (
-              filteredConversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  onClick={() => {
-                    // Drive selection via URL so bottom nav and back behave predictably.
-                    setSelectedConversation(conversation)
-                    router.push(`/inbox?id=${conversation.id}`)
-                  }}
-                  className={cn(
-                    "flex gap-3 p-4 border-b cursor-pointer hover:bg-muted/50 transition-all",
-                    selectedConversation?.id === conversation.id
-                      ? "bg-blue-50/50 border-s-4 border-s-primary"
-                      : "border-s-4 border-s-transparent",
-                  )}
-                >
-                  <div className="relative shrink-0">
-                    <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
-                      <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                        {getInitials(conversation.contact.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -bottom-1 -end-1 bg-white p-0.5 rounded-full shadow-sm">
-                      {getPlatformIcon(conversation.platform)}
-                    </div>
-                  </div>
-
-                  <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                    <div className="flex justify-between items-start">
-                      <span className="font-semibold text-sm truncate max-w-[70%]">{conversation.contact.name}</span>
-                      <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
-                        {format(new Date(conversation.lastMessageAt), "h:mm a", { locale: dateLocale })}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate line-clamp-1 opacity-80 pe-2">
-                      {conversation.messages?.[0]?.content || t("noMessagesYet")}
-                    </p>
-                    <div className="mt-2 flex gap-2 flex-wrap">
-                      {conversation.leadStatus && (
-                        <Badge variant={conversation.leadStatus === "New" ? "default" : "secondary"} className="h-5 px-1.5 text-[10px] uppercase tracking-wider rounded-md font-medium shrink-0">
-                          {conversation.leadStatus === "New" ? t("leadStatusNew") : conversation.leadStatus === "Booked" ? t("leadStatusBooked") : t("leadStatusInProgress")}
-                        </Badge>
-                      )}
-                      {(conversation.contact.id.includes('@g.us') || (conversation.contact as any).tags?.includes('whatsapp-group')) && (
-                        <Badge variant="outline" className="h-5 px-1.5 text-[10px] uppercase tracking-wider rounded-md font-medium text-pink-600 border-pink-200 bg-pink-50 shrink-0">
-                          {t("group")}
-                        </Badge>
-                      )}
-                      {!conversation.isRead && <div className="h-2 w-2 bg-red-500 rounded-full mt-1.5 shrink-0" />}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* MIDDLE COLUMN: Chat Area — flex-1, scrolls internally */}
-        {/* On Mobile: Show this ONLY if conversation IS selected (covers list) */}
-        {selectedConversation ? (
-          <div
-            className={cn(
-              "inbox-col-middle chat-column bg-slate-50 dark:bg-background z-40",
-              "fixed inset-x-0 top-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] bg-background md:inset-auto",
-              "md:relative md:bottom-auto md:z-0",
-            )}
-            dir={dir}
-          >
-            {/* Chat header — fixed */}
-            <div className="inbox-chat-header h-14 md:h-16 border-b bg-card px-4 flex items-center justify-between shadow-sm z-30">
-              <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
-                {/* Mobile Back Button */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="md:hidden -ms-2 me-1 h-10 w-10 min-w-10 rounded-full"
-                  onClick={() => {
-                    setSelectedConversation(null)
-                    router.push("/inbox")
-                  }}
-                >
-                  <ArrowLeft className="h-6 w-6" />
-                </Button>
-
-                <Avatar className="h-9 w-9 shrink-0">
-                  <AvatarFallback>{getInitials(selectedConversation.contact.name)}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-sm flex items-center gap-1 truncate">
-                    <span className="truncate">{selectedConversation.contact.name}</span>
-                    <span className="shrink-0">{getPlatformIcon(selectedConversation.platform)}</span>
-                  </h3>
-                  <p className="text-xs text-green-600 flex items-center gap-1 truncate">
-                    <span className="relative flex h-2 w-2 shrink-0">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </span>
-                    <span className="truncate">{lastActiveLabel}</span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1 shrink-0">
-                {/* Mobile Info Button (Sheet Trigger) */}
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="xl:hidden h-9 w-9">
-                      <Info className="h-5 w-5 text-muted-foreground" />
+              <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant={filterType === 'all' ? "outline" : "default"} size="sm" className="gap-2 text-xs rounded-full h-8 shrink-0">
+                      <Filter className="h-3 w-3" />
+                      {filterType === 'all' ? t("filters") : filterType === 'unread' ? t("unread") : t("groupsOnly")}
                     </Button>
-                  </SheetTrigger>
-                  <SheetContent side={dir === "rtl" ? "left" : "right"} className="p-0 w-full sm:w-[400px]">
-                    <SidebarContent conversation={selectedConversation} onUpdate={() => fetchConversations()} />
-                  </SheetContent>
-                </Sheet>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuLabel>{t("filterConversations")}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setFilterType('all')}>
+                      {t("allChats")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFilterType('unread')}>
+                      {t("unreadOnly")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFilterType('groups')}>
+                      {t("groupsOnly")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <div className="flex gap-1 shrink-0">
+                  <Button
+                    variant="ghost" size="icon"
+                    onClick={() => showComingSoon('Facebook')}
+                    className="h-8 w-8 rounded-full text-blue-600 bg-blue-50 hover:bg-blue-100"
+                  >
+                    <Facebook className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost" size="icon"
+                    onClick={() => showComingSoon('Instagram')}
+                    className="h-8 w-8 rounded-full text-pink-600 bg-pink-50 hover:bg-pink-100"
+                  >
+                    <Instagram className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost" size="icon"
+                    className="h-8 w-8 rounded-full text-green-600 bg-green-50 hover:bg-green-100 ring-2 ring-green-100"
+                  >
+                    <WhatsAppIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
 
-                <Dialog open={isBookingOpen} onOpenChange={(open) => {
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-32 text-muted-foreground">{t("loading")}</div>
+              ) : filteredConversations.length === 0 ? (
+                <div className="flex items-center justify-center h-32 text-muted-foreground">{t("noConversations")}</div>
+              ) : (
+                filteredConversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    onClick={() => {
+                      // Drive selection via URL so bottom nav and back behave predictably.
+                      setSelectedConversation(conversation)
+                      router.push(`/inbox?id=${conversation.id}`)
+                    }}
+                    className={cn(
+                      "flex gap-3 p-4 border-b cursor-pointer hover:bg-muted/50 transition-all",
+                      selectedConversation?.id === conversation.id
+                        ? "bg-blue-50/50 border-s-4 border-s-primary"
+                        : "border-s-4 border-s-transparent",
+                    )}
+                  >
+                    <div className="relative shrink-0">
+                      <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                        <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                          {getInitials(conversation.contact.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-1 -end-1 bg-white p-0.5 rounded-full shadow-sm">
+                        {getPlatformIcon(conversation.platform)}
+                      </div>
+                    </div>
+
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <div className="flex justify-between items-start">
+                        <span className="font-semibold text-sm truncate max-w-[70%]">{conversation.contact.name}</span>
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
+                          {format(new Date(conversation.lastMessageAt), "h:mm a", { locale: dateLocale })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate line-clamp-1 opacity-80 pe-2">
+                        {conversation.messages?.[0]?.content || t("noMessagesYet")}
+                      </p>
+                      <div className="mt-2 flex gap-2 flex-wrap">
+                        {conversation.leadStatus && (
+                          <Badge variant={conversation.leadStatus === "New" ? "default" : "secondary"} className="h-5 px-1.5 text-[10px] uppercase tracking-wider rounded-md font-medium shrink-0">
+                            {conversation.leadStatus === "New" ? t("leadStatusNew") : conversation.leadStatus === "Booked" ? t("leadStatusBooked") : t("leadStatusInProgress")}
+                          </Badge>
+                        )}
+                        {(conversation.contact.id.includes('@g.us') || (conversation.contact as any).tags?.includes('whatsapp-group')) && (
+                          <Badge variant="outline" className="h-5 px-1.5 text-[10px] uppercase tracking-wider rounded-md font-medium text-pink-600 border-pink-200 bg-pink-50 shrink-0">
+                            {t("group")}
+                          </Badge>
+                        )}
+                        {!conversation.isRead && <div className="h-2 w-2 bg-red-500 rounded-full mt-1.5 shrink-0" />}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* MIDDLE COLUMN: Chat Area — flex-1, scrolls internally */}
+          {/* On Mobile: Show this ONLY if conversation IS selected (covers list) */}
+          {selectedConversation ? (
+            <div
+              className={cn(
+                "inbox-col-middle chat-column bg-slate-50 dark:bg-background z-40",
+                "fixed inset-x-0 top-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] bg-background md:inset-auto",
+                "md:relative md:bottom-auto md:z-0",
+              )}
+              dir={dir}
+            >
+              {/* Chat header — fixed */}
+              <div className="inbox-chat-header h-14 md:h-16 border-b bg-card px-4 flex items-center justify-between shadow-sm z-30">
+                <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
+                  {/* Mobile Back Button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="md:hidden -ms-2 me-1 h-10 w-10 min-w-10 rounded-full"
+                    onClick={() => {
+                      setSelectedConversation(null)
+                      router.push("/inbox")
+                    }}
+                  >
+                    <ArrowLeft className="h-6 w-6" />
+                  </Button>
+
+                  <Avatar className="h-9 w-9 shrink-0">
+                    <AvatarFallback>{getInitials(selectedConversation.contact.name)}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-sm flex items-center gap-1 truncate">
+                      <span className="truncate">{selectedConversation.contact.name}</span>
+                      <span className="shrink-0">{getPlatformIcon(selectedConversation.platform)}</span>
+                    </h3>
+                    <p className="text-xs text-green-600 flex items-center gap-1 truncate">
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                      </span>
+                      <span className="truncate">{lastActiveLabel}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {/* Mobile Info Button (Sheet Trigger) */}
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="ghost" size="icon" className="xl:hidden h-9 w-9">
+                        <Info className="h-5 w-5 text-muted-foreground" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side={dir === "rtl" ? "left" : "right"} className="p-0 w-full sm:w-[400px]">
+                      <SidebarContent conversation={selectedConversation} onUpdate={() => fetchConversations()} />
+                    </SheetContent>
+                  </Sheet>
+
+                  <Dialog open={isBookingOpen} onOpenChange={(open) => {
                     if (open) {
                       const role = getUserRole()
                       const currentUser = getUser()
@@ -1157,489 +1157,489 @@ export default function InboxPage() {
                     }
                     setIsBookingOpen(open)
                   }}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2 h-8 hidden sm:flex">
-                      <Calendar className="h-4 w-4" /> {t("book")}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>{t("bookAppointment")}</DialogTitle>
-                      <DialogDescription>
-                        {t("createBookingFor")} {selectedConversation.contact.name}.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="agent" className="text-end">{t("agent")}</Label>
-                        {getUserRole() === "AGENT" ? (
-                          <div className="col-span-3 text-sm text-muted-foreground py-2">
-                            {getUser()?.name ?? t("selectAgent")}
-                          </div>
-                        ) : (
-                          <Select
-                            value={bookingFormData.agentId}
-                            onValueChange={(value) => setBookingFormData(prev => ({ ...prev, agentId: value }))}
-                          >
-                            <SelectTrigger className="col-span-3">
-                              <SelectValue placeholder={t("selectAgent")} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {bookingAgents.map((agent) => (
-                                <SelectItem key={agent.id} value={agent.id}>
-                                  {agent.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="date" className="text-end">{t("dateLabel")}</Label>
-                        <Input
-                          id="date"
-                          type="date"
-                          className="col-span-3"
-                          value={bookingFormData.date}
-                          onChange={(e) => setBookingFormData(prev => ({ ...prev, date: e.target.value }))}
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="notes" className="text-end">{t("notes")}</Label>
-                        <Textarea
-                          id="notes"
-                          placeholder={t("addNotesPlaceholder")}
-                          className="col-span-3"
-                          value={bookingFormData.notes}
-                          onChange={(e) => setBookingFormData(prev => ({ ...prev, notes: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button onClick={handleBooking}>{t("confirmBooking")}</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
-                {/* Resolve Button - hidden on small mobile */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="hidden sm:flex gap-2 h-8 text-green-600 border-green-200 hover:bg-green-50"
-                  onClick={handleResolve}
-                  disabled={isLoading}
-                >
-                  <Check className="h-4 w-4" /> {isLoading ? t("saving") : t("resolve")}
-                </Button>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>{t("chatOptions")}</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setIsTemplatesOpen(true)}>
-                      <Sparkles className="me-2 h-4 w-4" /> {t("messageTemplates")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsBotFlowsDialogOpen(true)}>
-                      <Play className="me-2 h-4 w-4" /> {t("botFlows")}
-                    </DropdownMenuItem>
-                    {getUserRole() === "ADMIN" && (
-                      <>
-                        <DropdownMenuItem onClick={handleExportChat}>
-                          <p className="flex items-center"><span className="me-2">📤</span> {t("exportChat")}</p>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600" onClick={handleBlockContact}>
-                          {t("blockContact")}
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                {/* Templates & Bots Dialogs */}
-                <Dialog open={isTemplatesOpen} onOpenChange={setIsTemplatesOpen}>
-                  <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>{t("selectMessageTemplate")}</DialogTitle>
-                      <DialogDescription>
-                        {t("chooseTemplateToInsert")}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      {templates.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-3">
-                          {templates.map((template) => (
-                            <div
-                              key={template.id}
-                              className="flex flex-col gap-2 p-4 border rounded-xl hover:bg-muted/50 cursor-pointer transition-colors group"
-                              onClick={() => handleUseTemplate(template.content)}
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2 h-8 hidden sm:flex">
+                        <Calendar className="h-4 w-4" /> {t("book")}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>{t("bookAppointment")}</DialogTitle>
+                        <DialogDescription>
+                          {t("createBookingFor")} {selectedConversation.contact.name}.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="agent" className="text-end">{t("agent")}</Label>
+                          {getUserRole() === "AGENT" ? (
+                            <div className="col-span-3 text-sm text-muted-foreground py-2">
+                              {getUser()?.name ?? t("selectAgent")}
+                            </div>
+                          ) : (
+                            <Select
+                              value={bookingFormData.agentId}
+                              onValueChange={(value) => setBookingFormData(prev => ({ ...prev, agentId: value }))}
                             >
-                              <div className="flex justify-between items-center">
-                                <h4 className="font-semibold text-sm">{template.name}</h4>
-                                <Badge variant="secondary" className="text-[10px]">{template.category || t("general")}</Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground line-clamp-2 bg-muted p-2 rounded-lg group-hover:bg-white transition-colors">
-                                {template.content}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          {t("noTemplatesFound")}
-                        </div>
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
-
-                <Dialog open={isBotFlowsDialogOpen} onOpenChange={setIsBotFlowsDialogOpen}>
-                  <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>{t("selectBotFlow")}</DialogTitle>
-                      <DialogDescription>
-                        {t("manuallyTriggerFlow")}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      {botFlows.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-3">
-                          {botFlows.filter(f => f.isActive).map((flow) => (
-                            <div
-                              key={flow.id}
-                              className="flex flex-col gap-2 p-4 border rounded-xl hover:bg-muted/50 cursor-pointer transition-colors group"
-                              onClick={() => {
-                                handleAcceptSuggestion(flow)
-                                setIsBotFlowsDialogOpen(false)
-                              }}
-                            >
-                              <div className="flex justify-between items-center">
-                                <h4 className="font-semibold text-sm">{flow.name}</h4>
-                                <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-700 border-purple-200">
-                                  {t("trigger")}: {flow.trigger}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {t("clickToStartFlow")}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          {t("noActiveBotFlows")}
-                        </div>
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
-
-            {/* Messages — only this area scrolls */}
-            <div className="chat-messages inbox-chat-messages p-4 md:p-6 pb-4">
-              {messages.map((message) => {
-                const isOutgoing = message.direction === "OUTGOING"
-                return (
-                  <div
-                    key={message.id}
-                    className={`chat-message-row ${isOutgoing ? "outgoing" : "incoming"}`}
-                  >
-                    <div className={`chat-bubble-wrap flex flex-col ${isOutgoing ? "outgoing items-end" : "incoming items-start"}`}>
-                      <div
-                        className={cn(
-                          "chat-bubble px-4 py-2 rounded-2xl shadow-sm text-sm",
-                          isOutgoing
-                            ? cn(
-                              "bg-[#dcf8c6] dark:bg-[#005c4b] text-slate-800 dark:text-slate-100",
-                              dir === 'rtl' ? "rounded-tl-none" : "rounded-tr-none"
-                            )
-                            : cn(
-                              "bg-white dark:bg-[#202c33] text-gray-800 dark:text-slate-100 border dark:border-none",
-                              dir === 'rtl' ? "rounded-tr-none" : "rounded-tl-none"
-                            )
-                        )}
-                      >
-                        {message.type === 'IMAGE' && message.mediaUrl ? (
-                          <div className="rounded-lg overflow-hidden max-w-sm">
-                            <img src={message.mediaUrl} alt={t("sentImageAlt")} className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setPreviewImage(message.mediaUrl || null)} />
-                            {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
-                          </div>
-                        ) : message.type === 'AUDIO' && message.mediaUrl ? (
-                          <div className="flex items-center gap-2 min-w-[200px] md:min-w-[250px] p-1">
-                            <audio controls className="w-full h-10 accent-primary" src={message.mediaUrl} />
-                          </div>
-                        ) : message.type === 'VIDEO' && message.mediaUrl ? (
-                          <div className="rounded-lg overflow-hidden max-w-sm">
-                            <video controls className="w-full h-auto max-h-[300px]" src={message.mediaUrl} />
-                            {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
-                          </div>
-                        ) : message.type === 'LOCATION' ? (
-                          <div className="rounded-xl overflow-hidden max-w-[280px] border shadow-sm bg-white group/map">
-                            <div className="p-3 bg-slate-50 border-b flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4 text-red-500 fill-red-500/20" />
-                                <span className="text-xs font-bold text-slate-700">{t("locationLabel")}</span>
-                              </div>
-                              <ExternalLink className="h-3 w-3 text-muted-foreground group-hover/map:text-primary transition-colors" />
-                            </div>
-                            <div
-                              className="h-[140px] w-full bg-slate-100 flex items-center justify-center cursor-pointer relative overflow-hidden"
-                              onClick={() => window.open(message.content, '_blank')}
-                            >
-                              <img
-                                src={`https://maps.googleapis.com/maps/api/staticmap?center=${message.content.split('q=')[1]}&zoom=15&size=300x150&sensor=false&key=`}
-                                alt="Map Preview"
-                                className="w-full h-full object-cover opacity-80"
-                                onError={(e) => {
-                                  (e.target as any).style.display = 'none';
-                                  (e.target as any).nextSibling.style.display = 'flex';
-                                }}
-                              />
-                              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50" style={{ display: "none" }}>
-                                <MapPin className="h-8 w-8 text-red-500 mb-2 animate-bounce" />
-                                <span className="text-[10px] font-medium text-slate-500 px-4 text-center">{t("clickToViewInMaps")}</span>
-                              </div>
-                            </div>
-                            <a href={message.content} target="_blank" rel="noopener noreferrer" className="block p-3 text-xs text-primary font-medium hover:bg-slate-50 transition-colors text-center border-t">
-                              {t("openInMaps")}
-                            </a>
-                          </div>
-                        ) : message.type === 'DOCUMENT' && message.mediaUrl ? (
-                          <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors text-slate-800 border">
-                            <div className="bg-white p-2 rounded shadow-sm">
-                              <Paperclip className="h-5 w-5 text-slate-500" />
-                            </div>
-                            <div className="flex flex-col overflow-hidden">
-                              <span className="text-sm font-medium truncate max-w-[150px]">{message.content || t("documentLabel")}</span>
-                              <span className="text-[10px] text-muted-foreground uppercase">{t("downloadLabel")}</span>
-                            </div>
-                          </a>
-                        ) : (
-                          <span className="block text-start whitespace-pre-wrap leading-relaxed" dir="auto">{message.content}</span>
-                        )}
-                      </div>
-                      <div className="chat-bubble-meta mt-1 ms-1 text-[10px] text-gray-500 flex items-center gap-1">
-                        <span>{format(new Date(message.createdAt), "h:mm a", { locale: dateLocale })}</span>
-                        {isOutgoing && (
-                          <span className={cn("text-[10px]", message.status === "READ" ? "text-blue-500" : "text-gray-400")} aria-hidden>
-                            {message.status === "READ" ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />}
-                          </span>
-                        )}
-                      </div>
-                      {isOutgoing && (
-                        <div
-                          className={cn(
-                            "mt-0.5 text-[10px] text-muted-foreground",
-                            dir === "rtl" ? "text-start" : "text-end"
+                              <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder={t("selectAgent")} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {bookingAgents.map((agent) => (
+                                  <SelectItem key={agent.id} value={agent.id}>
+                                    {agent.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           )}
-                          aria-label={t("sentBy")}
-                        >
-                          — {t("sentBy")}: {message.sender?.name?.trim() || message.sender?.username || t("systemLabel")}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="date" className="text-end">{t("dateLabel")}</Label>
+                          <Input
+                            id="date"
+                            type="date"
+                            className="col-span-3"
+                            value={bookingFormData.date}
+                            onChange={(e) => setBookingFormData(prev => ({ ...prev, date: e.target.value }))}
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="notes" className="text-end">{t("notes")}</Label>
+                          <Textarea
+                            id="notes"
+                            placeholder={t("addNotesPlaceholder")}
+                            className="col-span-3"
+                            value={bookingFormData.notes}
+                            onChange={(e) => setBookingFormData(prev => ({ ...prev, notes: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleBooking}>{t("confirmBooking")}</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
 
-              <div ref={chatMessagesEndRef} aria-hidden className="min-h-2" />
-            </div>
-
-            {/* Quick-reply template buttons (WhatsApp/Messenger style) — show when last customer message matches trigger */}
-            {quickReplyTemplates.length > 0 && (
-              <div className="border-t bg-muted/30 px-2 md:px-3 py-2 flex flex-wrap gap-2">
-                {quickReplyTemplates.map((tpl) => (
+                  {/* Resolve Button - hidden on small mobile */}
                   <Button
-                    key={tpl.id}
-                    type="button"
                     variant="outline"
                     size="sm"
-                    className="rounded-full text-sm font-medium shrink-0"
-                    onClick={() => {
-                      handleSendMessage(tpl.content)
-                      setQuickReplyTemplates([])
-                    }}
+                    className="hidden sm:flex gap-2 h-8 text-green-600 border-green-200 hover:bg-green-50"
+                    onClick={handleResolve}
+                    disabled={isLoading}
                   >
-                    {tpl.name}
+                    <Check className="h-4 w-4" /> {isLoading ? t("saving") : t("resolve")}
                   </Button>
-                ))}
-              </div>
-            )}
 
-            {/* Input bar — fixed at bottom */}
-            <div className="inbox-chat-input bg-card chat-input-bar border-t p-2 md:p-3 flex items-end gap-2">
-              <div className="flex items-center gap-1 md:gap-2 bg-muted/30 p-1 md:p-1.5 rounded-[24px] flex-1 min-w-0 border focus-within:ring-2 ring-primary/20 transition-all min-h-[44px]">
-                {/* Emoji Button */}
-                <Popover>
-                  <PopoverTrigger asChild>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>{t("chatOptions")}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setIsTemplatesOpen(true)}>
+                        <Sparkles className="me-2 h-4 w-4" /> {t("messageTemplates")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setIsBotFlowsDialogOpen(true)}>
+                        <Play className="me-2 h-4 w-4" /> {t("botFlows")}
+                      </DropdownMenuItem>
+                      {getUserRole() === "ADMIN" && (
+                        <>
+                          <DropdownMenuItem onClick={handleExportChat}>
+                            <p className="flex items-center"><span className="me-2">📤</span> {t("exportChat")}</p>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-red-600" onClick={handleBlockContact}>
+                            {t("blockContact")}
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Templates & Bots Dialogs */}
+                  <Dialog open={isTemplatesOpen} onOpenChange={setIsTemplatesOpen}>
+                    <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>{t("selectMessageTemplate")}</DialogTitle>
+                        <DialogDescription>
+                          {t("chooseTemplateToInsert")}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        {templates.length > 0 ? (
+                          <div className="grid grid-cols-1 gap-3">
+                            {templates.map((template) => (
+                              <div
+                                key={template.id}
+                                className="flex flex-col gap-2 p-4 border rounded-xl hover:bg-muted/50 cursor-pointer transition-colors group"
+                                onClick={() => handleUseTemplate(template.content)}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <h4 className="font-semibold text-sm">{template.name}</h4>
+                                  <Badge variant="secondary" className="text-[10px]">{template.category || t("general")}</Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground line-clamp-2 bg-muted p-2 rounded-lg group-hover:bg-white transition-colors">
+                                  {template.content}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-muted-foreground">
+                            {t("noTemplatesFound")}
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog open={isBotFlowsDialogOpen} onOpenChange={setIsBotFlowsDialogOpen}>
+                    <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>{t("selectBotFlow")}</DialogTitle>
+                        <DialogDescription>
+                          {t("manuallyTriggerFlow")}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        {botFlows.length > 0 ? (
+                          <div className="grid grid-cols-1 gap-3">
+                            {botFlows.filter(f => f.isActive).map((flow) => (
+                              <div
+                                key={flow.id}
+                                className="flex flex-col gap-2 p-4 border rounded-xl hover:bg-muted/50 cursor-pointer transition-colors group"
+                                onClick={() => {
+                                  handleAcceptSuggestion(flow)
+                                  setIsBotFlowsDialogOpen(false)
+                                }}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <h4 className="font-semibold text-sm">{flow.name}</h4>
+                                  <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-700 border-purple-200">
+                                    {t("trigger")}: {flow.trigger}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {t("clickToStartFlow")}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-muted-foreground">
+                            {t("noActiveBotFlows")}
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
+
+              {/* Messages — only this area scrolls */}
+              <div className="chat-messages inbox-chat-messages p-4 md:p-6 pb-4">
+                {messages.map((message) => {
+                  const isOutgoing = message.direction === "OUTGOING"
+                  return (
+                    <div
+                      key={message.id}
+                      className={`chat-message-row ${isOutgoing ? "outgoing" : "incoming"}`}
+                    >
+                      <div className={`chat-bubble-wrap flex flex-col ${isOutgoing ? "outgoing items-end" : "incoming items-start"}`}>
+                        <div
+                          className={cn(
+                            "chat-bubble px-4 py-2 rounded-2xl shadow-sm text-sm",
+                            isOutgoing
+                              ? cn(
+                                "bg-[#dcf8c6] dark:bg-[#005c4b] text-slate-800 dark:text-slate-100",
+                                dir === 'rtl' ? "rounded-tl-none" : "rounded-tr-none"
+                              )
+                              : cn(
+                                "bg-white dark:bg-[#202c33] text-gray-800 dark:text-slate-100 border dark:border-none",
+                                dir === 'rtl' ? "rounded-tr-none" : "rounded-tl-none"
+                              )
+                          )}
+                        >
+                          {message.type === 'IMAGE' && message.mediaUrl ? (
+                            <div className="rounded-lg overflow-hidden max-w-sm">
+                              <img src={message.mediaUrl} alt={t("sentImageAlt")} className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setPreviewImage(message.mediaUrl || null)} />
+                              {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
+                            </div>
+                          ) : message.type === 'AUDIO' && message.mediaUrl ? (
+                            <div className="flex items-center gap-2 min-w-[200px] md:min-w-[250px] p-1">
+                              <audio controls className="w-full h-10 accent-primary" src={message.mediaUrl} />
+                            </div>
+                          ) : message.type === 'VIDEO' && message.mediaUrl ? (
+                            <div className="rounded-lg overflow-hidden max-w-sm">
+                              <video controls className="w-full h-auto max-h-[300px]" src={message.mediaUrl} />
+                              {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
+                            </div>
+                          ) : message.type === 'LOCATION' ? (
+                            <div className="rounded-xl overflow-hidden max-w-[280px] border shadow-sm bg-white group/map">
+                              <div className="p-3 bg-slate-50 border-b flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4 text-red-500 fill-red-500/20" />
+                                  <span className="text-xs font-bold text-slate-700">{t("locationLabel")}</span>
+                                </div>
+                                <ExternalLink className="h-3 w-3 text-muted-foreground group-hover/map:text-primary transition-colors" />
+                              </div>
+                              <div
+                                className="h-[140px] w-full bg-slate-100 flex items-center justify-center cursor-pointer relative overflow-hidden"
+                                onClick={() => window.open(message.content, '_blank')}
+                              >
+                                <img
+                                  src={`https://maps.googleapis.com/maps/api/staticmap?center=${message.content.split('q=')[1]}&zoom=15&size=300x150&sensor=false&key=`}
+                                  alt="Map Preview"
+                                  className="w-full h-full object-cover opacity-80"
+                                  onError={(e) => {
+                                    (e.target as any).style.display = 'none';
+                                    (e.target as any).nextSibling.style.display = 'flex';
+                                  }}
+                                />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50" style={{ display: "none" }}>
+                                  <MapPin className="h-8 w-8 text-red-500 mb-2 animate-bounce" />
+                                  <span className="text-[10px] font-medium text-slate-500 px-4 text-center">{t("clickToViewInMaps")}</span>
+                                </div>
+                              </div>
+                              <a href={message.content} target="_blank" rel="noopener noreferrer" className="block p-3 text-xs text-primary font-medium hover:bg-slate-50 transition-colors text-center border-t">
+                                {t("openInMaps")}
+                              </a>
+                            </div>
+                          ) : message.type === 'DOCUMENT' && message.mediaUrl ? (
+                            <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors text-slate-800 border">
+                              <div className="bg-white p-2 rounded shadow-sm">
+                                <Paperclip className="h-5 w-5 text-slate-500" />
+                              </div>
+                              <div className="flex flex-col overflow-hidden">
+                                <span className="text-sm font-medium truncate max-w-[150px]">{message.content || t("documentLabel")}</span>
+                                <span className="text-[10px] text-muted-foreground uppercase">{t("downloadLabel")}</span>
+                              </div>
+                            </a>
+                          ) : (
+                            <span className="block text-start whitespace-pre-wrap leading-relaxed" dir="auto">{message.content}</span>
+                          )}
+                        </div>
+                        <div className="chat-bubble-meta mt-1 ms-1 text-[10px] text-gray-500 flex items-center gap-1">
+                          <span>{format(new Date(message.createdAt), "h:mm a", { locale: dateLocale })}</span>
+                          {isOutgoing && (
+                            <span className={cn("text-[10px]", message.status === "READ" ? "text-blue-500" : "text-gray-400")} aria-hidden>
+                              {message.status === "READ" ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />}
+                            </span>
+                          )}
+                        </div>
+                        {isOutgoing && (
+                          <div
+                            className={cn(
+                              "mt-0.5 text-[10px] text-muted-foreground",
+                              dir === "rtl" ? "text-start" : "text-end"
+                            )}
+                            aria-label={t("sentBy")}
+                          >
+                            — {t("sentBy")}: {message.sender?.name?.trim() || message.sender?.username || t("systemLabel")}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+
+                <div ref={chatMessagesEndRef} aria-hidden className="min-h-2" />
+              </div>
+
+              {/* Quick-reply template buttons (WhatsApp/Messenger style) — show when last customer message matches trigger */}
+              {quickReplyTemplates.length > 0 && (
+                <div className="border-t bg-muted/30 px-2 md:px-3 py-2 flex flex-wrap gap-2">
+                  {quickReplyTemplates.map((tpl) => (
+                    <Button
+                      key={tpl.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full text-sm font-medium shrink-0"
+                      onClick={() => {
+                        handleSendMessage(tpl.content)
+                        setQuickReplyTemplates([])
+                      }}
+                    >
+                      {tpl.name}
+                    </Button>
+                  ))}
+                </div>
+              )}
+
+              {/* Input bar — fixed at bottom */}
+              <div className="inbox-chat-input bg-card chat-input-bar border-t p-2 md:p-3 flex items-end gap-2">
+                <div className="flex items-center gap-1 md:gap-2 bg-muted/30 p-1 md:p-1.5 rounded-[24px] flex-1 min-w-0 border focus-within:ring-2 ring-primary/20 transition-all min-h-[44px]">
+                  {/* Emoji Button */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:bg-background h-8 w-8 md:h-9 md:w-9 rounded-full shrink-0"
+                      >
+                        <Smile className="h-5 w-5" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0 border-none bg-transparent shadow-none" side="top" align="start">
+                      <EmojiPicker
+                        onEmojiClick={(emojiData: EmojiClickData) => setNewMessage(prev => prev + emojiData.emoji)}
+                        autoFocusSearch={false}
+                        width={300}
+                        height={400}
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  <Input
+                    dir={dir}
+                    className="border-none bg-transparent shadow-none focus-visible:ring-0 flex-1 min-w-0 h-9 px-2 text-base"
+                    placeholder={t("typeYourMessage")}
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                  />
+
+                  {/* Attachments Group */}
+                  <div className="flex items-center gap-0.5 shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground hover:bg-background h-8 w-8 md:h-9 md:w-9 rounded-full shrink-0"
+                      className="text-muted-foreground hover:bg-background shrink-0 rounded-full h-8 w-8 md:h-9 md:w-9"
+                      onClick={() => document.getElementById("file-upload")?.click()}
                     >
-                      <Smile className="h-5 w-5" />
+                      <Paperclip className="h-5 w-5" />
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 border-none bg-transparent shadow-none" side="top" align="start">
-                    <EmojiPicker
-                      onEmojiClick={(emojiData: EmojiClickData) => setNewMessage(prev => prev + emojiData.emoji)}
-                      autoFocusSearch={false}
-                      width={300}
-                      height={400}
+                    <input
+                      type="file"
+                      id="file-upload"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+
+                        setIsSending(true);
+                        try {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          const uploadRes = await fetch('/api/upload', { method: 'POST', headers: { ...getAuthHeader() }, body: formData });
+                          const uploadData = await uploadRes.json();
+                          if (!uploadData.success) throw new Error(uploadData.error);
+                          await handleSendMessage(undefined, uploadData.url);
+                          toast({ title: t("sent"), description: t("fileSentSuccessfully") });
+                        } catch (error) {
+                          toast({ title: t("error"), description: t("failedToSendFile"), variant: "destructive" });
+                        } finally {
+                          setIsSending(false);
+                          e.target.value = '';
+                        }
+                      }}
                     />
-                  </PopoverContent>
-                </Popover>
-
-                <Input
-                  dir={dir}
-                  className="border-none bg-transparent shadow-none focus-visible:ring-0 flex-1 min-w-0 h-9 px-2 text-base"
-                  placeholder={t("typeYourMessage")}
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                />
-
-                {/* Attachments Group */}
-                <div className="flex items-center gap-0.5 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:bg-background shrink-0 rounded-full h-8 w-8 md:h-9 md:w-9"
-                    onClick={() => document.getElementById("file-upload")?.click()}
-                  >
-                    <Paperclip className="h-5 w-5" />
-                  </Button>
-                  <input
-                    type="file"
-                    id="file-upload"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-
-                      setIsSending(true);
-                      try {
-                        const formData = new FormData();
-                        formData.append('file', file);
-                        const uploadRes = await fetch('/api/upload', { method: 'POST', headers: { ...getAuthHeader() }, body: formData });
-                        const uploadData = await uploadRes.json();
-                        if (!uploadData.success) throw new Error(uploadData.error);
-                        await handleSendMessage(undefined, uploadData.url);
-                        toast({ title: t("sent"), description: t("fileSentSuccessfully") });
-                      } catch (error) {
-                        toast({ title: t("error"), description: t("failedToSendFile"), variant: "destructive" });
-                      } finally {
-                        setIsSending(false);
-                        e.target.value = '';
-                      }
-                    }}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:bg-background shrink-0 rounded-full h-8 w-8 md:h-9 md:w-9"
-                    onClick={handleLocationShare}
-                    title={t("location")}
-                  >
-                    <MapPin className="h-5 w-5" />
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:bg-background shrink-0 rounded-full h-8 w-8 md:h-9 md:w-9"
+                      onClick={handleLocationShare}
+                      title={t("location")}
+                    >
+                      <MapPin className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Floating Action Button (Send / Mic) */}
-              <div className="shrink-0 mb-0.5">
-                {newMessage.trim() ? (
-                  <Button
-                    size="icon"
-                    onClick={() => handleSendMessage()}
-                    disabled={isSending}
-                    className="rounded-full h-10 w-10 md:h-11 md:w-11 shadow-sm transition-transform active:scale-95 bg-primary text-primary-foreground hover:bg-primary/90"
-                  >
-                    <Send className="h-4 w-4 md:h-5 md:w-5 rtl:rotate-180" />
-                  </Button>
-                ) : (
-                  <Button
-                    variant={isRecording ? "destructive" : "default"}
-                    size="icon"
-                    className={cn(
-                      "rounded-full h-10 w-10 md:h-11 md:w-11 shadow-sm transition-all active:scale-95",
-                      isRecording ? "animate-pulse ring-4 ring-destructive/30" : "bg-primary text-primary-foreground hover:bg-primary/90"
-                    )}
-                    onClick={isRecording ? stopRecording : startRecording}
-                  >
-                    {isRecording ? <div className="h-3 w-3 bg-white rounded-sm" /> : <Mic className="h-5 w-5" />}
-                  </Button>
+                {/* Floating Action Button (Send / Mic) */}
+                <div className="shrink-0 mb-0.5">
+                  {newMessage.trim() ? (
+                    <Button
+                      size="icon"
+                      onClick={() => handleSendMessage()}
+                      disabled={isSending}
+                      className="rounded-full h-10 w-10 md:h-11 md:w-11 shadow-sm transition-transform active:scale-95 bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Send className="h-4 w-4 md:h-5 md:w-5 rtl:rotate-180" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant={isRecording ? "destructive" : "default"}
+                      size="icon"
+                      className={cn(
+                        "rounded-full h-10 w-10 md:h-11 md:w-11 shadow-sm transition-all active:scale-95",
+                        isRecording ? "animate-pulse ring-4 ring-destructive/30" : "bg-primary text-primary-foreground hover:bg-primary/90"
+                      )}
+                      onClick={isRecording ? stopRecording : startRecording}
+                    >
+                      {isRecording ? <div className="h-3 w-3 bg-white rounded-sm" /> : <Mic className="h-5 w-5" />}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Dynamic AI Suggestion Fixed Overlay */}
+                {suggestedFlow && !isSuggestionSnoozed && (
+                  <div className="absolute bottom-20 start-4 end-4 z-20">
+                    <div className="flex items-center justify-between p-4 bg-white border-2 border-purple-200 rounded-2xl shadow-xl animate-in fade-in zoom-in duration-300">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                          <Sparkles className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900 leading-tight">{t("recommendStartFlow").replace("{name}", suggestedFlow.name)}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{t("autoDetectedTrigger").replace("{trigger}", suggestedFlow.trigger)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-9 px-4 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700"
+                          onClick={() => {
+                            setIsSuggestionSnoozed(true)
+                            setSuggestedFlow(null)
+                            setTimeout(() => setIsSuggestionSnoozed(false), 10000)
+                          }}
+                        >
+                          {t("dismiss")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="h-9 px-5 rounded-full bg-purple-600 hover:bg-purple-700 text-white gap-2 text-xs font-bold shadow-md shadow-purple-200"
+                          onClick={() => handleAcceptSuggestion(suggestedFlow)}
+                        >
+                          <Play className="h-4 w-4 fill-current" /> {t("useFlow")}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
 
-              {/* Dynamic AI Suggestion Fixed Overlay */}
-              {suggestedFlow && !isSuggestionSnoozed && (
-                <div className="absolute bottom-20 start-4 end-4 z-20">
-                  <div className="flex items-center justify-between p-4 bg-white border-2 border-purple-200 rounded-2xl shadow-xl animate-in fade-in zoom-in duration-300">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                        <Sparkles className="h-5 w-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 leading-tight">{t("recommendStartFlow").replace("{name}", suggestedFlow.name)}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{t("autoDetectedTrigger").replace("{trigger}", suggestedFlow.trigger)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="h-9 px-4 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700"
-                        onClick={() => {
-                          setIsSuggestionSnoozed(true)
-                          setSuggestedFlow(null)
-                          setTimeout(() => setIsSuggestionSnoozed(false), 10000)
-                        }}
-                      >
-                        {t("dismiss")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="h-9 px-5 rounded-full bg-purple-600 hover:bg-purple-700 text-white gap-2 text-xs font-bold shadow-md shadow-purple-200"
-                        onClick={() => handleAcceptSuggestion(suggestedFlow)}
-                      >
-                        <Play className="h-4 w-4 fill-current" /> {t("useFlow")}
-                      </Button>
-                    </div>
-                  </div>
+            </div>
+          ) : (
+            // Desktop-only placeholder: on mobile we show ONLY the list when no conversation selected
+            !isMobile && (
+              <div className="inbox-col-middle flex flex-col items-center justify-center bg-slate-50 dark:bg-background text-center p-8 min-h-0">
+                <div className="bg-white dark:bg-card p-4 rounded-full shadow-sm mb-4">
+                  <MessageCircle className="h-8 w-8 text-primary" />
                 </div>
-              )}
-            </div>
-
-          </div>
-        ) : (
-          // Desktop-only placeholder: on mobile we show ONLY the list when no conversation selected
-          !isMobile && (
-            <div className="inbox-col-middle flex flex-col items-center justify-center bg-slate-50 dark:bg-background text-center p-8 min-h-0">
-              <div className="bg-white dark:bg-card p-4 rounded-full shadow-sm mb-4">
-                <MessageCircle className="h-8 w-8 text-primary" />
+                <h3 className="font-semibold text-lg">{t("noConversationSelected")}</h3>
+                <p className="text-muted-foreground text-sm max-w-xs mt-2">{t("selectConversationToView")}</p>
               </div>
-              <h3 className="font-semibold text-lg">{t("noConversationSelected")}</h3>
-              <p className="text-muted-foreground text-sm max-w-xs mt-2">{t("selectConversationToView")}</p>
-            </div>
+            )
           )
-        )
-        }
+          }
 
-        {/* RIGHT COLUMN: Contact details — fixed width, own scroll */}
-        {selectedConversation && (
-          <div className={cn("inbox-col-right hidden xl:flex bg-card", dir === "rtl" ? "border-e border-border/50" : "border-s border-border/50")}>
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
-              <SidebarContent conversation={selectedConversation} onUpdate={() => fetchConversations()} />
+          {/* RIGHT COLUMN: Contact details — fixed width, own scroll */}
+          {selectedConversation && (
+            <div className={cn("inbox-col-right hidden xl:flex bg-card", dir === "rtl" ? "border-e border-border/50" : "border-s border-border/50")}>
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+                <SidebarContent conversation={selectedConversation} onUpdate={() => fetchConversations()} />
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
 
