@@ -103,19 +103,18 @@ export async function POST(request: NextRequest) {
             })
         }
 
-        // Find MOST RECENT conversation for this contact (resolved or not)
+        // Find existing ACTIVE conversation first to reuse
         let conversation = await prisma.conversation.findFirst({
             where: {
                 contactId: contact.id,
-            },
-            orderBy: {
-                createdAt: 'desc'
+                status: 'ACTIVE'
             }
         })
 
         if (!conversation) {
-            // Create new conversation with auto-assigned agent when available
-            console.log('🆕 Creating NEW conversation');
+            // No active conversation, create NEW one
+            // Or find most recent resolved one if we want to reopen (optional, but new is safer for tracking)
+            console.log('🆕 Creating NEW conversation (No active one found)');
             conversation = await prisma.conversation.create({
                 data: {
                     contactId: contact.id,
@@ -125,15 +124,19 @@ export async function POST(request: NextRequest) {
                 }
             })
         } else {
-            // If exists, ensure it's ACTIVE and auto-assign agent if not already assigned
+            // Reuse existing ACTIVE conversation
+            console.log(`♻️ Reusing EXISTING ACTIVE conversation ${conversation.id}`);
             const updateData: any = {}
-            if (conversation.status === 'RESOLVED') {
-                console.log(`♻️ Reactivating RESOLVED conversation ${conversation.id}`);
-                updateData.status = 'ACTIVE'
-            }
             if (!conversation.assignedToId && assignedAgentId) {
                 updateData.assignedToId = assignedAgentId
             }
+            if (conversation.status === 'RESOLVED') {
+                // Is safe to reactivate if needed, but logic above finds ACTIVE only.
+                // If we found ACTIVE, it is active. This check is redundant but harmless contextually
+                // unless we change the find logic.
+                updateData.status = 'ACTIVE'
+            }
+
             if (Object.keys(updateData).length > 0) {
                 conversation = await prisma.conversation.update({
                     where: { id: conversation.id },
