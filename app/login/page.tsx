@@ -52,10 +52,10 @@ export default function LoginPage() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-purple-200 via-purple-300 to-indigo-300 p-4 font-sans" dir={isRtl ? "rtl" : "ltr"}>
-            <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-[30px] bg-white shadow-2xl md:flex-row md:h-[650px]">
+            <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl md:flex-row md:h-[650px] md:rounded-[40px]">
 
                 {/* Left Side: Dark Astronaut Theme - Hidden on Mobile, Visible on Desktop */}
-                <div className="relative hidden w-full md:block md:w-1/2 bg-[#171717]">
+                <div className="relative hidden w-full bg-[#171717] md:block md:h-full md:w-1/2">
                     <div className="card w-full h-full flex flex-col justify-between p-8 relative">
                         {/* Moon/Stars Effects via CSS ::after/before */}
                         <div className="heading absolute top-0 left-0 w-full h-full pointer-events-none z-0"></div>
