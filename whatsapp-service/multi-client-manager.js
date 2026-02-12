@@ -1,5 +1,6 @@
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const EventEmitter = require('events');
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 /**
  * Multi-Client Manager for WhatsApp (WhatChimp Style)
@@ -155,81 +156,89 @@ class MultiClientManager extends EventEmitter {
             await this.updateDatabaseStatus(accountId, 'DISCONNECTED', null);
         });
 
-        // Message event
+        // Message event (Incoming)
         client.on('message', async (message) => {
-            try {
-                const chat = await message.getChat();
-                const contact = await message.getContact();
-
-                let senderName = contact.pushname || contact.name || contact.number;
-                if (chat.isGroup) {
-                    senderName = chat.name;
-                }
-
-                console.log(`📨 [${accountId}] Message from ${senderName}: ${message.body.substring(0, 50)}...`);
-
-                // Handle Media
-                let mediaData = null;
-                if (message.hasMedia) {
-                    try {
-                        const media = await message.downloadMedia();
-                        if (media) {
-                            mediaData = {
-                                mimetype: media.mimetype,
-                                data: media.data, // Base64
-                                filename: media.filename
-                            };
-                            console.log(`📎 [${accountId}] Media downloaded: ${media.mimetype}`);
-                        }
-                    } catch (err) {
-                        console.error(`❌ Error downloading media for message ${message.id.id}:`, err);
-                    }
-                }
-
-                // Handle Location
-                let locationData = null;
-                if (message.type === 'location') {
-                    locationData = {
-                        latitude: message.location.latitude,
-                        longitude: message.location.longitude,
-                        description: message.location.description
-                    };
-                    console.log(`📍 [${accountId}] Location received: ${locationData.latitude}, ${locationData.longitude}`);
-                }
-
-                // Forward to webhook with accountId
-                const payload = {
-                    accountId,
-                    from: message.from,
-                    body: message.body,
-                    timestamp: message.timestamp,
-                    isGroup: chat.isGroup,
-                    senderName: senderName,
-                    senderId: message.author || message.from,
-                    hasMedia: message.hasMedia,
-                    media: mediaData,
-                    location: locationData, // Include location data
-                    type: message.type
-                };
-
-                await fetch(`${this.nextAppUrl}/api/whatsapp/webhook`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                this.emit('message', { accountId, message: payload });
-            } catch (error) {
-                console.error(`❌ Error handling message for ${accountId}:`, error);
-            }
+            await this.processMessage(accountId, message);
         });
 
-        // Message create event (for sent messages)
+        // Message create event (Outgoing - Sync from phone)
         client.on('message_create', async (message) => {
             if (message.fromMe) {
-                console.log(`📤 [${accountId}] Outgoing message: ${message.body.substring(0, 50)}...`);
+                console.log(`📤 [${accountId}] Outgoing message detected (Sync): ${message.body.substring(0, 50)}...`);
+                await this.processMessage(accountId, message);
             }
         });
+    }
+
+    /**
+     * Process message and send to webhook
+     */
+    async processMessage(accountId, message) {
+        try {
+            const chat = await message.getChat();
+            const contact = await message.getContact();
+
+            let senderName = contact.pushname || contact.name || contact.number;
+            if (chat.isGroup) {
+                senderName = chat.name;
+            }
+
+            // Handle Media
+            let mediaData = null;
+            if (message.hasMedia) {
+                try {
+                    const media = await message.downloadMedia();
+                    if (media) {
+                        mediaData = {
+                            mimetype: media.mimetype,
+                            data: media.data, // Base64
+                            filename: media.filename
+                        };
+                        console.log(`📎 [${accountId}] Media downloaded: ${media.mimetype}`);
+                    }
+                } catch (err) {
+                    console.error(`❌ Error downloading media for message ${message.id.id}:`, err);
+                }
+            }
+
+            // Handle Location
+            let locationData = null;
+            if (message.type === 'location') {
+                locationData = {
+                    latitude: message.location.latitude,
+                    longitude: message.location.longitude,
+                    description: message.location.description
+                };
+                console.log(`📍 [${accountId}] Location received: ${locationData.latitude}, ${locationData.longitude}`);
+            }
+
+            // Forward to webhook with accountId
+            const payload = {
+                accountId,
+                from: message.from,
+                to: message.to, // Added 'to' for outgoing messages
+                body: message.body,
+                timestamp: message.timestamp,
+                isGroup: chat.isGroup,
+                senderName: senderName,
+                senderId: message.author || message.from,
+                fromMe: message.fromMe, // Added flag
+                hasMedia: message.hasMedia,
+                media: mediaData,
+                location: locationData,
+                type: message.type
+            };
+
+            await fetch(`${this.nextAppUrl}/api/whatsapp/webhook`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            this.emit('message', { accountId, message: payload });
+        } catch (error) {
+            console.error(`❌ Error handling message for ${accountId}: `, error);
+        }
     }
 
     /**
@@ -243,7 +252,7 @@ class MultiClientManager extends EventEmitter {
         }
 
         if (!clientData.isReady) {
-            throw new Error(`Account ${accountId} is not ready. Status: ${clientData.status}`);
+            throw new Error(`Account ${accountId} is not ready.Status: ${clientData.status} `);
         }
 
         const { client } = clientData;
@@ -256,10 +265,10 @@ class MultiClientManager extends EventEmitter {
             targetChatId = phoneNumber;
         } else {
             const formattedNumber = phoneNumber.replace(/[^0-9]/g, '');
-            targetChatId = `${formattedNumber}@c.us`;
+            targetChatId = `${formattedNumber} @c.us`;
         }
 
-        console.log(`📤 [${accountId}] Sending to ${targetChatId}`);
+        console.log(`📤[${accountId}] Sending to ${targetChatId} `);
 
         // Send message
         if (mediaUrl) {
@@ -361,9 +370,9 @@ class MultiClientManager extends EventEmitter {
                 phone: phone || undefined
             };
 
-            console.log(`📡 Updating database: ${accountId} -> ${status}${phone ? ` (${phone})` : ''}`);
+            console.log(`📡 Updating database: ${accountId} -> ${status}${phone ? ` (${phone})` : ''} `);
 
-            const response = await fetch(`${this.nextAppUrl}/api/whatsapp/status`, {
+            const response = await fetch(`${this.nextAppUrl} /api/whatsapp / status`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -371,12 +380,12 @@ class MultiClientManager extends EventEmitter {
 
             const result = await response.json();
             if (!result.success) {
-                console.warn(`⚠️ Database update response:`, result);
+                console.warn(`⚠️ Database update response: `, result);
             } else {
-                console.log(`✅ Database updated: ${accountId} -> ${status}`);
+                console.log(`✅ Database updated: ${accountId} -> ${status} `);
             }
         } catch (error) {
-            console.error(`❌ Failed to update database for ${accountId}:`, error.message);
+            console.error(`❌ Failed to update database for ${accountId}: `, error.message);
         }
     }
 
@@ -430,9 +439,9 @@ class MultiClientManager extends EventEmitter {
         for (const [accountId, clientData] of this.clients.entries()) {
             try {
                 await clientData.client.destroy();
-                console.log(`✅ Closed ${accountId}`);
+                console.log(`✅ Closed ${accountId} `);
             } catch (error) {
-                console.error(`Error closing ${accountId}:`, error);
+                console.error(`Error closing ${accountId}: `, error);
             }
         }
         this.clients.clear();

@@ -1407,17 +1407,44 @@ export default function InboxPage() {
                           )}
                         >
                           {message.type === 'IMAGE' && message.mediaUrl ? (
-                            <div className="rounded-lg overflow-hidden max-w-sm">
-                              <img src={message.mediaUrl} alt={t("sentImageAlt")} className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setPreviewImage(message.mediaUrl || null)} />
+                            <div className="rounded-lg overflow-hidden max-w-sm relative group">
+                              <img
+                                src={message.mediaUrl}
+                                alt={t("sentImageAlt")}
+                                className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity min-h-[100px] bg-gray-100"
+                                onClick={() => setPreviewImage(message.mediaUrl || null)}
+                                onError={(e) => {
+                                  // Fallback for broken images (e.g. expired URLs)
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                }}
+                              />
+                              {/* Fallback View */}
+                              <div className="hidden flex-col items-center justify-center p-4 bg-gray-100 text-gray-500 gap-2 min-w-[200px]">
+                                <span className="text-xs">{t("imageNotLoaded")}</span>
+                                <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline">
+                                  {t("openLink")}
+                                </a>
+                              </div>
                               {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
                             </div>
                           ) : message.type === 'AUDIO' && message.mediaUrl ? (
-                            <div className="flex items-center gap-2 min-w-[200px] md:min-w-[250px] p-1">
+                            <div className="flex flex-col gap-1 min-w-[240px] p-2">
                               <audio controls className="w-full h-10 accent-primary" src={message.mediaUrl} />
+                              <div className="flex justify-end">
+                                <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline">
+                                  {t("downloadAudio")}
+                                </a>
+                              </div>
                             </div>
                           ) : message.type === 'VIDEO' && message.mediaUrl ? (
                             <div className="rounded-lg overflow-hidden max-w-sm">
                               <video controls className="w-full h-auto max-h-[300px]" src={message.mediaUrl} />
+                              <div className="flex justify-end p-1">
+                                <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline">
+                                  {t("downloadVideo")}
+                                </a>
+                              </div>
                               {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
                             </div>
                           ) : message.type === 'LOCATION' ? (
@@ -1434,17 +1461,22 @@ export default function InboxPage() {
                                 onClick={() => window.open(message.content, '_blank')}
                               >
                                 <img
-                                  src={`https://maps.googleapis.com/maps/api/staticmap?center=${message.content.split('q=')[1]}&zoom=15&size=300x150&sensor=false&key=`}
+                                  src={`https://maps.googleapis.com/maps/api/staticmap?center=${message.content.split('q=')[1] || message.content.split('ll=')[1]}&zoom=15&size=300x150&sensor=false&key=`}
                                   alt="Map Preview"
                                   className="w-full h-full object-cover opacity-80"
                                   onError={(e) => {
-                                    (e.target as any).style.display = 'none';
-                                    (e.target as any).nextSibling.style.display = 'flex';
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    if (target.nextElementSibling) {
+                                      (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                                    }
                                   }}
                                 />
-                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/50" style={{ display: "none" }}>
-                                  <MapPin className="h-8 w-8 text-red-500 mb-2 animate-bounce" />
-                                  <span className="text-[10px] font-medium text-slate-500 px-4 text-center">{t("clickToViewInMaps")}</span>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100" style={{ display: "none" }}>
+                                  <div className="p-3 bg-white rounded-full shadow-sm mb-2">
+                                    <MapPin className="h-6 w-6 text-red-500 fill-red-500/10" />
+                                  </div>
+                                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight">{t("clickToViewInMaps")}</span>
                                 </div>
                               </div>
                               <a href={message.content} target="_blank" rel="noopener noreferrer" className="block p-3 text-xs text-primary font-medium hover:bg-slate-50 transition-colors text-center border-t">
@@ -1462,7 +1494,8 @@ export default function InboxPage() {
                               </div>
                             </a>
                           ) : (
-                            <div className="text-sm whitespace-pre-wrap break-words leading-relaxed text-gray-800 dark:text-gray-100 w-fit max-w-full" dir="auto">
+                            // Text Rendering - Fixed wrapping issues
+                            <div className="text-sm whitespace-pre-wrap wrap-break-word leading-relaxed text-gray-800 dark:text-gray-100 min-w-[50px] max-w-full" dir="auto">
                               {formatMessageContent(message.content)}
                             </div>
                           )}
