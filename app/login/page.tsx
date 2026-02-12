@@ -51,7 +51,7 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-200 via-purple-300 to-indigo-300 p-4 font-sans" dir={isRtl ? "rtl" : "ltr"}>
+        <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-purple-200 via-purple-300 to-indigo-300 p-4 font-sans" dir={isRtl ? "rtl" : "ltr"}>
             <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-[30px] bg-white shadow-2xl md:flex-row md:h-[650px]">
 
                 {/* Left Side: Dark Astronaut Theme - Exactly matching provided CSS structure */}
@@ -72,10 +72,16 @@ export default function LoginPage() {
                             }}
                         />
 
-                        {/* Text Overlay - High Z-index to sit on top of stars */}
-                        <div className="z-10 text-center space-y-2 mt-4 relative">
-                            <h2 className="text-2xl font-bold tracking-widest text-white uppercase drop-shadow-lg">OMNICHANNEL SYSTEM</h2>
-                            <p className="text-sm text-gray-300 font-medium tracking-wide">Meras Holding Company</p>
+                        {/* Text Overlay */}
+                        <div className="z-10 text-center space-y-4 mt-6 relative max-w-md px-6">
+                            <div className="space-y-1">
+                                <h2 className="text-3xl font-black tracking-widest text-white uppercase drop-shadow-lg">MERAS UNIVERSE</h2>
+                                <p className="text-purple-300 font-bold tracking-[0.2em] text-sm uppercase">NEXT GEN PLATFORM</p>
+                            </div>
+
+                            <p className="text-gray-300 text-xs md:text-sm leading-relaxed font-medium opacity-90 max-w-xs mx-auto text-balance">
+                                Welcome to your centralized command center. Manage operations for Kayan, Bura, and Mozdanh with seamlessly integrated tools designed to elevate efficiency and customer experience.
+                            </p>
                         </div>
 
                         {/* Footer Logos */}
