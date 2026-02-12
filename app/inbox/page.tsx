@@ -385,8 +385,11 @@ export default function InboxPage() {
               branch: c.contact?.branch ?? null,
             }))
             setConversations(prev => {
-              if (JSON.stringify(prev) === JSON.stringify(enrichedConversations)) return prev
-              return enrichedConversations
+              // Deduplicate incoming conversations based on ID
+              const uniqueEnriched = Array.from(new Map(enrichedConversations.map((c: any) => [c.id, c])).values()) as Conversation[];
+
+              if (JSON.stringify(prev) === JSON.stringify(uniqueEnriched)) return prev
+              return uniqueEnriched
             })
           }
         })
@@ -476,15 +479,18 @@ export default function InboxPage() {
 
       if (data.success && data.conversations) {
         // Enriched mock data for UI demo purposes
-        const enrichedConversations = data.conversations.map((c: any, index: number) => ({
+        const enrichedConversations = await Promise.all(data.conversations.map(async (c: any, index: number) => ({
           ...c,
           platform: 'whatsapp',
           leadScore: index === 0 ? 'Hot' : 'Warm',
           leadStatus: index === 0 ? 'New' : index === 1 ? 'Booked' : 'In Progress',
           branch: c.contact?.branch ?? null,
-        }))
+        })))
 
-        setConversations(enrichedConversations)
+        // Deduplicate conversations based on ID to fix repeat issue
+        const uniqueConversations = Array.from(new Map(enrichedConversations.map((c: any) => [c.id, c])).values()) as Conversation[];
+
+        setConversations(uniqueConversations)
 
         // Selection logic:
         // - If URL has ?id=... → open that conversation explicitly
@@ -1456,7 +1462,7 @@ export default function InboxPage() {
                               </div>
                             </a>
                           ) : (
-                            <div className="whitespace-pre-wrap leading-relaxed break-words w-fit max-w-full" dir="auto">
+                            <div className="text-sm whitespace-pre-wrap break-words leading-relaxed text-gray-800 dark:text-gray-100 w-fit max-w-full" dir="auto">
                               {formatMessageContent(message.content)}
                             </div>
                           )}
