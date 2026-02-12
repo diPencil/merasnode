@@ -52,51 +52,54 @@ export default function LoginPage() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-200 via-purple-300 to-indigo-300 p-4 font-sans" dir={isRtl ? "rtl" : "ltr"}>
-            <div className="flex w-full max-w-5xl flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl md:flex-row md:h-[600px]">
+            <div className="flex w-full max-w-6xl flex-col overflow-hidden rounded-[30px] bg-white shadow-2xl md:flex-row md:h-[650px]">
 
-                {/* Left Side: Dark Astronaut Theme */}
-                <div className="relative w-full md:w-1/2 bg-[#171717] flex flex-col items-center justify-center">
-                    <div className="astronaut-card w-full h-full flex flex-col items-center justify-center relative bg-transparent border-none shadow-none">
-                        {/* Moon/Planet glow effect via CSS ::after/before */}
-                        <div className="heading absolute top-0 left-0 w-full h-full pointer-events-none">
-                            {/* Stars added via CSS ::before */}
-                        </div>
+                {/* Left Side: Dark Astronaut Theme - Exactly matching provided CSS structure */}
+                <div className="relative w-full md:w-1/2 p-0 bg-[#171717]">
+                    <div className="card">
+                        {/* CSS Effects Layers */}
+                        <div className="heading"></div>
+                        <div className="icons"></div>
 
-                        {/* Astronaut Image */}
+                        {/* Astronaut Image - Fluent 3D applied with Purple Hue Filter to match reference */}
                         <img
                             src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/People/Astronaut.png"
                             alt="Astronaut"
-                            className="w-48 md:w-64 max-w-[80%] z-10 drop-shadow-[0_0_20px_rgba(139,92,246,0.5)] animate-[move_10s_ease-in-out_infinite]"
-                            style={{ animation: 'move 10s ease-in-out infinite' }}
+                            className="astronaut-img"
+                            style={{
+                                filter: "hue-rotate(260deg) saturate(1.2) drop-shadow(0 0 15px rgba(139,92,246,0.5))",
+                                maxWidth: "70%"
+                            }}
                         />
 
-                        <div className="z-10 mt-8 text-center space-y-1 relative">
-                            <h2 className="text-xl font-bold tracking-wider text-white uppercase drop-shadow-md">OMNICHANNEL SYSTEM</h2>
-                            <p className="text-sm text-gray-400 font-medium tracking-wide">Meras Holding Company</p>
+                        {/* Text Overlay - High Z-index to sit on top of stars */}
+                        <div className="z-10 text-center space-y-2 mt-4 relative">
+                            <h2 className="text-2xl font-bold tracking-widest text-white uppercase drop-shadow-lg">OMNICHANNEL SYSTEM</h2>
+                            <p className="text-sm text-gray-300 font-medium tracking-wide">Meras Holding Company</p>
                         </div>
 
-                        {/* Footer Logos from Public folder */}
-                        <div className="mt-auto w-full px-8 pb-8 z-10 flex justify-center items-center">
+                        {/* Footer Logos */}
+                        <div className="mt-12 w-full px-8 z-10 flex justify-center items-center opacity-90 hover:opacity-100 transition-opacity">
                             <img
                                 src="/meraslogos.png"
                                 alt="Meras Companies"
-                                className="h-8 md:h-10 w-auto object-contain brightness-0 invert opacity-80 hover:opacity-100 transition-opacity duration-300"
+                                className="h-8 md:h-8 w-auto object-contain brightness-0 invert"
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* Right Side: Login Form */}
-                <div className="flex w-full flex-col items-center justify-center bg-white p-8 md:w-1/2 md:p-12 relative z-20">
-                    <div className="w-full max-w-sm space-y-8">
-                        <div className="text-center space-y-2">
-                            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{t("systemTitle")}</h1>
-                            <p className="text-sm text-purple-600 font-bold">{t("systemSubtitle")}</p>
+                <div className="flex w-full flex-col items-center justify-center bg-white p-8 md:w-1/2 md:p-16 relative z-20">
+                    <div className="w-full max-w-md space-y-8">
+                        <div className="text-center space-y-3">
+                            <h1 className="text-3xl font-extrabold text-[#1a1a1a] tracking-tight">{t("systemTitle")}</h1>
+                            <p className="text-sm text-purple-700 font-bold">{t("systemSubtitle")}</p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-5 mt-8">
+                        <form onSubmit={handleSubmit} className="space-y-6 mt-10">
                             <div className="space-y-2 text-start">
-                                <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+                                <Label htmlFor="email" className="text-sm font-bold text-gray-700">
                                     {t("emailOrUsernameLabel")}
                                 </Label>
                                 <Input
@@ -108,12 +111,12 @@ export default function LoginPage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                     disabled={isLoading}
-                                    className="h-12 rounded-lg border-gray-200 bg-gray-50 px-4 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all shadow-sm text-base"
+                                    className="h-14 rounded-2xl border-gray-100 bg-gray-50 px-5 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all shadow-sm text-base font-medium placeholder:text-gray-400"
                                 />
                             </div>
 
                             <div className="space-y-2 text-start">
-                                <Label htmlFor="password" className="text-sm font-semibold text-gray-700">
+                                <Label htmlFor="password" className="text-sm font-bold text-gray-700">
                                     {t("passwordLabel")}
                                 </Label>
                                 <div className="relative">
@@ -126,21 +129,21 @@ export default function LoginPage() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
                                         disabled={isLoading}
-                                        className="h-12 rounded-lg border-gray-200 bg-gray-50 px-4 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all shadow-sm pe-12 text-base"
+                                        className="h-14 rounded-2xl border-gray-100 bg-gray-50 px-5 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all shadow-sm pe-12 text-base font-medium placeholder:text-gray-400"
                                     />
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        className="absolute end-1 top-1/2 h-9 w-9 -translate-y-1/2 text-gray-400 hover:text-purple-600 rounded-md"
+                                        className="absolute end-2 top-1/2 h-10 w-10 -translate-y-1/2 text-gray-400 hover:text-purple-600 rounded-xl hover:bg-purple-50"
                                         onClick={() => setShowPassword((p) => !p)}
                                         disabled={isLoading}
                                         aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                                     >
                                         {showPassword ? (
-                                            <EyeOff className="h-4 w-4" />
+                                            <EyeOff className="h-5 w-5" />
                                         ) : (
-                                            <Eye className="h-4 w-4" />
+                                            <Eye className="h-5 w-5" />
                                         )}
                                     </Button>
                                 </div>
@@ -148,7 +151,7 @@ export default function LoginPage() {
 
                             <Button
                                 type="submit"
-                                className="h-12 w-full rounded-full bg-[#52449F] hover:bg-[#433785] text-white text-base font-bold shadow-lg shadow-purple-200 hover:shadow-purple-300 transition-all mt-6 active:scale-95 duration-200"
+                                className="h-14 w-full rounded-2xl bg-[#52449F] hover:bg-[#433785] text-white text-lg font-bold shadow-xl shadow-purple-200 hover:shadow-purple-300 transition-all mt-8 active:scale-[0.98] duration-200"
                                 disabled={isLoading}
                             >
                                 {isLoading ? (
@@ -162,8 +165,8 @@ export default function LoginPage() {
                             </Button>
                         </form>
 
-                        <div className="mt-8 text-center">
-                            <p className="text-xs text-gray-400">
+                        <div className="mt-auto pt-8 text-center">
+                            <p className="text-xs text-gray-400 font-medium">
                                 {t("copyright").replace("{year}", String(new Date().getFullYear()))}
                             </p>
                         </div>

@@ -1,10 +1,12 @@
-/* Astronaut Card Styles - From User Request */
+/* From Uiverse.io by Praashoo7 */
+/* HOLD THE ASTRONAUT */
 
-.astronaut-card {
+.card {
     position: relative;
     width: 100%;
+    /* Adjusted to fill container */
     height: 100%;
-    min-height: 500px;
+    /* Adjusted to fill container */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -14,32 +16,25 @@
     font-family: inherit;
     font-weight: bold;
     padding: 1em;
-    border-radius: 20px 0 0 20px;
-    /* Rounded left corners only for the split layout */
+    /* border-radius: 20px; Removed to fit the split layout perfectly */
     overflow: hidden;
     z-index: 1;
     row-gap: 1em;
 }
 
-/* On mobile, full rounded */
-@media (max-width: 768px) {
-    .astronaut-card {
-        border-radius: 20px 20px 0 0;
-        min-height: 300px;
-    }
-}
-
-.astronaut-card img {
+.card img.astronaut-img {
     width: 15em;
-    max-width: 80%;
+    /* Increased size */
     margin-right: 1em;
     animation: move 10s ease-in-out infinite;
     z-index: 5;
-    filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.3));
+    filter: drop-shadow(0 0 15px rgba(155, 64, 252, 0.5));
+    /* Added purple glow matching styles */
 }
 
-.astronaut-card:hover {
-    cursor: default;
+.astronaut-img:hover {
+    cursor: -webkit-grab;
+    cursor: grab;
 }
 
 .icons svg {
@@ -47,30 +42,31 @@
     height: 20px;
 }
 
-.astronaut-card::before {
+.card::before {
     content: "";
     position: absolute;
     width: 100%;
     height: 100%;
     inset: -3px;
-    border-radius: 10px;
+    /* border-radius: 10px; */
     background: radial-gradient(#858585, transparent, transparent);
     transform: translate(-5px, 250px);
     transition: 0.4s ease-in-out;
     z-index: -1;
-    opacity: 0.5;
+    opacity: 0.3;
 }
 
-.astronaut-card:hover::before {
+.card:hover::before {
     width: 150%;
     height: 100%;
     margin-left: -4.25em;
 }
 
-.astronaut-card::after {
+.card::after {
     content: "";
     position: absolute;
-    inset: 0;
+    inset: 2px;
+    /* border-radius: 20px; */
     background: rgb(23, 23, 23, 0.7);
     transition: all 0.4s ease-in-out;
     z-index: -1;
@@ -79,6 +75,16 @@
 .heading {
     z-index: 2;
     transition: 0.4s ease-in-out;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.card:hover .heading {
+    letter-spacing: 0.025em;
 }
 
 .heading::before {
@@ -136,13 +142,68 @@
     animation-delay: 0.8s;
 }
 
+.card:hover .heading::before,
+.card:hover .icons::before,
+.card:hover .icons::after {
+    filter: blur(3px);
+}
+
+.astronaut-img:active {
+    cursor: -webkit-grabbing;
+    cursor: grabbing;
+}
+
+.astronaut-img:active+.heading::before {
+    box-shadow: 240px 20px #9b40fc, 240px 25px #9b40fc, 240px 30px #9b40fc,
+        240px 35px #9b40fc, 240px 40px #9b40fc, 242px 45px #9b40fc,
+        246px 48px #9b40fc, 251px 49px #9b40fc, 256px 48px #9b40fc,
+        260px 45px #9b40fc, 262px 40px #9b40fc;
+    animation: none;
+    filter: blur(0);
+    border-radius: 2px;
+    width: 0.45em;
+    height: 0.45em;
+    scale: 0.65;
+    transform: translateX(9em) translateY(1em);
+}
+
+.astronaut-img:active~.icons::before {
+    box-shadow: 262px 35px #9b40fc, 262px 30px #9b40fc, 262px 25px #9b40fc,
+        262px 20px #9b40fc, 275px 20px #9b40fc, 275px 24px #9b40fc,
+        275px 28px #9b40fc, 275px 32px #9b40fc, 275px 36px #9b40fc,
+        275px 40px #9b40fc, 275px 44px #9b40fc, 275px 48px #9b40fc;
+    animation: none;
+    filter: blur(0);
+    border-radius: 2px;
+    width: 0.45em;
+    height: 0.45em;
+    scale: 0.65;
+    transform: translateX(9em) translateY(1em);
+}
+
+.astronaut-img:active~.icons::after {
+    box-shadow: 238px 60px #9b40fc, 242px 60px #9b40fc, 246px 60px #9b40fc,
+        250px 60px #9b40fc, 254px 60px #9b40fc, 258px 60px #9b40fc,
+        262px 60px #9b40fc, 266px 60px #9b40fc, 270px 60px #9b40fc,
+        274px 60px #9b40fc, 278px 60px #9b40fc, 282px 60px #9b40fc,
+        234px 60px #9b40fc, 234px 60px #9b40fc;
+    animation: none;
+    filter: blur(0);
+    border-radius: 2px;
+    width: 0.45em;
+    height: 0.45em;
+    scale: 0.65;
+    transform: translateX(9em) translateY(1.25em);
+}
+
 .heading::after {
     content: "";
     top: -8.5%;
     left: -8.5%;
     position: absolute;
-    width: 7.5em;
-    height: 7.5em;
+    width: 15em;
+    /* Increased for the large moon effect in top left */
+    height: 15em;
     border: none;
     outline: none;
     border-radius: 50%;
@@ -151,11 +212,25 @@
         0px 0px 100px rgba(135, 42, 211, 0.8), inset #9b40fc 0px 0px 40px -12px;
     transition: 0.4s ease-in-out;
     z-index: -1;
-    opacity: 0.3;
-    /* Toned down for background */
+    opacity: 0.8;
 }
 
-/* Animations */
+.card:hover .heading::after {
+    box-shadow: 0px 0px 200px rgba(193, 119, 241, 1),
+        0px 0px 200px rgba(135, 42, 211, 1), inset #9b40fc 0px 0px 40px -12px;
+}
+
+.icons {
+    position: absolute;
+    /* To position stars correctly without affecting layout */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
 @keyframes shootingStar {
     0% {
         transform: translateX(0) translateY(0);
