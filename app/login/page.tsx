@@ -67,15 +67,15 @@ export default function LoginPage() {
                             <img
                                 src="/astronaut.webp"
                                 alt="Astronaut"
-                                className="astronaut-img w-64 md:w-80 object-contain drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]"
+                                className="astronaut-img w-64 md:w-80 object-contain drop-shadow-[0_0_30px_rgba(168,85,247,0.4)] rtl:scale-x-[-1]"
                                 style={{
                                     transform: "translateY(-20px)"
                                 }}
                             />
                         </div>
 
-                        {/* Bottom Section: Text Overlay - Left Aligned */}
-                        <div className="z-20 w-full space-y-4 text-left pl-4 md:pl-6">
+                        {/* Bottom Section: Text Overlay - Logical Alignment for RTL/LTR */}
+                        <div className="z-20 w-full space-y-4 text-start ps-4 md:ps-6">
                             <div className="inline-block rounded-full bg-purple-600 px-3 py-1 text-[10px] font-bold tracking-wider text-white uppercase shadow-[0_0_15px_rgba(147,51,234,0.6)] border border-purple-500/50">
                                 NEXT GEN PLATFORM
                             </div>
@@ -84,11 +84,11 @@ export default function LoginPage() {
                                 MERAS UNIVERSE
                             </h2>
 
-                            <p className="text-gray-400 text-xs leading-relaxed font-medium max-w-sm">
+                            <p className="text-gray-400 text-xs leading-relaxed font-medium max-w-sm text-balance">
                                 Welcome to your centralized command center. Manage operations for Kayan, Bura, and Mozdanh with seamlessly integrated tools designed to elevate efficiency and customer experience.
                             </p>
 
-                            {/* Footer Logos - Row at bottom left */}
+                            {/* Footer Logos - Row at bottom start */}
                             <div className="pt-8 flex items-center justify-start opacity-100">
                                 <img
                                     src="/meraslogos.png"
