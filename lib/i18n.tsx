@@ -268,6 +268,10 @@ const translations: Translations = {
 
   // Inbox / Chat
   failedToSendMessage: { en: "Failed to send message", ar: "فشل إرسال الرسالة" },
+  imageNotLoaded: { en: "Image could not be loaded", ar: "تعذر تحميل الصورة" },
+  openLink: { en: "Open link", ar: "فتح الرابط" },
+  downloadAudio: { en: "Download Audio", ar: "تحميل الصوت" },
+  downloadVideo: { en: "Download Video", ar: "تحميل الفيديو" },
   geolocationNotSupported: { en: "Geolocation is not supported by your browser", ar: "المتصفح لا يدعم الموقع الجغرافي" },
   gettingLocation: { en: "Getting Location...", ar: "جاري الحصول على الموقع..." },
   pleaseAllowLocation: { en: "Please allow location access if prompted.", ar: "الرجاء السماح بالوصول للموقع إذا طُلب منك." },

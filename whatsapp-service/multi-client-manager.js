@@ -252,9 +252,7 @@ class MultiClientManager extends EventEmitter {
             throw new Error(`Account ${accountId} not found`);
         }
 
-        if (!clientData.isReady) {
-            throw new Error(`Account ${accountId} is not ready.Status: ${clientData.status} `);
-        }
+        throw new Error(`Account ${accountId} is not ready. Status: ${clientData.status}`);
 
         const { client } = clientData;
 
@@ -266,10 +264,10 @@ class MultiClientManager extends EventEmitter {
             targetChatId = phoneNumber;
         } else {
             const formattedNumber = phoneNumber.replace(/[^0-9]/g, '');
-            targetChatId = `${formattedNumber} @c.us`;
+            targetChatId = `${formattedNumber}@c.us`;
         }
 
-        console.log(`📤[${accountId}] Sending to ${targetChatId} `);
+        console.log(`📤 [${accountId}] Sending to ${targetChatId}`);
 
         // Send message
         if (mediaUrl) {
@@ -371,9 +369,9 @@ class MultiClientManager extends EventEmitter {
                 phone: phone || undefined
             };
 
-            console.log(`📡 Updating database: ${accountId} -> ${status}${phone ? ` (${phone})` : ''} `);
+            console.log(`📡 Updating database: ${accountId} -> ${status}${phone ? ` (${phone})` : ''}`);
 
-            const response = await fetch(`${this.nextAppUrl} /api/whatsapp / status`, {
+            const response = await fetch(`${this.nextAppUrl}/api/whatsapp/status`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -381,12 +379,12 @@ class MultiClientManager extends EventEmitter {
 
             const result = await response.json();
             if (!result.success) {
-                console.warn(`⚠️ Database update response: `, result);
+                console.warn(`⚠️ Database update response:`, result);
             } else {
-                console.log(`✅ Database updated: ${accountId} -> ${status} `);
+                console.log(`✅ Database updated: ${accountId} -> ${status}`);
             }
         } catch (error) {
-            console.error(`❌ Failed to update database for ${accountId}: `, error.message);
+            console.error(`❌ Failed to update database for ${accountId}:`, error.message);
         }
     }
 
