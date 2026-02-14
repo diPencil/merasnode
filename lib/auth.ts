@@ -175,10 +175,14 @@ export function getAuthHeader(): { Authorization?: string } {
 
 // API request helper with authentication
 export async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
-    const headers = {
-        'Content-Type': 'application/json',
+    // لا نضع Content-Type عند إرسال FormData (مثل رفع الملفات) حتى يضبط المتصفح multipart/form-data تلقائياً
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
+    const headers: HeadersInit = {
         ...getAuthHeader(),
         ...options.headers
+    }
+    if (!isFormData && !(options.headers && 'Content-Type' in (options.headers as Record<string, string>))) {
+        (headers as Record<string, string>)['Content-Type'] = 'application/json'
     }
 
     return fetch(url, {
