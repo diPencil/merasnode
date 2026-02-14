@@ -180,18 +180,25 @@ export default function OffersPage() {
         if (!id) return
         try {
             const response = await authenticatedFetch(`/api/offers/${id}`, { method: "DELETE" })
-            const data = await response.json()
+            const data = await response.json().catch(() => ({ success: false, error: t("failedToDeleteOffer") }))
             if (data.success) {
                 toast({
                     title: t("success"),
                     description: t("offerDeletedSuccess"),
                 })
                 fetchOffers()
+            } else {
+                toast({
+                    title: t("error"),
+                    description: data.error || t("failedToDeleteOffer"),
+                    variant: "destructive",
+                })
+                fetchOffers()
             }
         } catch (error) {
             toast({
                 title: t("error"),
-                description: t("failedToDeleteOffer"),
+                description: error instanceof Error ? error.message : t("failedToDeleteOffer"),
                 variant: "destructive",
             })
         }
@@ -235,9 +242,16 @@ export default function OffersPage() {
         try {
             const form = new FormData()
             form.append("file", file)
+            const auth = getAuthHeader()
+            if (!auth.Authorization) {
+                toast({ title: t("error"), description: t("sessionExpired") || "Session expired. Please sign in again.", variant: "destructive" })
+                setImageUploading(false)
+                e.target.value = ""
+                return
+            }
             const response = await fetch("/api/upload", {
                 method: "POST",
-                headers: { ...getAuthHeader() },
+                headers: auth,
                 body: form,
             })
             const text = await response.text()
@@ -602,11 +616,11 @@ export default function OffersPage() {
                                             <span className="text-xs">{t("offerImage")}</span>
                                         </div>
                                     )}
-                                    <div className="absolute top-2 right-2 flex gap-1">
+                                    <div className="absolute top-2 right-2 flex gap-1.5">
                                         <Button
                                             variant="secondary"
                                             size="icon"
-                                            className="h-8 w-8 rounded-full shadow-sm bg-background/80 hover:bg-background"
+                                            className="h-9 w-9 rounded-full border border-border bg-white/95 text-foreground shadow-md hover:bg-white hover:scale-105 dark:bg-gray-900/95 dark:border-gray-700 dark:text-gray-100"
                                             onClick={() => openEditDialog(offer)}
                                         >
                                             <Edit className="h-4 w-4" />
@@ -615,7 +629,7 @@ export default function OffersPage() {
                                             <Button
                                                 variant="secondary"
                                                 size="icon"
-                                                className="h-8 w-8 rounded-full shadow-sm bg-background/80 hover:bg-destructive hover:text-destructive-foreground"
+                                                className="h-9 w-9 rounded-full border border-border bg-white/95 text-destructive shadow-md hover:bg-destructive hover:text-white dark:bg-gray-900/95 dark:border-gray-700"
                                                 onClick={() => handleDeleteClick(offer.id)}
                                             >
                                                 <Trash2 className="h-4 w-4" />

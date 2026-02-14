@@ -243,6 +243,7 @@ const translations: Translations = {
   getStarted: { en: "Get started", ar: "ابدأ الآن" },
   loginSuccess: { en: "Login successful", ar: "تم تسجيل الدخول بنجاح" },
   loginFailed: { en: "Login failed", ar: "فشل تسجيل الدخول" },
+  sessionExpired: { en: "Session expired. Please sign in again.", ar: "انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى." },
   invalidCredentials: { en: "Invalid email, username or password", ar: "البريد أو اسم المستخدم أو كلمة المرور غير صحيحة" },
   logout: { en: "Log out", ar: "تسجيل الخروج" },
   merasCrm: { en: "Meras CRM", ar: "مراس CRM" },
