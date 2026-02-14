@@ -51,16 +51,13 @@ export default function LoginPage() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-purple-200 via-purple-300 to-indigo-300 p-4 font-sans" dir={isRtl ? "rtl" : "ltr"}>
-            {/* Main Container: Rounded-3xl on mobile, Rounded-[40px] on desktop to match reference */}
-            <div className="flex w-full max-w-[850px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl md:flex-row md:h-[550px] md:rounded-[40px]">
+            {/* Main Container: RTL = الكارت يمين والفورم يسار (flex-row-reverse) */}
+            <div className={`flex w-full max-w-[850px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl md:flex-row md:h-[550px] md:rounded-[40px] ${isRtl ? "md:flex-row-reverse" : ""}`}>
 
                 {/* 
-                   LEFT SIDE: Astronaut & Universe Theme 
-                   Note: Kept usually in LTR for the design aesthetic of the English text, 
-                   but we apply RTL flip to the image if needed.
-                   For strict adherence to image: Text seems left-aligned English.
+                   كارت الفضاء: عربي = يمين الصفحة ومحتواه RTL؛ إنجليزي = يسار ومحتواه LTR
                 */}
-                <div className={`card relative hidden w-full bg-[#171717] md:flex md:h-full md:w-[40%] lg:w-[40%] flex-col overflow-hidden ${isRtl ? "items-end" : ""}`}>
+                <div className={`card relative hidden w-full bg-[#171717] md:flex md:h-full md:w-[40%] lg:w-[40%] flex-col overflow-hidden ${isRtl ? "items-end" : ""}`} dir={isRtl ? "rtl" : "ltr"}>
                     {/* Astronaut Image Section — صورة معكوسة للعربي من مجلد الصور */}
                     <div className="image flex-1 flex items-center justify-center z-10 w-full" dir="ltr">
                         <img
@@ -95,8 +92,8 @@ export default function LoginPage() {
                             </p>
                         </div>
 
-                        {/* Logos & Icons Area — RTL: اللوجوهات يمين */}
-                        <div className={`icons pt-4 flex items-center gap-6 ${isRtl ? "justify-end" : "justify-start"}`}>
+                        {/* Logos & Icons Area — RTL: اللوجوهات يمين وترتيبها من يمين ليسار */}
+                        <div className={`icons pt-4 flex items-center gap-6 ${isRtl ? "justify-end flex-row-reverse" : "justify-start"}`}>
                             <div className="instagram">
                                 <img
                                     src="/meraslogos.png"
@@ -407,6 +404,7 @@ export default function LoginPage() {
                 }
                 .heading[dir="rtl"] .icons {
                     justify-content: flex-end;
+                    flex-direction: row-reverse;
                 }
 
                 .instagram::before {
