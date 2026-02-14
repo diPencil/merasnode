@@ -29,7 +29,8 @@ import { cn } from "@/lib/utils"
 import { useI18n } from "@/lib/i18n"
 import { getUserRole, logout, getUser, authenticatedFetch } from "@/lib/auth"
 import { canAccessPage, type PageRoute } from "@/lib/permissions"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { getDefaultAvatarForGender } from "@/lib/avatar"
 
 const GROUP_LABELS: Record<string, string> = {
     main: "navigation",
@@ -53,7 +54,7 @@ export function NavigationRail() {
     const [companyName, setCompanyName] = useState("")
     const [companyLogo, setCompanyLogo] = useState("")
     const [companyDisplayType, setCompanyDisplayType] = useState<"text" | "logo">("text")
-    const [currentUser, setCurrentUser] = useState<{ name?: string; role?: string } | null>(null)
+    const [currentUser, setCurrentUser] = useState<any | null>(null)
     const [quickCreateTemplateOpen, setQuickCreateTemplateOpen] = useState(false)
     const [quickCreateBotFlowOpen, setQuickCreateBotFlowOpen] = useState(false)
 
@@ -87,7 +88,7 @@ export function NavigationRail() {
             .catch(err => console.error('Error fetching settings:', err))
     }, [])
 
-    const userInitials = currentUser?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "U"
+    const userInitials = currentUser?.name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "U"
     const roleLabel = currentUser?.role ? currentUser.role.charAt(0) + currentUser.role.slice(1).toLowerCase() : ""
 
     return (
@@ -190,7 +191,8 @@ export function NavigationRail() {
                         className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
                         onClick={() => router.push('/settings')}
                     >
-                        <Avatar className="h-8 w-8 shrink-0">
+                        <Avatar className="h-8 w-8 shrink-0 border border-border/20">
+                            <AvatarImage src={getDefaultAvatarForGender(currentUser?.gender)} alt={currentUser?.name} />
                             <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                                 {userInitials}
                             </AvatarFallback>

@@ -182,6 +182,7 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
     }
 
     return fetch(url, {
+        cache: 'no-store',
         ...options,
         headers
     })
