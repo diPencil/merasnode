@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, basename } from 'path';
 import { requireAuth, unauthorizedResponse } from '@/lib/api-auth';
-import { 
-    validateFileUpload, 
+import {
+    validateFileUpload,
     sanitizeFilename,
     MAX_FILE_SIZE,
     ALLOWED_IMAGE_TYPES,
@@ -24,13 +24,13 @@ export async function POST(request: NextRequest) {
     try {
         // Require authentication
         const currentUser = await requireAuth(request);
-        
+
         const data = await request.formData();
         const file: File | null = data.get('file') as unknown as File;
 
         if (!file) {
             return NextResponse.json(
-                { success: false, error: 'No file provided' }, 
+                { success: false, error: 'No file provided' },
                 { status: 400 }
             );
         }
@@ -86,10 +86,12 @@ export async function POST(request: NextRequest) {
         if (error instanceof Error && error.message === 'Unauthorized') {
             return unauthorizedResponse();
         }
-        
+
         console.error('Upload error:', error);
+        // Return specific error for debugging
+        const errorMessage = error instanceof Error ? error.message : 'Unknown upload error';
         return NextResponse.json(
-            { success: false, error: 'Upload failed' }, 
+            { success: false, error: `Upload failed: ${errorMessage}` },
             { status: 500 }
         );
     }
