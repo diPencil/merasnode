@@ -83,7 +83,7 @@ export default function LoginPage() {
 
                             {/* Titles */}
                             <div className="space-y-0">
-                                <h1 className={`text-xl lg:text-2xl font-black tracking-tighter text-white uppercase flex gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
+                                <h1 className="text-xl lg:text-2xl font-black tracking-tighter text-white uppercase flex gap-2">
                                     <span>{t("meras")}</span>
                                     <span>{t("universe")}</span>
                                 </h1>
@@ -145,7 +145,7 @@ export default function LoginPage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                     disabled={isLoading}
-                                    className="h-12 rounded-full border-gray-100 bg-gray-50/80 px-5 text-sm font-semibold text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:bg-white focus:ring-4 focus:ring-purple-100/50 transition-all"
+                                    className="h-12 rounded-full border-gray-100 bg-gray-50/80 dark:bg-gray-50 dark:text-gray-900 px-5 text-sm font-semibold text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:bg-white dark:focus:bg-white focus:ring-4 focus:ring-purple-100/50 transition-all"
                                 />
                             </div>
 
@@ -162,7 +162,7 @@ export default function LoginPage() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
                                         disabled={isLoading}
-                                        className="h-12 rounded-full border-gray-100 bg-gray-50/80 px-5 pe-12 text-sm font-semibold text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:bg-white focus:ring-4 focus:ring-purple-100/50 transition-all"
+                                        className="h-12 rounded-full border-gray-100 bg-gray-50/80 dark:bg-gray-50 dark:text-gray-900 px-5 pe-12 text-sm font-semibold text-gray-800 placeholder:text-gray-400 focus:border-purple-400 focus:bg-white dark:focus:bg-white focus:ring-4 focus:ring-purple-100/50 transition-all"
                                     />
                                     <Button
                                         type="button"
