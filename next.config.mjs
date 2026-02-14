@@ -8,6 +8,9 @@ const nextConfig = {
     unoptimized: true,
   },
 
+  // Next.js 16: تجنب تعارض Turbopack مع webpack
+  turbopack: {},
+
   // Exclude WhatsApp packages from server bundles
   serverExternalPackages: [
     'whatsapp-web.js',
