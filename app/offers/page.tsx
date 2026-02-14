@@ -242,31 +242,19 @@ export default function OffersPage() {
         try {
             const form = new FormData()
             form.append("file", file)
-            const auth = getAuthHeader()
-            if (!auth.Authorization) {
-                toast({ title: t("error"), description: t("sessionExpired") || "Session expired. Please sign in again.", variant: "destructive" })
-                setImageUploading(false)
-                e.target.value = ""
-                return
-            }
-            const response = await fetch("/api/upload", {
+
+            const response = await authenticatedFetch("/api/upload", {
                 method: "POST",
-                headers: auth,
                 body: form,
             })
-            const text = await response.text()
-            let data: { success?: boolean; url?: string; error?: string }
-            try {
-                data = text ? JSON.parse(text) : {}
-            } catch {
-                data = { error: response.status === 401 ? t("sessionExpired") || "Session expired" : `Upload failed (${response.status})` }
-            }
+
+            const data = await response.json()
+
             if (response.ok && data.success && data.url) {
-                setFormData((prev) => ({ ...prev, imageUrl: data.url! }))
-                toast({ title: t("success"), description: "Image added" })
+                setFormData((prev) => ({ ...prev, imageUrl: data.url }))
+                toast({ title: t("success"), description: "Image uploaded successfully" })
             } else {
-                const msg = data.error || (response.status === 401 ? (t("sessionExpired") || "Session expired") : "Upload failed")
-                throw new Error(msg)
+                throw new Error(data.error || "Upload failed")
             }
         } catch (err) {
             toast({ title: t("error"), description: err instanceof Error ? err.message : "Upload failed", variant: "destructive" })
@@ -435,20 +423,20 @@ export default function OffersPage() {
     return (
         <AppLayout title={t("offers")}>
             {canDeleteOffer && (
-            <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
-                        <AlertDialogDescription>{t("confirmDeleteOffer")}</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDeleteOffer} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            {t("delete")}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
+                            <AlertDialogDescription>{t("confirmDeleteOffer")}</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmDeleteOffer} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                {t("delete")}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             )}
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
@@ -789,18 +777,16 @@ export default function OffersPage() {
                                             (contacts || []).map((contact) => (
                                                 <div
                                                     key={contact.id}
-                                                    className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-colors ${
-                                                        selectedContactIds.includes(contact.id)
+                                                    className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-colors ${selectedContactIds.includes(contact.id)
                                                             ? "bg-primary/10 border-primary"
                                                             : "hover:bg-muted"
-                                                    }`}
+                                                        }`}
                                                     onClick={() => toggleContactSelection(contact.id)}
                                                 >
-                                                    <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${
-                                                        selectedContactIds.includes(contact.id)
+                                                    <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${selectedContactIds.includes(contact.id)
                                                             ? "bg-primary border-primary"
                                                             : "border-muted-foreground"
-                                                    }`}>
+                                                        }`}>
                                                         {selectedContactIds.includes(contact.id) && (
                                                             <CheckSquare className="h-3 w-3 text-primary-foreground" />
                                                         )}
