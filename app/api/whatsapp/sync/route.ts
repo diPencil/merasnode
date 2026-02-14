@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
-const WHATSAPP_SERVICE_URL = 'http://localhost:3001'
+const WHATSAPP_SERVICE_URL = process.env.WHATSAPP_SERVICE_URL || 'http://localhost:3001'
 
 /**
  * POST /api/whatsapp/sync
@@ -52,13 +52,33 @@ export async function POST(request: NextRequest) {
         const assignedAgentId = activeAgent ? activeAgent.id : null
 
         // Get chats from WhatsApp service
-        const chatsResponse = await fetch(`${WHATSAPP_SERVICE_URL}/chats/${accountId}`)
-
-        if (!chatsResponse.ok) {
-            throw new Error('Failed to fetch chats from WhatsApp service')
+        let chatsResponse: Response
+        try {
+            chatsResponse = await fetch(`${WHATSAPP_SERVICE_URL}/chats/${accountId}`, {
+                headers: { 'Accept': 'application/json' },
+                signal: AbortSignal.timeout(30000), // 30s timeout
+            })
+        } catch (fetchError: any) {
+            const msg = fetchError?.name === 'AbortError'
+                ? 'WhatsApp service did not respond in time (timeout).'
+                : fetchError?.message || 'Could not reach WhatsApp service.'
+            console.error('Sync fetch error:', fetchError)
+            throw new Error(`Failed to fetch chats: ${msg} Is the service running at ${WHATSAPP_SERVICE_URL}?`)
         }
 
-        const chatsData = await chatsResponse.json()
+        const responseText = await chatsResponse.text()
+        let chatsData: { chats?: any[] }
+        try {
+            chatsData = responseText ? JSON.parse(responseText) : {}
+        } catch {
+            throw new Error(`Invalid response from WhatsApp service (status ${chatsResponse.status}). Check that the service exposes GET /chats/:accountId.`)
+        }
+
+        if (!chatsResponse.ok) {
+            const errMsg = (chatsData as any)?.error || (chatsData as any)?.message || responseText?.slice(0, 200) || `HTTP ${chatsResponse.status}`
+            throw new Error(`WhatsApp service error: ${errMsg}`)
+        }
+
         const chats = chatsData.chats || []
 
         console.log(`📱 Found ${chats.length} chats`)
@@ -89,6 +109,20 @@ export async function POST(request: NextRequest) {
                 let contact = await prisma.contact.findUnique({
                     where: { phone: contactPhone }
                 });
+
+                // للمجموعات: إن وُجدت جهة اتصال بنفس الرقم بدون @g.us نحدّثها للصيغة الكاملة لتجنب التكرار
+                if (!contact && isGroup && contactPhone.endsWith('@g.us')) {
+                    const withoutSuffix = contactPhone.replace('@g.us', '')
+                    contact = await prisma.contact.findFirst({
+                        where: { phone: withoutSuffix }
+                    })
+                    if (contact) {
+                        contact = await prisma.contact.update({
+                            where: { id: contact.id },
+                            data: { phone: contactPhone, name: chat.name || contact.name || contactPhone }
+                        })
+                    }
+                }
 
                 if (!contact) {
                     contact = await prisma.contact.create({
@@ -137,7 +171,7 @@ export async function POST(request: NextRequest) {
                             status: 'ACTIVE',
                             lastMessageAt: new Date(chat.timestamp * 1000),
                             isRead: chat.unreadCount === 0,
-                            // Auto-assign to agent linked with this WhatsApp account, if available
+                            whatsappAccountId: accountId,
                             ...(assignedAgentId && { assignedToId: assignedAgentId })
                         }
                     })
@@ -150,9 +184,11 @@ export async function POST(request: NextRequest) {
                         updatedAt: new Date()
                     }
 
-                    // If conversation is unassigned, auto-assign to agent linked with this account
                     if (!existingConversation.assignedToId && assignedAgentId) {
                         conversationUpdateData.assignedToId = assignedAgentId
+                    }
+                    if (!existingConversation.whatsappAccountId) {
+                        conversationUpdateData.whatsappAccountId = accountId
                     }
 
                     await prisma.conversation.update({

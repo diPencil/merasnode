@@ -191,6 +191,9 @@ const translations: Translations = {
   validFrom: { en: "Valid From", ar: "صالح من" },
   validTo: { en: "Valid To", ar: "صالح حتى" },
   sendOffer: { en: "Send Offer", ar: "إرسال العرض" },
+  offerImage: { en: "Offer Image", ar: "صورة العرض" },
+  offerImageOptional: { en: "Optional — shown when sending the offer", ar: "اختياري — تظهر عند إرسال العرض" },
+  uploadImage: { en: "Upload image", ar: "رفع صورة" },
   targetAudience: { en: "Target Audience", ar: "الجمهور المستهدف" },
 
   // Analytics
@@ -272,6 +275,7 @@ const translations: Translations = {
   openLink: { en: "Open link", ar: "فتح الرابط" },
   downloadAudio: { en: "Download Audio", ar: "تحميل الصوت" },
   downloadVideo: { en: "Download Video", ar: "تحميل الفيديو" },
+  videoUnavailable: { en: "Video unavailable", ar: "الفيديو غير متاح" },
   geolocationNotSupported: { en: "Geolocation is not supported by your browser", ar: "المتصفح لا يدعم الموقع الجغرافي" },
   gettingLocation: { en: "Getting Location...", ar: "جاري الحصول على الموقع..." },
   pleaseAllowLocation: { en: "Please allow location access if prompted.", ar: "الرجاء السماح بالوصول للموقع إذا طُلب منك." },
@@ -461,6 +465,10 @@ const translations: Translations = {
   pleaseSelectAtLeastOneContact: { en: "Please select at least one contact", ar: "يرجى اختيار جهة اتصال واحدة على الأقل" },
   bulkSendComplete: { en: "Bulk Send Complete", ar: "اكتمل الإرسال الجماعي" },
   sentToContactsCount: { en: "Sent to {n} contact(s)", ar: "تم الإرسال إلى {n} جهة اتصال" },
+  offerStatsSentTo: { en: "Sent to {n} recipient(s)", ar: "أُرسل إلى {n} رقم" },
+  offerStatsSingle: { en: "{n} single", ar: "{n} فردي" },
+  offerStatsBulk: { en: "{n} bulk", ar: "{n} جماعي" },
+  offerStatsNeverSent: { en: "Not sent yet", ar: "لم يُرسل بعد" },
   bulkSendFailedCount: { en: "{n} failed", ar: "فشل {n}" },
   offersPageDescription: { en: "Create and manage promotional offers for customers", ar: "إنشاء وإدارة العروض الترويجية للعملاء" },
   editOffer: { en: "Edit Offer", ar: "تعديل العرض" },

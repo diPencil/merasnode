@@ -23,6 +23,7 @@ import { format } from "date-fns"
 import { authenticatedFetch, getUserRole } from "@/lib/auth"
 import { hasPermission } from "@/lib/permissions"
 import type { UserRole } from "@/lib/permissions"
+import { getDefaultAvatarForGender } from "@/lib/avatar"
 
 interface User {
   id: string
@@ -399,7 +400,7 @@ export default function UsersPage() {
                   >
                     <div className="flex items-start gap-3">
                       <Avatar className="h-12 w-12 shrink-0 border">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}&gender=${user.gender === 'FEMALE' ? 'female' : 'male'}`} />
+                        <AvatarImage src={getDefaultAvatarForGender(user.gender)} alt={user.name} />
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
@@ -475,7 +476,7 @@ export default function UsersPage() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9 border">
-                              <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}&gender=${user.gender === 'FEMALE' ? 'female' : 'male'}`} />
+                              <AvatarImage src={getDefaultAvatarForGender(user.gender)} alt={user.name} />
                               <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="flex flex-col">

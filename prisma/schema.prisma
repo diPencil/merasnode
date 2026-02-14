@@ -340,16 +340,20 @@ model Settings {
 
 // العروض
 model Offer {
-  id             String   @id @default(uuid())
-  title          String
-  description    String?  @db.Text
-  content        String   @db.Text
-  validFrom      DateTime
-  validTo        DateTime
-  isActive       Boolean  @default(true)
-  targetAudience Json? // JSON array of contact IDs or filters
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  title              String
+  description        String?  @db.Text
+  content            String   @db.Text
+  imageUrl           String?  // صورة العرض — تظهر عند الإرسال
+  validFrom          DateTime
+  validTo            DateTime
+  isActive           Boolean  @default(true)
+  targetAudience     Json? // JSON array of contact IDs or filters
+  recipientsCount    Int      @default(0) // إجمالي الأرقام اللي اتبعتلها
+  singleSendCount    Int      @default(0) // عدد مرات الإرسال فردي
+  bulkSendCount      Int      @default(0) // عدد مرات الإرسال جماعي
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@index([isActive])
   @@index([validFrom])

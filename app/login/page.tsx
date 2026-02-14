@@ -60,19 +60,22 @@ export default function LoginPage() {
                    but we apply RTL flip to the image if needed.
                    For strict adherence to image: Text seems left-aligned English.
                 */}
-                <div className="card relative hidden w-full bg-[#171717] md:flex md:h-full md:w-[40%] lg:w-[40%] flex-col overflow-hidden">
-                    {/* Astronaut Image Section */}
-                    <div className="image flex-1 flex items-center justify-center z-10">
+                <div className={`card relative hidden w-full bg-[#171717] md:flex md:h-full md:w-[40%] lg:w-[40%] flex-col overflow-hidden ${isRtl ? "items-end" : ""}`}>
+                    {/* Astronaut Image Section — صورة معكوسة للعربي من مجلد الصور */}
+                    <div className="image flex-1 flex items-center justify-center z-10 w-full" dir="ltr">
                         <img
-                            src="/astronaut.webp"
+                            src={isRtl ? "/astronaut - RTL.png" : "/astronaut.webp"}
                             alt="Astronaut"
                             className="astronaut-image w-[65%] object-contain filter drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]"
                         />
                     </div>
 
-                    {/* Bottom Content Section */}
-                    <div className="heading z-10 px-8 pb-10 space-y-4 text-left" dir="ltr">
-                        <div className="space-y-4">
+                    {/* Bottom Content Section — RTL: محتوى الكارت يمين؛ LTR: يسار */}
+                    <div
+                        className={`heading z-10 px-8 pb-10 space-y-4 w-full ${isRtl ? "text-right" : "text-left"}`}
+                        dir={isRtl ? "rtl" : "ltr"}
+                    >
+                        <div className={`space-y-4 ${isRtl ? "flex flex-col items-end" : ""}`}>
                             {/* Badge */}
                             <div className="inline-block rounded-full bg-[#8B5CF6] px-3 py-1 text-[9px] font-extrabold tracking-widest text-white uppercase shadow-[0_0_15px_rgba(139,92,246,0.5)]">
                                 {t("nextGenPlatform")}
@@ -80,25 +83,25 @@ export default function LoginPage() {
 
                             {/* Titles */}
                             <div className="space-y-0">
-                                <h1 className="text-xl lg:text-2xl font-black tracking-tighter text-white uppercase flex gap-2">
+                                <h1 className={`text-xl lg:text-2xl font-black tracking-tighter text-white uppercase flex gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
                                     <span>{t("meras")}</span>
                                     <span>{t("universe")}</span>
                                 </h1>
                             </div>
 
                             {/* Description */}
-                            <p className="max-w-[280px] text-[9px] lg:text-[10px] font-bold leading-relaxed text-gray-400">
+                            <p className={`max-w-[280px] text-[9px] lg:text-[10px] font-bold leading-relaxed text-gray-400 ${isRtl ? "text-end" : ""}`}>
                                 {t("brandDescription")}
                             </p>
                         </div>
 
-                        {/* Logos & Icons Area */}
-                        <div className="icons pt-4 flex items-center justify-start gap-6">
+                        {/* Logos & Icons Area — RTL: اللوجوهات يمين */}
+                        <div className={`icons pt-4 flex items-center gap-6 ${isRtl ? "justify-end" : "justify-start"}`}>
                             <div className="instagram">
                                 <img
                                     src="/meraslogos.png"
                                     alt="Meras Companies"
-                                    className="h-6 lg:h-7 w-auto object-contain brightness-0 invert opacity-90"
+                                    className="h-9 lg:h-11 w-auto object-contain brightness-0 invert opacity-90"
                                 />
                             </div>
                             <div className="x"></div>
@@ -401,6 +404,9 @@ export default function LoginPage() {
                     flex-direction: row;
                     column-gap: 1em;
                     z-index: 1;
+                }
+                .heading[dir="rtl"] .icons {
+                    justify-content: flex-end;
                 }
 
                 .instagram::before {

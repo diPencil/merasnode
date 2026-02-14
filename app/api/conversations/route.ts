@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       where.AND.push({ contact: { branchId } })
     }
 
-    const conversations = await prisma.conversation.findMany({
+    const rawConversations = await prisma.conversation.findMany({
       where,
       include: {
         contact: {
@@ -54,6 +54,24 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { lastMessageAt: 'desc' }
     })
+
+    // إزالة تكرار المحادثات: نفس الجهة قد تظهر بأكثر من contact (مثلاً رقم المجموعة مع وبدون @g.us)
+    const conversationKey = (c: (typeof rawConversations)[0]) => {
+      const phone = c.contact?.phone ?? ''
+      if (phone.includes('@g.us')) return `group:${phone.split('@')[0]}`
+      return `phone:${phone.replace(/\D/g, '')}`
+    }
+    const seen = new Map<string, (typeof rawConversations)[0]>()
+    for (const c of rawConversations) {
+      const key = conversationKey(c)
+      const existing = seen.get(key)
+      if (!existing || new Date(c.lastMessageAt) > new Date(existing.lastMessageAt)) {
+        seen.set(key, c)
+      }
+    }
+    const conversations = Array.from(seen.values()).sort(
+      (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+    )
 
     return NextResponse.json({
       success: true,

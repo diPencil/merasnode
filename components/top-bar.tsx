@@ -1,6 +1,7 @@
 "use client"
 
 import { logout, getUser } from "@/lib/auth"
+import { getDefaultAvatarForGender } from "@/lib/avatar"
 import { Search, Calendar, Globe, Bell, X, Check, Trash2, CheckCircle2, User, Settings, KeyRound, LogOut } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
@@ -315,7 +316,7 @@ export function TopBar({ title, showSearch = true, isMobile = false }: TopBarPro
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Avatar className="h-10 w-10 min-h-[44px] min-w-[44px] cursor-pointer ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
-              <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser?.name || 'User'}`} />
+              <AvatarImage src={getDefaultAvatarForGender(currentUser?.gender)} alt={currentUser?.name} />
               <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                 {currentUser?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U'}
               </AvatarFallback>

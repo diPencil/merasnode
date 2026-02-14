@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Tag, Calendar, Send, Edit, Trash2, Users, CheckSquare } from "lucide-react"
+import { Plus, Tag, Calendar, Send, Edit, Trash2, Users, CheckSquare, X, ImageIcon, BarChart2 } from "lucide-react"
 import { useI18n } from "@/lib/i18n"
 import {
     Dialog,
@@ -47,10 +47,14 @@ interface Offer {
     title: string
     description?: string
     content: string
+    imageUrl?: string | null
     validFrom: string
     validTo: string
     isActive: boolean
     createdAt: string
+    recipientsCount?: number
+    singleSendCount?: number
+    bulkSendCount?: number
 }
 
 interface Contact {
@@ -71,10 +75,12 @@ export default function OffersPage() {
         title: "",
         description: "",
         content: "",
+        imageUrl: "" as string,
         validFrom: "",
         validTo: "",
         isActive: true,
     })
+    const [imageUploading, setImageUploading] = useState(false)
     const [isSendDialogOpen, setIsSendDialogOpen] = useState(false)
     const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null)
     const [contacts, setContacts] = useState<Contact[]>([])
@@ -131,10 +137,11 @@ export default function OffersPage() {
             const url = editingOffer ? `/api/offers/${editingOffer.id}` : "/api/offers"
             const method = editingOffer ? "PUT" : "POST"
 
+            const payload = { ...formData, imageUrl: formData.imageUrl || null }
             const response = await authenticatedFetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             })
 
             const data = await response.json()
@@ -190,6 +197,7 @@ export default function OffersPage() {
             title: "",
             description: "",
             content: "",
+            imageUrl: "",
             validFrom: "",
             validTo: "",
             isActive: true,
@@ -203,11 +211,37 @@ export default function OffersPage() {
             title: offer.title,
             description: offer.description || "",
             content: offer.content,
+            imageUrl: offer.imageUrl || "",
             validFrom: offer.validFrom.split("T")[0],
             validTo: offer.validTo.split("T")[0],
             isActive: offer.isActive,
         })
         setIsDialogOpen(true)
+    }
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        if (!file.type.startsWith("image/")) {
+            toast({ title: t("error"), description: "Please select an image file (e.g. JPG, PNG)", variant: "destructive" })
+            return
+        }
+        setImageUploading(true)
+        try {
+            const form = new FormData()
+            form.append("file", file)
+            const response = await authenticatedFetch("/api/upload", { method: "POST", body: form })
+            const data = await response.json()
+            if (data.success && data.url) {
+                setFormData((prev) => ({ ...prev, imageUrl: data.url }))
+                toast({ title: t("success"), description: "Image added" })
+            } else throw new Error(data.error || "Upload failed")
+        } catch (err) {
+            toast({ title: t("error"), description: err instanceof Error ? err.message : "Upload failed", variant: "destructive" })
+        } finally {
+            setImageUploading(false)
+            e.target.value = ""
+        }
     }
 
     const openSendDialog = (offer: Offer) => {
@@ -251,7 +285,7 @@ export default function OffersPage() {
                 conversation = createConvData.data
             }
 
-            // Send offer as message
+            // Send offer as message (with optional image)
             const messageContent = `🎁 *${offer.title}*\n\n${offer.description ? offer.description + '\n\n' : ''}${offer.content}\n\n📅 Valid: ${format(new Date(offer.validFrom), "MMM dd")} - ${format(new Date(offer.validTo), "MMM dd, yyyy")}`
 
             const response = await authenticatedFetch('/api/messages', {
@@ -261,7 +295,8 @@ export default function OffersPage() {
                     conversationId: conversation.id,
                     content: messageContent,
                     direction: 'OUTGOING',
-                    type: 'TEXT'
+                    type: offer.imageUrl ? 'IMAGE' : 'TEXT',
+                    mediaUrl: offer.imageUrl || undefined,
                 })
             })
 
@@ -296,6 +331,14 @@ export default function OffersPage() {
             if (!selectedOffer) return
             const success = await sendOfferToContact(selectedContactId, selectedOffer)
             if (success) {
+                try {
+                    await authenticatedFetch(`/api/offers/${selectedOffer.id}/record-send`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ mode: "single", recipientCount: 1 }),
+                    })
+                } catch (_) { /* ignore */ }
+                fetchOffers()
                 const contact = contacts.find(c => c.id === selectedContactId)
                 toast({
                     title: t("success"),
@@ -334,6 +377,17 @@ export default function OffersPage() {
                 }
                 // Small delay to avoid overwhelming the API
                 await new Promise(resolve => setTimeout(resolve, 100))
+            }
+
+            if (successCount > 0) {
+                try {
+                    await authenticatedFetch(`/api/offers/${selectedOffer.id}/record-send`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ mode: "bulk", recipientCount: successCount }),
+                    })
+                } catch (_) { /* ignore */ }
+                fetchOffers()
             }
 
             toast({
@@ -414,6 +468,47 @@ export default function OffersPage() {
                                             required
                                         />
                                     </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="imageUrl">{t("offerImage")}</Label>
+                                        <p className="text-xs text-muted-foreground">{t("offerImageOptional")}</p>
+                                        <div className="flex flex-wrap gap-2 items-center">
+                                            <Input
+                                                id="imageUrl"
+                                                type="url"
+                                                placeholder="https://..."
+                                                value={formData.imageUrl}
+                                                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                                                className="flex-1 min-w-[200px]"
+                                            />
+                                            <label className="cursor-pointer">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="sr-only"
+                                                    onChange={handleImageUpload}
+                                                    disabled={imageUploading}
+                                                />
+                                                <Button type="button" variant="outline" size="sm" asChild>
+                                                    <span>{imageUploading ? t("loading") + "..." : t("uploadImage")}</span>
+                                                </Button>
+                                            </label>
+                                        </div>
+                                        {formData.imageUrl && (
+                                            <div className="mt-2 relative rounded-lg overflow-hidden border bg-muted max-w-[200px]">
+                                                <img src={formData.imageUrl} alt="" className="w-full h-auto object-cover max-h-32" />
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    size="icon"
+                                                    className="absolute top-1 right-1 h-7 w-7"
+                                                    onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                                                    aria-label={t("delete")}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="grid gap-2">
                                             <Label htmlFor="validFrom">{t("validFrom")} *</Label>
@@ -474,54 +569,70 @@ export default function OffersPage() {
                 ) : (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {offers.map((offer) => (
-                            <Card key={offer.id} className="rounded-2xl shadow-soft hover:shadow-soft-lg transition-shadow">
-                                <CardHeader>
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                                                <Tag className="h-5 w-5 text-primary" />
-                                            </div>
-                                            <div>
-                                                <CardTitle className="text-lg">{offer.title}</CardTitle>
-                                                <CardDescription>
-                                                    {offer.isActive ? (
-                                                        <span className="text-success">{t("active")}</span>
-                                                    ) : (
-                                                        <span className="text-muted-foreground">{t("inactive")}</span>
-                                                    )}
-                                                </CardDescription>
-                                            </div>
+                            <Card key={offer.id} className="rounded-2xl shadow-soft hover:shadow-soft-lg transition-shadow overflow-hidden">
+                                {/* صورة العرض في أعلى الكارت — تظهر دائماً (صورة أو placeholder) */}
+                                <div className="relative w-full aspect-16/10 bg-muted shrink-0">
+                                    {offer.imageUrl ? (
+                                        <img
+                                            src={offer.imageUrl}
+                                            alt=""
+                                            className="absolute inset-0 w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground/60">
+                                            <ImageIcon className="h-12 w-12 mb-1" />
+                                            <span className="text-xs">{t("offerImage")}</span>
                                         </div>
-                                        <div className="flex gap-1">
+                                    )}
+                                    <div className="absolute top-2 right-2 flex gap-1">
+                                        <Button
+                                            variant="secondary"
+                                            size="icon"
+                                            className="h-8 w-8 rounded-full shadow-sm bg-background/80 hover:bg-background"
+                                            onClick={() => openEditDialog(offer)}
+                                        >
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                        {canDeleteOffer && (
                                             <Button
-                                                variant="ghost"
+                                                variant="secondary"
                                                 size="icon"
-                                                className="h-8 w-8"
-                                                onClick={() => openEditDialog(offer)}
-                                            >
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            {canDeleteOffer && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                                className="h-8 w-8 rounded-full shadow-sm bg-background/80 hover:bg-destructive hover:text-destructive-foreground"
                                                 onClick={() => handleDeleteClick(offer.id)}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
-                                            )}
-                                        </div>
+                                        )}
                                     </div>
-                                </CardHeader>
-                                <CardContent className="space-y-3">
-                                    {offer.description && (
-                                        <p className="text-sm text-muted-foreground">{offer.description}</p>
+                                    {offer.isActive && (
+                                        <span className="absolute bottom-2 start-2 rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
+                                            {t("active")}
+                                        </span>
                                     )}
+                                </div>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-lg line-clamp-1">{offer.title}</CardTitle>
+                                    {offer.description && (
+                                        <CardDescription className="line-clamp-2">{offer.description}</CardDescription>
+                                    )}
+                                </CardHeader>
+                                <CardContent className="space-y-3 pt-0">
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <Calendar className="h-4 w-4" />
+                                        <Calendar className="h-4 w-4 shrink-0" />
                                         <span>
                                             {format(new Date(offer.validFrom), "MMM dd")} - {format(new Date(offer.validTo), "MMM dd, yyyy")}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <BarChart2 className="h-3.5 w-3.5 shrink-0" />
+                                        <span>
+                                            {(offer.recipientsCount ?? 0) === 0 && (offer.singleSendCount ?? 0) === 0 && (offer.bulkSendCount ?? 0) === 0
+                                                ? t("offerStatsNeverSent")
+                                                : [
+                                                    t("offerStatsSentTo").replace("{n}", String(offer.recipientsCount ?? 0)),
+                                                    (offer.singleSendCount ?? 0) > 0 ? t("offerStatsSingle").replace("{n}", String(offer.singleSendCount)) : null,
+                                                    (offer.bulkSendCount ?? 0) > 0 ? t("offerStatsBulk").replace("{n}", String(offer.bulkSendCount)) : null,
+                                                ].filter(Boolean).join(" · ")}
                                         </span>
                                     </div>
                                     <Button
@@ -550,7 +661,12 @@ export default function OffersPage() {
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                             {selectedOffer && (
-                                <div className="rounded-lg bg-muted p-3 space-y-1">
+                                <div className="rounded-lg bg-muted p-3 space-y-2">
+                                    {selectedOffer.imageUrl && (
+                                        <div className="rounded-md overflow-hidden border bg-background max-h-24">
+                                            <img src={selectedOffer.imageUrl} alt="" className="w-full h-full object-cover max-h-24" />
+                                        </div>
+                                    )}
                                     <p className="font-semibold text-sm">{selectedOffer.title}</p>
                                     {selectedOffer.description && (
                                         <p className="text-xs text-muted-foreground">{selectedOffer.description}</p>

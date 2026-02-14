@@ -26,7 +26,7 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const body = await request.json()
-        const { title, description, content, validFrom, validTo, isActive } = body
+        const { title, description, content, imageUrl, validFrom, validTo, isActive } = body
 
         if (!title || !content || !validFrom || !validTo) {
             return NextResponse.json(
@@ -40,6 +40,7 @@ export async function POST(request: Request) {
                 title,
                 description: description || null,
                 content,
+                imageUrl: imageUrl || null,
                 validFrom: new Date(validFrom),
                 validTo: new Date(validTo),
                 isActive: isActive !== undefined ? isActive : true,

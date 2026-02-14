@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
                     username: true,
                     password: true,
                     role: true,
+                    gender: true,
                     status: true,
                     isActive: true
                 }
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
                     username: true,
                     password: true,
                     role: true,
+                    gender: true,
                     status: true,
                     isActive: true
                 }

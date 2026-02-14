@@ -181,6 +181,13 @@ export default function InboxPage() {
 
   // Recording Refs
   const [isRecording, setIsRecording] = useState(false)
+  const [failedVideoIds, setFailedVideoIds] = useState<Set<string>>(new Set())
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_BASE_URL || "")
+  const getFullMediaUrl = (url: string | undefined) => {
+    if (!url) return ""
+    if (url.startsWith("http://") || url.startsWith("https://")) return url
+    return baseUrl ? `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}` : url
+  }
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const chatMessagesEndRef = useRef<HTMLDivElement | null>(null)
@@ -1443,13 +1450,32 @@ export default function InboxPage() {
                               </div>
                             </div>
                           ) : message.type === 'VIDEO' && message.mediaUrl ? (
-                            <div className="rounded-lg overflow-hidden max-w-sm">
-                              <video controls className="w-full h-auto max-h-[300px]" src={message.mediaUrl} />
-                              <div className="flex justify-end p-1">
-                                <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline">
-                                  {t("downloadVideo")}
-                                </a>
-                              </div>
+                            <div className="rounded-lg overflow-hidden max-w-sm bg-black/5">
+                              {failedVideoIds.has(message.id) ? (
+                                <div className="flex flex-col items-center justify-center gap-2 p-6 min-h-[120px] text-center">
+                                  <Video className="h-10 w-10 text-muted-foreground" />
+                                  <p className="text-xs text-muted-foreground">{t("videoUnavailable") || "Video unavailable"}</p>
+                                  <a href={getFullMediaUrl(message.mediaUrl)} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline">
+                                    {t("downloadVideo")}
+                                  </a>
+                                </div>
+                              ) : (
+                                <video
+                                  controls
+                                  className="w-full h-auto max-h-[300px]"
+                                  preload="metadata"
+                                  playsInline
+                                  src={getFullMediaUrl(message.mediaUrl)}
+                                  onError={() => setFailedVideoIds((prev) => new Set(prev).add(message.id))}
+                                />
+                              )}
+                              {!failedVideoIds.has(message.id) && (
+                                <div className="flex justify-end p-1">
+                                  <a href={getFullMediaUrl(message.mediaUrl)} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline">
+                                    {t("downloadVideo")}
+                                  </a>
+                                </div>
+                              )}
                               {message.content && !message.content.startsWith('http') && <p className="mt-2 text-xs opacity-90">{message.content}</p>}
                             </div>
                           ) : message.type === 'LOCATION' ? (

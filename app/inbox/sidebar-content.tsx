@@ -102,31 +102,39 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
 
         setLoadingParticipants(true)
         try {
-            // We need accountId and groupId
-            // accountId is in conversation.whatsappAccountId
-            // groupId is in conversation.contact.phone
-            const accountId = conversation.whatsappAccountId
             const groupId = conversation.contact.phone
+            // accountId: من المحادثة أو من آخر رسالة (غالباً غير معيّن للمحادثات المجلوبة من السينك)
+            const accountId = (conversation as any).whatsappAccountId
+                || (conversation as any).messages?.[0]?.whatsappAccountId
+                || null
 
-            if (!accountId) {
-                // Try to find a connected account if not in conversation
+            let resolvedAccountId = accountId
+            if (!resolvedAccountId) {
                 const accRes = await authenticatedFetch('/api/whatsapp/accounts')
                 const accData = await accRes.json()
                 if (accData.success && accData.accounts?.length > 0) {
                     const connected = accData.accounts.find((a: any) => a.status === 'CONNECTED')
-                    if (connected) {
-                        const res = await authenticatedFetch(`/api/whatsapp/group?accountId=${connected.id}&groupId=${groupId}`)
-                        const data = await res.json()
-                        if (data.success) setParticipants(data.group.participants || [])
-                    }
+                    if (connected) resolvedAccountId = connected.id
                 }
+            }
+
+            if (!resolvedAccountId) {
+                setParticipants([])
+                return
+            }
+
+            const res = await authenticatedFetch(
+                `/api/whatsapp/group?accountId=${encodeURIComponent(resolvedAccountId)}&groupId=${encodeURIComponent(groupId)}`
+            )
+            const data = await res.json()
+            if (data.success && data.group?.participants) {
+                setParticipants(data.group.participants)
             } else {
-                const res = await authenticatedFetch(`/api/whatsapp/group?accountId=${accountId}&groupId=${groupId}`)
-                const data = await res.json()
-                if (data.success) setParticipants(data.group.participants || [])
+                setParticipants([])
             }
         } catch (error) {
             console.error('Failed to fetch group participants', error)
+            setParticipants([])
         } finally {
             setLoadingParticipants(false)
         }
