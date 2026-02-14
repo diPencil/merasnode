@@ -1499,8 +1499,8 @@ export default function InboxPage() {
                               </div>
                             </a>
                           ) : (
-                            // Text Rendering - Fixed wrapping issues
-                            <div className="text-sm whitespace-pre-wrap wrap-break-word leading-relaxed text-gray-800 dark:text-gray-100 min-w-[50px] max-w-full" dir="auto">
+                            // Text Rendering: full text, proper wrap, RTL-friendly, no clipping
+                            <div className="text-sm whitespace-pre-wrap wrap-break-word leading-relaxed text-gray-800 dark:text-gray-100 min-w-0 max-w-full overflow-visible" dir="auto">
                               {formatMessageContent(message.content)}
                             </div>
                           )}

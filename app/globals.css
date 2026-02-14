@@ -524,30 +524,33 @@ body {
   display: flex;
   flex-direction: column;
   max-inline-size: 100%;
+  min-inline-size: 0; /* allow flex item to shrink; bubble still grows with content up to max-width */
 }
 
-/* Bubble: shared desktop + mobile behavior */
-/* Bubble: shared desktop + mobile behavior */
+/* Bubble: dynamic width, no fixed width, no text clipping */
 .chat-bubble {
   display: inline-block;
   width: fit-content;
-  max-width: 90%;
-  /* mobile default */
+  max-width: 85%; /* mobile: ~85% of viewport */
+  min-width: 0;
 
-  /* Text wrapping */
-  white-space: normal;
+  /* No clipping — text must show fully */
+  overflow: visible;
+
+  /* Text wrapping: natural wrapping, no forced breaks that cut text */
+  white-space: pre-wrap; /* preserve newlines, wrap long lines */
   word-break: break-word;
   overflow-wrap: break-word;
 
   /* Base alignment */
-  text-align: left;
+  text-align: start;
   line-height: 1.6;
 }
 
-/* Desktop: slightly narrower bubbles */
+/* Desktop / tablet: 55–70% of screen width for sent and received */
 @media (min-width: 768px) {
   .chat-bubble {
-    max-width: 75%;
+    max-width: 70%;
   }
 }
 
