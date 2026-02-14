@@ -36,19 +36,36 @@ export async function GET(
 // PUT /api/offers/[id]
 export async function PUT(
     request: Request,
-    { params }: { params: Promise<{ id: string }> }
+    props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params
-        const body = await request.json()
-        const { title, description, content, imageUrl, validFrom, validTo, isActive } = body
-        // لا نخزن data: URLs (base64) — نسمح فقط بـ http/https أو /uploads/
+        const params = await props.params;
+        const id = params.id;
+
+        let body;
+        try {
+            body = await request.json();
+        } catch (e) {
+            return NextResponse.json(
+                { success: false, error: "Invalid JSON body" },
+                { status: 400 }
+            );
+        }
+
+        const { title, description, content, imageUrl, validFrom, validTo, isActive } = body;
+
+        // Ensure mandatory fields are present if needed, or allow partial updates
+        if (!title || !content || !validFrom || !validTo) {
+            // Basic validation for required fields on update if full update is expected
+            // Alternatively, we can make update partial. For now, let's assume update form sends all fields.
+        }
+
         const safeImageUrl =
             imageUrl !== undefined
                 ? typeof imageUrl === "string" && imageUrl.startsWith("data:")
                     ? null
                     : imageUrl || null
-                : undefined
+                : undefined;
 
         const offer = await prisma.offer.update({
             where: { id },
@@ -59,9 +76,9 @@ export async function PUT(
                 imageUrl: safeImageUrl,
                 validFrom: new Date(validFrom),
                 validTo: new Date(validTo),
-                isActive,
+                isActive: isActive ?? true, // Default to true if undefined, but form should send it
             },
-        })
+        });
 
         return NextResponse.json({
             success: true,
@@ -79,10 +96,11 @@ export async function PUT(
 // DELETE /api/offers/[id] (ADMIN only; Supervisor blocked and audited)
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params
+        const params = await props.params;
+        const id = params.id;
         const offer = await prisma.offer.findUnique({ where: { id } })
         const prevState = offer ? { title: offer.title, status: offer.isActive } : undefined
         const allowed = await requireDeleteAllowed(request, "Offer", id, prevState)
