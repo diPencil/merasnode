@@ -34,13 +34,16 @@ export async function POST(request: Request) {
                 { status: 400 }
             )
         }
+        // لا نخزن data: URLs (base64) — استخدم رابط الرفع فقط
+        const safeImageUrl =
+            typeof imageUrl === "string" && imageUrl.startsWith("data:") ? null : imageUrl || null
 
         const offer = await prisma.offer.create({
             data: {
                 title,
                 description: description || null,
                 content,
-                imageUrl: imageUrl || null,
+                imageUrl: safeImageUrl,
                 validFrom: new Date(validFrom),
                 validTo: new Date(validTo),
                 isActive: isActive !== undefined ? isActive : true,

@@ -5,11 +5,12 @@ import { requireDeleteAllowed, unauthorizedResponse, forbiddenResponse } from "@
 // GET /api/offers/[id]
 export async function GET(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params
         const offer = await prisma.offer.findUnique({
-            where: { id: params.id },
+            where: { id },
         })
 
         if (!offer) {
@@ -35,19 +36,27 @@ export async function GET(
 // PUT /api/offers/[id]
 export async function PUT(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params
         const body = await request.json()
         const { title, description, content, imageUrl, validFrom, validTo, isActive } = body
+        // لا نخزن data: URLs (base64) — نسمح فقط بـ http/https أو /uploads/
+        const safeImageUrl =
+            imageUrl !== undefined
+                ? typeof imageUrl === "string" && imageUrl.startsWith("data:")
+                    ? null
+                    : imageUrl || null
+                : undefined
 
         const offer = await prisma.offer.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 title,
                 description: description || null,
                 content,
-                imageUrl: imageUrl !== undefined ? imageUrl || null : undefined,
+                imageUrl: safeImageUrl,
                 validFrom: new Date(validFrom),
                 validTo: new Date(validTo),
                 isActive,
@@ -70,16 +79,17 @@ export async function PUT(
 // DELETE /api/offers/[id] (ADMIN only; Supervisor blocked and audited)
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const offer = await prisma.offer.findUnique({ where: { id: params.id } })
+        const { id } = await params
+        const offer = await prisma.offer.findUnique({ where: { id } })
         const prevState = offer ? { title: offer.title, status: offer.isActive } : undefined
-        const allowed = await requireDeleteAllowed(request, "Offer", params.id, prevState)
+        const allowed = await requireDeleteAllowed(request, "Offer", id, prevState)
         if (allowed instanceof NextResponse) return allowed
 
         await prisma.offer.delete({
-            where: { id: params.id },
+            where: { id },
         })
 
         return NextResponse.json({

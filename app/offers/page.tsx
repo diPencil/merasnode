@@ -137,7 +137,12 @@ export default function OffersPage() {
             const url = editingOffer ? `/api/offers/${editingOffer.id}` : "/api/offers"
             const method = editingOffer ? "PUT" : "POST"
 
-            const payload = { ...formData, imageUrl: formData.imageUrl || null }
+            // لا نرسل data: URLs (base64) — يجب استخدام "رفع صورة" للحصول على رابط
+            const imageUrl =
+                formData.imageUrl && !formData.imageUrl.startsWith("data:")
+                    ? formData.imageUrl
+                    : null
+            const payload = { ...formData, imageUrl }
             const response = await authenticatedFetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
@@ -230,17 +235,25 @@ export default function OffersPage() {
         try {
             const form = new FormData()
             form.append("file", file)
-            // لا نضع Content-Type حتى يضبط المتصفح multipart/form-data تلقائياً
             const response = await fetch("/api/upload", {
                 method: "POST",
                 headers: { ...getAuthHeader() },
                 body: form,
             })
-            const data = await response.json()
-            if (data.success && data.url) {
-                setFormData((prev) => ({ ...prev, imageUrl: data.url }))
+            const text = await response.text()
+            let data: { success?: boolean; url?: string; error?: string }
+            try {
+                data = text ? JSON.parse(text) : {}
+            } catch {
+                data = { error: response.status === 401 ? t("sessionExpired") || "Session expired" : `Upload failed (${response.status})` }
+            }
+            if (response.ok && data.success && data.url) {
+                setFormData((prev) => ({ ...prev, imageUrl: data.url! }))
                 toast({ title: t("success"), description: "Image added" })
-            } else throw new Error(data.error || "Upload failed")
+            } else {
+                const msg = data.error || (response.status === 401 ? (t("sessionExpired") || "Session expired") : "Upload failed")
+                throw new Error(msg)
+            }
         } catch (err) {
             toast({ title: t("error"), description: err instanceof Error ? err.message : "Upload failed", variant: "destructive" })
         } finally {

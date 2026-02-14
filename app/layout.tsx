@@ -49,7 +49,7 @@ export default function RootLayout({
             <Toaster />
           </I18nProvider>
         </ThemeProvider>
-        <Analytics />
+        {process.env.NEXT_PUBLIC_VERCEL === "1" && <Analytics />}
       </body>
     </html>
   )
