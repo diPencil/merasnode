@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
-import { authenticatedFetch, getUserRole } from "@/lib/auth"
+import { authenticatedFetch, getUserRole, getAuthHeader } from "@/lib/auth"
 import { hasPermission } from "@/lib/permissions"
 import type { UserRole } from "@/lib/permissions"
 import { format } from "date-fns"
@@ -230,7 +230,12 @@ export default function OffersPage() {
         try {
             const form = new FormData()
             form.append("file", file)
-            const response = await authenticatedFetch("/api/upload", { method: "POST", body: form })
+            // لا نضع Content-Type حتى يضبط المتصفح multipart/form-data تلقائياً
+            const response = await fetch("/api/upload", {
+                method: "POST",
+                headers: { ...getAuthHeader() },
+                body: form,
+            })
             const data = await response.json()
             if (data.success && data.url) {
                 setFormData((prev) => ({ ...prev, imageUrl: data.url }))

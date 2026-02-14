@@ -67,32 +67,33 @@ export default function LoginPage() {
                         />
                     </div>
 
-                    {/* Bottom Content Section — RTL: محتوى الكارت يمين؛ LTR: يسار */}
+                    {/* Bottom Content Section — RTL كامل: البادج والعنوان والوصف واللوجوهات من اليمين */}
                     <div
                         className={`heading z-10 px-8 pb-10 space-y-4 w-full ${isRtl ? "text-right" : "text-left"}`}
                         dir={isRtl ? "rtl" : "ltr"}
+                        style={isRtl ? { direction: "rtl", textAlign: "right" } : undefined}
                     >
-                        <div className={`space-y-4 ${isRtl ? "flex flex-col items-end" : ""}`}>
+                        <div className={`space-y-4 w-full ${isRtl ? "flex flex-col items-end" : ""}`}>
                             {/* Badge */}
                             <div className="inline-block rounded-full bg-[#8B5CF6] px-3 py-1 text-[9px] font-extrabold tracking-widest text-white uppercase shadow-[0_0_15px_rgba(139,92,246,0.5)]">
                                 {t("nextGenPlatform")}
                             </div>
 
-                            {/* Titles */}
+                            {/* Titles — RTL: مراس ثم يونيفرس من اليمين */}
                             <div className="space-y-0">
-                                <h1 className="text-xl lg:text-2xl font-black tracking-tighter text-white uppercase flex gap-2">
+                                <h1 className={`text-xl lg:text-2xl font-black tracking-tighter text-white uppercase flex gap-2 ${isRtl ? "flex-row-reverse justify-end" : ""}`}>
                                     <span>{t("meras")}</span>
                                     <span>{t("universe")}</span>
                                 </h1>
                             </div>
 
-                            {/* Description */}
-                            <p className={`max-w-[280px] text-[9px] lg:text-[10px] font-bold leading-relaxed text-gray-400 ${isRtl ? "text-end" : ""}`}>
+                            {/* Description — RTL: الكتلة نفسها محاذاة لليمين */}
+                            <p className={`max-w-[280px] text-[9px] lg:text-[10px] font-bold leading-relaxed text-gray-400 ${isRtl ? "text-end ms-auto" : ""}`}>
                                 {t("brandDescription")}
                             </p>
                         </div>
 
-                        {/* Logos & Icons Area — RTL: اللوجوهات يمين وترتيبها من يمين ليسار */}
+                        {/* Logos & Icons Area — RTL: اللوجوهات من اليمين لليسار */}
                         <div className={`icons pt-4 flex items-center gap-6 ${isRtl ? "justify-end flex-row-reverse" : "justify-start"}`}>
                             <div className="instagram">
                                 <img
