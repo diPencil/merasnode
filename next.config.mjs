@@ -8,7 +8,7 @@ const nextConfig = {
     unoptimized: true,
   },
 
-  // Next.js 16: تجنب تعارض Turbopack مع webpack
+  // Next.js 16: استخدام Turbopack بدون webpack لتجنب خطأ الـ build
   turbopack: {},
 
   // Exclude WhatsApp packages from server bundles
@@ -20,22 +20,8 @@ const nextConfig = {
     '@prisma/client',
     'bcryptjs'
   ],
-  // Turbopack configuration
   experimental: {
-    // Optimize for better performance
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-  },
-  // Webpack fallback for better compatibility
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      }
-    }
-    return config
   },
 }
 

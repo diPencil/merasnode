@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build --webpack",
+    "build": "next build",
     "dev": "concurrently \"next dev\" \"powershell -Command Start-Sleep -Seconds 5; node whatsapp-service/server-multi.js\"",
     "dev:single": "concurrently \"next dev\" \"powershell -Command Start-Sleep -Seconds 5; node whatsapp-service/server.js\"",
     "dev:next": "next dev",
