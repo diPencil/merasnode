@@ -105,7 +105,7 @@ const rolePermissions: Record<UserRole, Permission[]> = {
         'view_contacts', 'create_contact', 'edit_contact', // Limited edit
         'view_bookings', 'create_booking', 'edit_booking', // Limited edit
         'view_templates', // Read and use only
-        'view_offers', 'create_offer', 'edit_offer', // Can manage offers
+        'view_offers', // View Only (Requested update)
         'view_invoices', 'create_invoice', 'edit_invoice', // Can manage invoices
         'view_settings', // Profile only
         'view_analytics', // Own analytics only (scoped on backend)
