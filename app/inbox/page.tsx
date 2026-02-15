@@ -184,6 +184,8 @@ export default function InboxPage() {
   // ... existing refs ...
   const searchParams = useSearchParams()
   const conversationIdParam = searchParams.get('id')
+  const phoneParam = searchParams.get('phone')
+  const normalizePhone = (p: string) => (p || '').replace(/\D/g, '')
 
   // Recording Refs
   const [isRecording, setIsRecording] = useState(false)
@@ -507,10 +509,17 @@ export default function InboxPage() {
 
         // Selection logic:
         // - If URL has ?id=... → open that conversation explicitly
-        // - Otherwise (visiting /inbox) → do NOT auto-select any conversation
+        // - If URL has ?phone=... → open conversation with that contact phone (e.g. from WhatsApp Accounts "Manage")
+        // - Otherwise → do NOT auto-select any conversation
         if (conversationIdParam) {
           const target = enrichedConversations.find(
             (c: Conversation) => c.id === conversationIdParam,
+          )
+          setSelectedConversation(target ?? null)
+        } else if (phoneParam) {
+          const normalized = normalizePhone(phoneParam)
+          const target = enrichedConversations.find(
+            (c: Conversation) => normalizePhone(c.contact?.phone ?? '') === normalized || c.contact?.phone?.includes(normalized) || normalized.includes(normalizePhone(c.contact?.phone ?? '')),
           )
           setSelectedConversation(target ?? null)
         } else {
@@ -1783,7 +1792,11 @@ export default function InboxPage() {
                   <MessageCircle className="h-8 w-8 text-primary" />
                 </div>
                 <h3 className="font-semibold text-lg">{t("noConversationSelected")}</h3>
-                <p className="text-muted-foreground text-sm max-w-xs mt-2">{t("selectConversationToView")}</p>
+                {phoneParam ? (
+                  <p className="text-muted-foreground text-sm max-w-xs mt-2">{t("noConversationWithNumberYet") || "No conversation with this number yet. When someone sends a message to this WhatsApp number, the chat will appear here."}</p>
+                ) : (
+                  <p className="text-muted-foreground text-sm max-w-xs mt-2">{t("selectConversationToView")}</p>
+                )}
               </div>
             )
           )

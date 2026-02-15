@@ -769,6 +769,7 @@ const translations: Translations = {
   // Inbox - empty & selection
   noConversationSelected: { en: "No Conversation Selected", ar: "لم يتم اختيار محادثة" },
   selectConversationToView: { en: "Select a conversation from the list to view details and start chatting.", ar: "اختر محادثة من القائمة لعرض التفاصيل وبدء الدردشة." },
+  noConversationWithNumberYet: { en: "No conversation with this number yet. When someone sends a message to this WhatsApp number, the chat will appear here.", ar: "لا توجد محادثة بهذا الرقم بعد. عند إرسال رسالة إلى هذا الرقم على واتساب ستظهر المحادثة هنا." },
 
   // Contacts - labels & placeholders
   loadingContacts: { en: "Loading contacts...", ar: "جاري تحميل جهات الاتصال..." },

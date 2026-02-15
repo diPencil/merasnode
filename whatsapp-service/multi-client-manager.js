@@ -251,8 +251,9 @@ class MultiClientManager extends EventEmitter {
         if (!clientData) {
             throw new Error(`Account ${accountId} not found`);
         }
-
-        throw new Error(`Account ${accountId} is not ready. Status: ${clientData.status}`);
+        if (!clientData.isReady) {
+            throw new Error(`Account ${accountId} is not ready. Status: ${clientData.status}`);
+        }
 
         const { client } = clientData;
 

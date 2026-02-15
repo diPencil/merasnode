@@ -60,33 +60,46 @@ export async function POST(request: NextRequest) {
             if (activeAgent) assignedAgentId = activeAgent.id
         }
 
-        // 2. Contact Resolution
-        // 2. Contact Resolution
-        const searchPhones = [identifier];
+        // 2. Contact Resolution — match phone in any format (+20..., 20..., etc.)
+        const digitsOnly = identifier.replace(/\D/g, '')
+        const searchPhones: string[] = [identifier, digitsOnly, '+' + digitsOnly]
+        if (digitsOnly !== identifier) searchPhones.push(identifier)
         if (isGroup && identifier.includes('@g.us')) {
-            searchPhones.push(identifier.replace('@g.us', ''));
+            searchPhones.push(identifier.replace('@g.us', ''))
         }
 
         let contact = await prisma.contact.findFirst({
             where: {
                 OR: [
                     { externalId: identifier },
+                    { externalId: digitsOnly },
                     { phone: { in: searchPhones } }
                 ]
             },
             orderBy: { createdAt: 'asc' }
         })
+        // Fallback: match by digits-only phone (e.g. DB has "+20 10 05866349")
+        if (!contact && digitsOnly.length >= 10) {
+            const suffix = digitsOnly.slice(-9)
+            const candidates = await prisma.contact.findMany({
+                where: { phone: { not: null, contains: suffix } },
+                take: 20,
+                orderBy: { createdAt: 'asc' }
+            })
+            contact = candidates.find(
+                (c) => (c.phone && c.phone.replace(/\D/g, '') === digitsOnly)
+            ) ?? null
+        }
 
         if (!contact) {
-            // New Contact Creation
-            // For outgoing (fromMe), senderName is ME, so don't use it for contact name. Use Phone.
-            // For incoming, senderName is the Contact's name.
-            const initialName = (!fromMe && senderName) ? senderName : phoneNumber;
+            // New Contact Creation — store phone in consistent format (+digits) for matching
+            const normalizedPhone = digitsOnly ? '+' + digitsOnly : phoneNumber
+            const initialName = (!fromMe && senderName) ? senderName : normalizedPhone
 
             contact = await prisma.contact.create({
                 data: {
-                    name: isGroup ? (senderName || phoneNumber) : initialName,
-                    phone: phoneNumber,
+                    name: isGroup ? (senderName || normalizedPhone) : initialName,
+                    phone: normalizedPhone,
                     externalId: externalId,
                     tags: isGroup ? ["whatsapp-group"] : ["whatsapp-contact"],
                     ...(branchId && { branchId }),
