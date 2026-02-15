@@ -1584,7 +1584,7 @@ export default function InboxPage() {
                             )}
                             aria-label={t("sentBy")}
                           >
-                            — {t("sentBy")}: {message.sender?.name?.trim() || message.sender?.username || t("systemLabel")}
+                            — {t("sentBy")}: {message.sender?.name?.trim() || message.sender?.username || (message.direction === "OUTGOING" ? t("merasTeamLabel") : t("systemLabel"))}
                           </div>
                         )}
                         {/* Reply / Forward — visible on hover */}

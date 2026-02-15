@@ -26,6 +26,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, message: 'Status broadcast ignored' })
         }
 
+        // Outgoing messages (fromMe): already saved by POST /api/messages when user sent — skip to avoid duplicates
+        if (fromMe) {
+            return NextResponse.json({ success: true, message: 'Outgoing message already stored by send API' })
+        }
+
         // ... (Existing account logic)
         // ... (Skip lines 25-52 for brevity in replacement if possible, but for safety I will include relevant context or jump)
 

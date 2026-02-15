@@ -921,6 +921,7 @@ const translations: Translations = {
   crmLabel: { en: "CRM", ar: "إدارة العلاقات" },
   automationLabel: { en: "Automation", ar: "الأتمتة" },
   systemLabel: { en: "System", ar: "النظام" },
+  merasTeamLabel: { en: "Meras Team", ar: "فريق المراس" },
   sentBy: { en: "Sent by", ar: "أرسل بواسطة" },
   whatsAppWeb: { en: "WhatsApp Web", ar: "واتساب ويب" },
   generateQrCode: { en: "Generate QR Code", ar: "إنشاء رمز QR" },
