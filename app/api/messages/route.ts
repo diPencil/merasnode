@@ -296,6 +296,14 @@ export async function POST(request: NextRequest) {
             }
         })
 
+        // 5. Update sender last activity (for Online/Away status: 5 min without sending = Away)
+        if (direction === 'OUTGOING' && scope.userId) {
+            await prisma.user.update({
+                where: { id: scope.userId },
+                data: { lastActivityAt: new Date() }
+            }).catch(() => {})
+        }
+
         // Trigger bot flows for incoming messages
         if (direction === 'INCOMING') {
             try {

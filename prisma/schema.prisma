@@ -19,12 +19,13 @@ model User {
   name         String
   role         UserRole   @default(AGENT)
   gender       Gender     @default(MALE)
-  status       UserStatus @default(OFFLINE)
-  isActive     Boolean    @default(true)
-  lastLoginAt  DateTime?
-  lastLogoutAt DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  status          UserStatus @default(OFFLINE)
+  isActive        Boolean    @default(true)
+  lastLoginAt     DateTime?
+  lastLogoutAt    DateTime?
+  lastActivityAt  DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   conversations Conversation[]
   messages      Message[]

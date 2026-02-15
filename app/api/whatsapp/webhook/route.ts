@@ -8,7 +8,9 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         console.log('📥 Webhook received payload:', body);
         const { from, to, timestamp, isGroup, senderName, accountId, fromMe } = body
-        let messageBody = body.body;
+        // Full message text: body + caption for media (no truncation)
+        let messageBody = body.body != null ? String(body.body) : ''
+        if (!messageBody && body.caption != null) messageBody = String(body.caption)
 
         // Determine effective target identifier (Who is the Other Party?)
         // If Incoming: Contact is 'from'
@@ -205,11 +207,12 @@ export async function POST(request: NextRequest) {
             messageBody = `https://www.google.com/maps?q=${latitude},${longitude}`
         }
 
-        // 5. Create Message
+        // 5. Create Message — store full content (no truncation)
+        const finalContent = messageBody || (messageType !== 'TEXT' && body.caption != null ? String(body.caption) : messageType !== 'TEXT' ? `Attachment: ${messageType}` : '')
         const message = await prisma.message.create({
             data: {
                 conversationId: conversation.id,
-                content: messageBody || (messageType !== 'TEXT' ? (body.caption || `Attachment: ${messageType}`) : ''),
+                content: finalContent,
                 type: messageType as any,
                 direction: fromMe ? 'OUTGOING' : 'INCOMING',
                 status: fromMe ? 'SENT' : 'DELIVERED',

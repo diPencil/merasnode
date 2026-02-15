@@ -413,7 +413,7 @@ export default function InboxPage() {
     return () => clearInterval(interval)
   }, [selectedBranch])
 
-  // Polling for Active Conversation Messages (every 4 seconds - optimized)
+  // Polling for Active Conversation Messages (every 3s — smooth + always show latest full content)
   useEffect(() => {
     if (!selectedConversation) return;
 
@@ -422,23 +422,11 @@ export default function InboxPage() {
         .then(res => res.json())
         .then(data => {
           if (data.success && data.messages) {
-            setMessages(prev => {
-              // Optimized check to avoid unnecessary re-renders
-              if (prev.length !== data.messages.length) {
-                return data.messages;
-              }
-              // Check if last message ID changed (new incoming)
-              if (prev.length > 0 && data.messages.length > 0) {
-                const lastPrev = prev[prev.length - 1];
-                const lastNew = data.messages[data.messages.length - 1];
-                if (lastPrev.id !== lastNew.id) return data.messages;
-              }
-              return prev;
-            });
+            setMessages(data.messages);
           }
         })
         .catch(err => console.error('Polling messages error:', err));
-    }, 4000); // Optimized: 4 seconds instead of 3
+    }, 3000); // 3s for smoother updates and full message content
     return () => clearInterval(interval);
   }, [selectedConversation?.id]);
 

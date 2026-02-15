@@ -99,13 +99,15 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Update user status to ONLINE and record login time
+        // Update user status to ONLINE and record login + last activity time
         try {
+            const now = new Date()
             await prisma.user.update({
                 where: { id: user.id },
                 data: {
                     status: 'ONLINE',
-                    lastLoginAt: new Date()
+                    lastLoginAt: now,
+                    lastActivityAt: now
                 }
             })
         } catch (e) {

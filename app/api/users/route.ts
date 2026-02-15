@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
                 isActive: true,
                 lastLoginAt: true,
                 lastLogoutAt: true,
+                lastActivityAt: true,
                 createdAt: true,
                 updatedAt: true,
                 branches: {
@@ -77,7 +78,18 @@ export async function GET(request: NextRequest) {
             take: pagination.limit
         })
 
-        const paginatedResponse = createPaginatedResponse(users, total, pagination)
+        // Compute effective status: ONLINE + no activity for 5 min => AWAY
+        const AWAY_THRESHOLD_MS = 5 * 60 * 1000
+        const now = Date.now()
+        const usersWithEffectiveStatus = users.map((u: any) => {
+            const effectiveStatus =
+                u.status === 'ONLINE' && u.lastActivityAt
+                    ? (now - new Date(u.lastActivityAt).getTime() > AWAY_THRESHOLD_MS ? 'AWAY' : 'ONLINE')
+                    : u.status
+            return { ...u, status: effectiveStatus }
+        })
+
+        const paginatedResponse = createPaginatedResponse(usersWithEffectiveStatus, total, pagination)
 
         return NextResponse.json({
             success: true,

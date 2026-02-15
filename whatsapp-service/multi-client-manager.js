@@ -211,16 +211,19 @@ class MultiClientManager extends EventEmitter {
                 console.log(`📍 [${accountId}] Location received: ${locationData.latitude}, ${locationData.longitude}`);
             }
 
-            // Forward to webhook with accountId
+            // Forward to webhook with accountId — full body + caption (no truncation)
+            const bodyText = message.body != null ? String(message.body) : ''
+            const captionText = message.caption != null ? String(message.caption) : ''
             const payload = {
                 accountId,
                 from: message.from,
                 to: message.to,
-                body: message.body,
+                body: bodyText || captionText || '',
+                caption: captionText || bodyText || undefined,
                 timestamp: message.timestamp,
                 isGroup: chat.isGroup,
-                senderName: displaySenderName, // The Group Name or Contact Name
-                authorName: authorName,       // Always the person's name
+                senderName: displaySenderName,
+                authorName: authorName,
                 authorId: message.author || message.from,
                 senderId: message.author || message.from,
                 fromMe: message.fromMe,
