@@ -1558,9 +1558,8 @@ export default function InboxPage() {
                               </div>
                             </a>
                           ) : (
-                            // Text: full content, wrap, break words, no truncation (desktop + mobile)
                             <div
-                              className="text-sm whitespace-pre-wrap break-words leading-relaxed text-gray-800 dark:text-gray-100 min-w-0 w-full max-w-full overflow-visible"
+                              className="text-sm whitespace-pre-wrap break-words leading-relaxed text-gray-800 dark:text-gray-100 w-full max-w-full overflow-visible inline-block min-w-[1ch]"
                               style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
                               dir="auto"
                             >

@@ -557,12 +557,13 @@ body {
   min-inline-size: 0;
 }
 
-/* Bubble Styling — full message visible, no truncation */
+/* Bubble Styling — full message visible, no truncation (WhatsApp Web–like) */
 .chat-bubble {
   display: inline-block;
   width: fit-content;
   max-width: 85%;
-  min-width: 0;
+  min-inline-size: 52px; /* minimum bubble width so short messages (e.g. "?", "ok") look like WhatsApp Web */
+  min-block-size: 1.5em;
   padding: 6px 7px 8px 9px;
   border-radius: 7.5px;
   box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
