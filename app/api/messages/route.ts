@@ -222,7 +222,11 @@ export async function POST(request: NextRequest) {
                             select: { metadata: true }
                         })
                         const meta = quoted?.metadata as { waMessageId?: string } | null
-                        if (meta?.waMessageId) quotedMessageId = meta.waMessageId
+                        if (meta?.waMessageId) {
+                            quotedMessageId = meta.waMessageId
+                        } else {
+                            console.warn(`[messages] Reply to ${replyToId}: no waMessageId (old message), will send as normal on WhatsApp`)
+                        }
                     }
 
                     const whatsappRes = await fetch(`${WHATSAPP_SERVICE_URL}/send`, {

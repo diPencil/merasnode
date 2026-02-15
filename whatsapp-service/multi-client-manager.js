@@ -243,7 +243,7 @@ class MultiClientManager extends EventEmitter {
             // Forward to webhook with accountId — full body + caption (no truncation)
             const bodyText = message.body != null ? String(message.body) : ''
             const captionText = message.caption != null ? String(message.caption) : ''
-            const waMessageId = (message.id && (message.id._serialized || message.id.id)) ? (message.id._serialized || message.id.id) : null;
+            const waMessageId = (message.id && message.id._serialized) ? message.id._serialized : (message.id && message.id.id ? String(message.id.id) : null);
             const payload = {
                 accountId,
                 from: message.from,
@@ -304,7 +304,16 @@ class MultiClientManager extends EventEmitter {
 
         const quotedOpt = quotedMessageId ? { quotedMessageId } : {};
 
-        console.log(`📤 [${accountId}] Sending to ${targetChatId}` + (quotedMessageId ? ' (reply)' : ''));
+        if (quotedMessageId) {
+            try {
+                const chat = await client.getChatById(targetChatId);
+                await chat.fetchMessages({ limit: 100 });
+            } catch (e) {
+                console.warn(`⚠️ Could not pre-load chat messages for reply: ${e.message || e}`);
+            }
+        }
+
+        console.log(`📤 [${accountId}] Sending to ${targetChatId}` + (quotedMessageId ? ` (reply: ${String(quotedMessageId).slice(0, 30)}...)` : ''));
 
         try {
             if (mediaUrl) {
