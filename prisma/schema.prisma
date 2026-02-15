@@ -119,7 +119,7 @@ enum ConversationStatus {
   PENDING
 }
 
-// الرسائل
+// الرسائل (Reply: quotedMessageId, Forward: metadata.forwarded)
 model Message {
   id                String           @id @default(uuid())
   conversationId    String
@@ -134,10 +134,14 @@ model Message {
   status            MessageStatus    @default(SENT)
   mediaUrl          String?
   metadata          Json?
+  quotedMessageId   String?
+  quotedMessage     Message?          @relation("MessageReply", fields: [quotedMessageId], references: [id], onDelete: SetNull)
+  quotedReplies     Message[]        @relation("MessageReply")
   createdAt         DateTime         @default(now())
 
   @@index([conversationId])
   @@index([whatsappAccountId])
+  @@index([quotedMessageId])
 }
 
 enum MessageType {
@@ -146,6 +150,7 @@ enum MessageType {
   VIDEO
   AUDIO
   DOCUMENT
+  LOCATION
 }
 
 enum Direction {

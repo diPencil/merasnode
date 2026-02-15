@@ -557,25 +557,25 @@ body {
   min-inline-size: 0;
 }
 
-/* Bubble Styling */
+/* Bubble Styling — full message visible, no truncation */
 .chat-bubble {
   display: inline-block;
   width: fit-content;
   max-width: 85%;
   min-width: 0;
   padding: 6px 7px 8px 9px;
-  /* WhatsApp-like padding */
   border-radius: 7.5px;
   box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
 
-  /* Text */
+  /* Text: show full content, wrap long words (desktop + mobile) */
   overflow: visible;
   white-space: pre-wrap;
   word-break: break-word;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   text-align: start;
   line-height: 1.6;
   font-size: 14.2px;
+  max-height: none;
 }
 
 @media (min-width: 768px) {

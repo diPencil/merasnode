@@ -37,7 +37,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Search, Send, Phone, Video, MoreVertical, Paperclip, Smile,
   MapPin, Mic, Filter, Check, X, Calendar, User, Facebook, Instagram,
-  MessageCircle, Sparkles, Play, Building2, StickyNote, Tag, CheckCheck, ExternalLink
+  MessageCircle, Sparkles, Play, Building2, StickyNote, Tag, CheckCheck, ExternalLink,
+  Reply, Forward
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
@@ -79,7 +80,9 @@ interface Message {
   type?: "TEXT" | "IMAGE" | "AUDIO" | "VIDEO" | "DOCUMENT" | "LOCATION"
   mediaUrl?: string
   whatsappAccountId?: string | null
-  metadata?: any // Added for mentions
+  metadata?: { forwarded?: boolean; [k: string]: unknown }
+  quotedMessage?: Message | null
+  quotedMessageId?: string | null
   sender?: {
     id: string
     name: string | null
@@ -169,6 +172,9 @@ export default function InboxPage() {
   const [settings, setSettings] = useState<any>(null)
   const [lastOrderId, setLastOrderId] = useState<string>("N/A")
   const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null)
+  const [forwardMessage, setForwardMessage] = useState<Message | null>(null)
+  const [forwardTargetConversation, setForwardTargetConversation] = useState<Conversation | null>(null)
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false)
   const { toast } = useToast()
   const { t, language, dir } = useI18n()
@@ -534,60 +540,71 @@ export default function InboxPage() {
     }
   }
 
-  const handleSendMessage = async (text?: string, mediaUrl?: string) => {
+  type SendMessageOptions = { replyToId?: string; forwarded?: boolean; type?: string; targetConversationId?: string }
+
+  const handleSendMessage = async (text?: string, mediaUrl?: string, options?: SendMessageOptions) => {
     const contentToSend = text !== undefined ? text : newMessage;
-    if ((!contentToSend.trim() && !mediaUrl) || !selectedConversation) return
+    const targetConv = options?.targetConversationId
+      ? conversations.find(c => c.id === options.targetConversationId)
+      : selectedConversation;
+    if ((!contentToSend.trim() && !mediaUrl) || !targetConv) return
+
+    const opts: SendMessageOptions = { ...options }
+    if (replyingTo && !opts.replyToId) opts.replyToId = replyingTo.id
 
     try {
       setIsSending(true)
 
-      // Determine which WhatsApp account to use
-      let whatsappAccountId = (selectedConversation as any).whatsappAccountId || null
-
-      // If not in conversation, try to find from messages
+      let whatsappAccountId = (targetConv as any).whatsappAccountId || null
       if (!whatsappAccountId && messages.length > 0) {
         const messageWithAccount = [...messages].reverse().find(m => m.whatsappAccountId)
         if (messageWithAccount) whatsappAccountId = messageWithAccount.whatsappAccountId
       }
-
-      // Default to first connected account if still null
       if (!whatsappAccountId) {
         try {
           const accountsRes = await authenticatedFetch('/api/whatsapp/accounts')
           const accountsData = await accountsRes.json()
-          if (accountsData.success && accountsData.accounts && accountsData.accounts.length > 0) {
+          if (accountsData.success && accountsData.accounts?.length > 0) {
             const connectedAccount = accountsData.accounts.find((acc: any) => acc.status === 'CONNECTED')
-            if (connectedAccount) {
-              whatsappAccountId = connectedAccount.id
-            }
+            if (connectedAccount) whatsappAccountId = connectedAccount.id
           }
         } catch (err) {
           console.error('Error fetching WhatsApp accounts:', err)
         }
       }
 
+      const payload: Record<string, unknown> = {
+        conversationId: targetConv.id,
+        content: contentToSend,
+        direction: 'OUTGOING',
+        mediaUrl: mediaUrl ?? undefined,
+        whatsappAccountId: whatsappAccountId ?? undefined,
+      }
+      if (opts.replyToId) payload.replyToId = opts.replyToId
+      if (opts.forwarded) payload.forwarded = true
+      if (opts.type) payload.type = opts.type
+
       const response = await authenticatedFetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId: selectedConversation.id,
-          content: contentToSend,
-          direction: 'OUTGOING',
-          type: 'TEXT', // Backend handles media type logic based on mediaUrl
-          mediaUrl: mediaUrl,
-          whatsappAccountId: whatsappAccountId // Include the account ID
-        })
+        body: JSON.stringify(payload),
       })
 
       const data = await response.json()
 
       if (data.success) {
-        if (!mediaUrl) setNewMessage("") // Only clear input if not a file upload (which clears itself)
-        setQuickReplyTemplates([]) // Clear quick-reply buttons after sending
-        fetchMessages(selectedConversation.id)
-        // Optimistic update for last message time
+        if (!mediaUrl) setNewMessage("")
+        setReplyingTo(null)
+        setQuickReplyTemplates([])
+        if (opts.targetConversationId) {
+          setForwardMessage(null)
+          setForwardTargetConversation(null)
+          fetchMessages(opts.targetConversationId)
+        } else {
+          fetchMessages(selectedConversation!.id)
+        }
         setConversations(prev => prev.map(c =>
-          c.id === selectedConversation.id
+          c.id === targetConv.id
             ? { ...c, lastMessageAt: new Date().toISOString() }
             : c
         ).sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()))
@@ -613,7 +630,7 @@ export default function InboxPage() {
       (position) => {
         const { latitude, longitude } = position.coords;
         const mapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        handleSendMessage(mapLink);
+        handleSendMessage(mapLink, undefined, { type: 'LOCATION' });
       },
       (error) => {
         console.error("Location error:", error);
@@ -821,7 +838,7 @@ export default function InboxPage() {
           if (!uploadData.success) throw new Error(uploadData.error);
 
           // Send as msg
-          await handleSendMessage(undefined, uploadData.url);
+          await handleSendMessage(undefined, uploadData.url, { type: 'AUDIO' });
           toast({ title: t("sent"), description: t("voiceNoteSent") });
         } catch (error) {
           console.error('Error sending voice note:', error);
@@ -952,22 +969,18 @@ export default function InboxPage() {
     }
   }
 
-  const formatMessageContent = (content: string) => {
-    if (!content) return ""
+  const formatMessageContent = (content: string | null | undefined) => {
+    const text = content != null ? String(content) : ""
+    if (!text) return ""
     // Regex to find JIDs like @12036...
     const mentionRegex = /@(\d+)(?:@g\.us|@c\.us)?/g
-    const parts = content.split(mentionRegex)
+    const parts = text.split(mentionRegex)
 
-    if (parts.length === 1) return content
+    if (parts.length === 1) return text
 
     return parts.map((part, i) => {
-      // If part matches a phone number (simple check, or use the captured group)
-      // Actually split with capturing group returns [text, captured, text, captured...]
-      // So odd indices are the captured phone numbers
       if (i % 2 === 1) {
-        // This is a phone number from the mention
         const phone = part
-        // Normalize phone for lookup
         const knownContact = conversations.find(c => c.contact.phone.replace(/\D/g, '').includes(phone))
         const name = knownContact ? knownContact.contact.name : phone
         return <span key={i} className="text-blue-500 font-medium mx-0.5">@{name}</span>
@@ -1398,7 +1411,7 @@ export default function InboxPage() {
                       key={message.id}
                       className={`chat-message-row ${isOutgoing ? "outgoing" : "incoming"}`}
                     >
-                      <div className={`chat-bubble-wrap flex flex-col ${isOutgoing ? "outgoing items-end" : "incoming items-start"}`}>
+                      <div className={`chat-bubble-wrap group flex flex-col ${isOutgoing ? "outgoing items-end" : "incoming items-start"}`}>
                         <div
                           className={cn(
                             "chat-bubble px-4 py-2 rounded-2xl shadow-sm text-sm",
@@ -1417,6 +1430,17 @@ export default function InboxPage() {
                             <div className="text-[10px] font-bold text-teal-600 dark:text-teal-400 mb-1 leading-none uppercase tracking-tighter">
                               {(message as any).metadata.authorName}
                             </div>
+                          )}
+                          {message.quotedMessage && (
+                            <div className="mb-2 pl-2 border-s-2 border-muted-foreground/30 text-xs text-muted-foreground">
+                              <p className="font-medium text-foreground/80">{message.quotedMessage.sender?.name || message.quotedMessage.sender?.username || t("systemLabel")}</p>
+                              <p className="truncate">{message.quotedMessage.content || (message.quotedMessage.type === 'AUDIO' ? '🎤' : message.quotedMessage.type === 'IMAGE' ? '🖼' : message.quotedMessage.type === 'VIDEO' ? '🎬' : message.quotedMessage.type === 'LOCATION' ? '📍' : '—')}</p>
+                            </div>
+                          )}
+                          {(message.metadata as any)?.forwarded && (
+                            <p className="text-[10px] text-muted-foreground/80 mb-1 flex items-center gap-1">
+                              <Forward className="h-3 w-3" /> {t("forwarded") || "Forwarded"}
+                            </p>
                           )}
                           {message.type === 'IMAGE' && message.mediaUrl ? (
                             <div className="rounded-lg overflow-hidden max-w-sm relative group">
@@ -1525,8 +1549,12 @@ export default function InboxPage() {
                               </div>
                             </a>
                           ) : (
-                            // Text Rendering: full text, proper wrap, RTL-friendly, no clipping
-                            <div className="text-sm whitespace-pre-wrap wrap-break-word leading-relaxed text-gray-800 dark:text-gray-100 min-w-0 max-w-full overflow-visible" dir="auto">
+                            // Text: full content, wrap, break words, no truncation (desktop + mobile)
+                            <div
+                              className="text-sm whitespace-pre-wrap break-words leading-relaxed text-gray-800 dark:text-gray-100 min-w-0 w-full max-w-full overflow-visible"
+                              style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+                              dir="auto"
+                            >
                               {formatMessageContent(message.content)}
                             </div>
                           )}
@@ -1550,6 +1578,15 @@ export default function InboxPage() {
                             — {t("sentBy")}: {message.sender?.name?.trim() || message.sender?.username || t("systemLabel")}
                           </div>
                         )}
+                        {/* Reply / Forward — visible on hover */}
+                        <div className={cn("mt-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity", dir === "rtl" ? "justify-start" : "justify-end")}>
+                          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => setReplyingTo(message)} title={t("reply") || "Reply"}>
+                            <Reply className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setForwardMessage(message); setForwardTargetConversation(null); }} title={t("forward") || "Forward"}>
+                            <Forward className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )
@@ -1576,6 +1613,19 @@ export default function InboxPage() {
                       {tpl.name}
                     </Button>
                   ))}
+                </div>
+              )}
+
+              {/* Replying to strip (Reply preview) */}
+              {replyingTo && (
+                <div className="border-t bg-muted/20 px-3 py-2 flex items-center gap-2">
+                  <div className="flex-1 min-w-0 border-s-4 border-primary pl-2 py-1">
+                    <p className="text-xs font-medium text-muted-foreground">{t("replyingTo") || "Replying to"}</p>
+                    <p className="text-sm truncate">{replyingTo.content || (replyingTo.type === 'AUDIO' ? '🎤 Voice note' : replyingTo.type === 'IMAGE' ? '🖼 Image' : replyingTo.type === 'VIDEO' ? '🎬 Video' : replyingTo.type === 'LOCATION' ? '📍 Location' : '—')}</p>
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => setReplyingTo(null)} aria-label={t("cancel")}>
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               )}
 
@@ -1749,6 +1799,63 @@ export default function InboxPage() {
           )}
         </div>
       </div>
+
+      {/* Forward message dialog */}
+      <Dialog open={!!forwardMessage} onOpenChange={(open) => { if (!open) { setForwardMessage(null); setForwardTargetConversation(null); } }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>{t("forward") || "Forward"}</DialogTitle>
+            <DialogDescription>{t("forwardToConversation") || "Choose a conversation to forward this message to."}</DialogDescription>
+          </DialogHeader>
+          {forwardMessage && (
+            <div className="space-y-4 py-4">
+              <div className="max-h-[200px] overflow-y-auto space-y-2 border rounded-lg p-2">
+                {filteredConversations
+                  .filter(c => c.id !== selectedConversation?.id)
+                  .map((conv) => (
+                    <button
+                      key={conv.id}
+                      type="button"
+                      className={cn(
+                        "w-full flex items-center gap-3 p-3 rounded-lg text-start transition-colors",
+                        forwardTargetConversation?.id === conv.id ? "bg-primary/10 border border-primary" : "hover:bg-muted"
+                      )}
+                      onClick={() => setForwardTargetConversation(conv)}
+                    >
+                      <Avatar className="h-9 w-9">
+                        <AvatarFallback>{conv.contact.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{conv.contact.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{conv.contact.phone}</p>
+                      </div>
+                    </button>
+                  ))}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setForwardMessage(null); setForwardTargetConversation(null); }}>{t("cancel")}</Button>
+                <Button
+                  disabled={!forwardTargetConversation || isSending}
+                  onClick={async () => {
+                    if (!forwardMessage || !forwardTargetConversation) return
+                    await handleSendMessage(
+                      forwardMessage.content,
+                      forwardMessage.mediaUrl ?? undefined,
+                      { type: forwardMessage.type, forwarded: true, targetConversationId: forwardTargetConversation.id }
+                    )
+                    setForwardMessage(null)
+                    setForwardTargetConversation(null)
+                    toast({ title: t("sent"), description: t("forwarded") || "Message forwarded." })
+                  }}
+                >
+                  <Forward className="h-4 w-4 mr-2" />
+                  {t("forward") || "Forward"}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Image Preview Modal */}
       <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>

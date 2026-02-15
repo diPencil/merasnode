@@ -49,6 +49,18 @@ export async function GET(request: NextRequest) {
                         email: true,
                         username: true
                     }
+                },
+                quotedMessage: {
+                    select: {
+                        id: true,
+                        content: true,
+                        type: true,
+                        mediaUrl: true,
+                        senderId: true,
+                        createdAt: true,
+                        direction: true,
+                        sender: { select: { name: true, username: true } }
+                    }
                 }
             },
             orderBy: { createdAt: 'asc' }
@@ -78,7 +90,7 @@ export async function POST(request: NextRequest) {
         const scope = await requireAuthWithScope(request)
         const body = await request.json()
 
-        const { conversationId, phone, content, direction = 'OUTGOING', mediaUrl, whatsappAccountId } = body;
+        const { conversationId, phone, content, direction = 'OUTGOING', mediaUrl, whatsappAccountId, replyToId, forwarded } = body;
 
         // Require either text content OR media – allow pure media messages
         if (!content && !mediaUrl) {
@@ -228,31 +240,38 @@ export async function POST(request: NextRequest) {
         }
 
         // 3. Save to Database (Create Message)
-        // Determine message type based on mediaUrl
-        let messageType = 'TEXT'
+        // Type: explicit body.type (AUDIO voice, LOCATION) or infer from mediaUrl
+        let messageType = (body.type as string) || 'TEXT'
         if (body.mediaUrl) {
             const url = body.mediaUrl.toLowerCase()
-            if (url.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
-                messageType = 'IMAGE'
-            } else if (url.match(/\.(mp4|mov|avi|webm)$/)) {
-                messageType = 'VIDEO'
-            } else if (url.match(/\.(mp3|wav|ogg|m4a)$/)) {
+            if (messageType === 'LOCATION') {
+                messageType = 'LOCATION'
+            } else if (messageType === 'AUDIO' || url.match(/\.(mp3|wav|ogg|m4a|webm)$/)) {
                 messageType = 'AUDIO'
+            } else if (url.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+                messageType = 'IMAGE'
+            } else if (url.match(/\.(mp4|mov|avi)$/)) {
+                messageType = 'VIDEO'
             } else {
                 messageType = 'DOCUMENT'
             }
         }
 
+        const metadata: Record<string, unknown> = {}
+        if (forwarded === true) metadata.forwarded = true
+
         const message = await prisma.message.create({
             data: {
                 conversationId: targetConversationId,
-                senderId: scope.userId,  // Track who sent the message
-                content: body.content,
+                senderId: scope.userId,
+                content: body.content ?? '',
                 type: messageType as any,
                 direction: direction,
                 status: 'SENT',
                 mediaUrl: body.mediaUrl || null,
-                whatsappAccountId: accountId || null
+                whatsappAccountId: accountId || null,
+                quotedMessageId: replyToId || null,
+                metadata: Object.keys(metadata).length > 0 ? metadata : undefined
             }
         })
 
