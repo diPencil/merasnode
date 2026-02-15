@@ -6,6 +6,14 @@ set -e
 cd "$(dirname "$0")/.."
 PROJECT_DIR="$PWD"
 
+# تحميل .env أولاً (للبناء: NEXT_PUBLIC_APP_URL، ولـ pm2: NEXT_APP_URL)
+if [ -f .env ]; then
+  set -a
+  source .env
+  set +a
+  echo "==> تم تحميل .env"
+fi
+
 # استخدام Node 20 إن وُجد nvm (مطلوب لـ Next.js)
 if [ -s "$HOME/.nvm/nvm.sh" ]; then
   echo "==> تحميل nvm واستخدام Node 20..."
@@ -15,6 +23,7 @@ fi
 
 echo "==> Project: $PROJECT_DIR (Node: $(node -v))"
 mkdir -p logs
+mkdir -p public/uploads/whatsapp
 if [ -d ".git" ]; then
   echo "==> Pulling from Git..."
   git pull

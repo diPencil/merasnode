@@ -192,7 +192,11 @@ export default function InboxPage() {
   // Recording Refs
   const [isRecording, setIsRecording] = useState(false)
   const [failedVideoIds, setFailedVideoIds] = useState<Set<string>>(new Set())
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_BASE_URL || "")
+  // Use app base URL for media so images work after deploy and when opening from different origin (e.g. localhost)
+  const baseUrl =
+    (typeof window !== "undefined"
+      ? (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || window.location.origin)
+      : (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "")) || ""
   const getFullMediaUrl = (url: string | undefined) => {
     if (!url) return ""
     if (url.startsWith("http://") || url.startsWith("https://")) return url
@@ -1459,12 +1463,12 @@ export default function InboxPage() {
                           {message.type === 'IMAGE' && message.mediaUrl ? (
                             <div className="rounded-lg overflow-hidden max-w-sm relative group">
                               <img
-                                src={message.mediaUrl}
+                                src={getFullMediaUrl(message.mediaUrl)}
                                 alt={t("sentImageAlt")}
                                 className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity min-h-[100px] bg-gray-100"
-                                onClick={() => setPreviewImage(message.mediaUrl || null)}
+                                onClick={() => setPreviewImage(getFullMediaUrl(message.mediaUrl!) || null)}
                                 onError={(e) => {
-                                  // Fallback for broken images (e.g. expired URLs)
+                                  // Fallback for broken images (e.g. missing file after deploy or wrong origin)
                                   e.currentTarget.style.display = 'none';
                                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
                                 }}
@@ -1472,7 +1476,7 @@ export default function InboxPage() {
                               {/* Fallback View */}
                               <div className="hidden flex-col items-center justify-center p-4 bg-gray-100 text-gray-500 gap-2 min-w-[200px]">
                                 <span className="text-xs">{t("imageNotLoaded")}</span>
-                                <a href={message.mediaUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline">
+                                <a href={getFullMediaUrl(message.mediaUrl)} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline">
                                   {t("openLink")}
                                 </a>
                               </div>
