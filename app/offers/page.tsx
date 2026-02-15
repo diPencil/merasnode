@@ -88,6 +88,7 @@ export default function OffersPage() {
     // Upload & Submit State
     const [imageUploading, setImageUploading] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [imagePreviewError, setImagePreviewError] = useState(false)
 
     // Send Dialog State
     const [isSendDialogOpen, setIsSendDialogOpen] = useState(false)
@@ -217,10 +218,12 @@ export default function OffersPage() {
         setEditingOffer(null)
         setImageUploading(false)
         setIsSubmitting(false)
+        setImagePreviewError(false)
     }
 
     const openEditDialog = (offer: Offer) => {
         setEditingOffer(offer)
+        setImagePreviewError(false)
         setFormData({
             title: offer.title,
             description: offer.description || "",
@@ -297,6 +300,7 @@ export default function OffersPage() {
             const data = await response.json()
 
             if (response.ok && data.success && data.url) {
+                setImagePreviewError(false)
                 setFormData((prev) => ({ ...prev, imageUrl: data.url }))
                 toast({ title: t("success"), description: "Image uploaded successfully" })
             } else {
@@ -432,22 +436,42 @@ export default function OffersPage() {
                                         <div className="space-y-4">
                                             <Label>{t("offerImage")}</Label>
                                             <div className="flex flex-col gap-4 items-start sm:flex-row sm:items-center">
-                                                <div className="relative w-full sm:w-40 aspect-video bg-muted rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden shrink-0 group hover:border-primary/50 transition-colors">
-                                                    {formData.imageUrl ? (
+                                                <div className="relative w-full sm:w-40 aspect-video bg-muted rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden shrink-0 group hover:border-primary/50 transition-colors min-h-[120px]">
+                                                    {formData.imageUrl && !imagePreviewError ? (
                                                         <>
-                                                            <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                                                            <img
+                                                                src={formData.imageUrl}
+                                                                alt="Preview"
+                                                                className="absolute inset-0 w-full h-full object-cover"
+                                                                onLoad={() => setImagePreviewError(false)}
+                                                                onError={() => setImagePreviewError(true)}
+                                                            />
                                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                                 <Button
                                                                     type="button"
                                                                     variant="destructive"
                                                                     size="icon"
                                                                     className="h-8 w-8"
-                                                                    onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                                                                    onClick={() => { setFormData({ ...formData, imageUrl: "" }); setImagePreviewError(false); }}
                                                                 >
                                                                     <X className="h-4 w-4" />
                                                                 </Button>
                                                             </div>
                                                         </>
+                                                    ) : formData.imageUrl && imagePreviewError ? (
+                                                        <div className="flex flex-col items-center gap-2 text-muted-foreground p-4 text-center">
+                                                            <ImageIcon className="h-8 w-8 text-destructive/80" />
+                                                            <span className="text-xs">Image failed to load</span>
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="mt-1"
+                                                                onClick={() => { setFormData({ ...formData, imageUrl: "" }); setImagePreviewError(false); }}
+                                                            >
+                                                                Remove URL
+                                                            </Button>
+                                                        </div>
                                                     ) : (
                                                         <div className="flex flex-col items-center gap-1 text-muted-foreground p-4 text-center">
                                                             {imageUploading ? (
@@ -501,7 +525,10 @@ export default function OffersPage() {
                                                     <Input
                                                         placeholder="https://example.com/image.jpg"
                                                         value={formData.imageUrl}
-                                                        onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                                                        onChange={(e) => {
+                                                            setFormData({ ...formData, imageUrl: e.target.value })
+                                                            setImagePreviewError(false)
+                                                        }}
                                                         disabled={imageUploading}
                                                     />
                                                 </div>
