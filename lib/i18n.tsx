@@ -452,6 +452,7 @@ const translations: Translations = {
   offerUpdatedSuccess: { en: "Offer updated successfully", ar: "تم تحديث العرض بنجاح" },
   offerDeletedSuccess: { en: "Offer deleted successfully", ar: "تم حذف العرض بنجاح" },
   failedToSaveOffer: { en: "Failed to save offer", ar: "فشل حفظ العرض" },
+  invalidImageUrl: { en: "Please enter a valid image URL.", ar: "يرجى إدخال رابط صورة صحيح." },
   confirmDeleteOffer: { en: "Are you sure you want to delete this offer?", ar: "هل أنت متأكد من حذف هذا العرض؟" },
   confirmDeleteIntegration: { en: "Are you sure you want to delete this integration?", ar: "هل أنت متأكد من حذف هذا التكامل؟" },
   confirmDeleteApiKey: { en: "Are you sure you want to delete this API key?", ar: "هل أنت متأكد من حذف مفتاح API هذا؟" },

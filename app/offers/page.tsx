@@ -85,8 +85,9 @@ export default function OffersPage() {
         isActive: true,
     })
 
-    // Upload State
+    // Upload & Submit State
     const [imageUploading, setImageUploading] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Send Dialog State
     const [isSendDialogOpen, setIsSendDialogOpen] = useState(false)
@@ -145,15 +146,31 @@ export default function OffersPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        if (isSubmitting) return
+        setIsSubmitting(true)
         try {
-            const url = editingOffer ? `/api/offers/${editingOffer.id}` : "/api/offers"
-            const method = editingOffer ? "PUT" : "POST"
-
             const imageUrl =
                 formData.imageUrl && !formData.imageUrl.startsWith("data:")
-                    ? formData.imageUrl
+                    ? formData.imageUrl.trim()
                     : null
 
+            // Validate image URL if provided (must be http(s) and look like image)
+            if (imageUrl) {
+                try {
+                    new URL(imageUrl)
+                } catch {
+                    toast({
+                        title: t("error"),
+                        description: t("invalidImageUrl"),
+                        variant: "destructive",
+                    })
+                    setIsSubmitting(false)
+                    return
+                }
+            }
+
+            const url = editingOffer ? `/api/offers/${editingOffer.id}` : "/api/offers"
+            const method = editingOffer ? "PUT" : "POST"
             const payload = { ...formData, imageUrl }
 
             const response = await authenticatedFetch(url, {
@@ -168,7 +185,7 @@ export default function OffersPage() {
                 toast({
                     title: t("success"),
                     description: editingOffer ? t("offerUpdatedSuccess") : t("offerCreatedSuccess"),
-                    variant: "default", // Green in shadcn default usually
+                    variant: "default",
                 })
                 setIsDialogOpen(false)
                 resetForm()
@@ -182,6 +199,8 @@ export default function OffersPage() {
                 description: error instanceof Error ? error.message : t("failedToSaveOffer"),
                 variant: "destructive",
             })
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -197,6 +216,7 @@ export default function OffersPage() {
         })
         setEditingOffer(null)
         setImageUploading(false)
+        setIsSubmitting(false)
     }
 
     const openEditDialog = (offer: Offer) => {
@@ -254,12 +274,12 @@ export default function OffersPage() {
         const file = e.target.files?.[0]
         if (!file) return
 
-        // Client-side validation
-        if (!file.type.startsWith("image/")) {
-            toast({ title: t("error"), description: "Please select an image file (JPEG, PNG, WebP)", variant: "destructive" })
+        const allowed = ["image/jpeg", "image/png", "image/webp"]
+        if (!allowed.includes(file.type)) {
+            toast({ title: t("error"), description: "Allowed types: JPEG, PNG, WebP only", variant: "destructive" })
             return
         }
-        if (file.size > 5 * 1024 * 1024) { // 5MB
+        if (file.size > 5 * 1024 * 1024) {
             toast({ title: t("error"), description: "File size exceeds 5MB limit", variant: "destructive" })
             return
         }
@@ -283,11 +303,13 @@ export default function OffersPage() {
                 throw new Error(data.error || "Upload failed")
             }
         } catch (err) {
-            console.error("Upload error:", err)
-            toast({ title: t("error"), description: err instanceof Error ? err.message : "Upload failed", variant: "destructive" })
+            toast({
+                title: t("error"),
+                description: err instanceof Error ? err.message : "Upload failed",
+                variant: "destructive",
+            })
         } finally {
             setImageUploading(false)
-            // Reset input so same file can be selected again if needed
             e.target.value = ""
         }
     }
@@ -546,11 +568,11 @@ export default function OffersPage() {
                                     </div>
 
                                     <DialogFooter>
-                                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                                             {t("cancel")}
                                         </Button>
-                                        <Button type="submit" disabled={imageUploading}>
-                                            {imageUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                        <Button type="submit" disabled={imageUploading || isSubmitting}>
+                                            {(imageUploading || isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />}
                                             {t("save")}
                                         </Button>
                                     </DialogFooter>
@@ -574,18 +596,18 @@ export default function OffersPage() {
                         ))}
                     </div>
                 ) : offers.length === 0 ? (
-                    <Card className="border-dashed shadow-sm">
-                        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                            <div className="rounded-full bg-primary/10 p-4 mb-4">
-                                <Tag className="h-8 w-8 text-primary" />
+                    <Card className="border-dashed rounded-xl overflow-hidden shadow-sm bg-card">
+                        <CardContent className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                            <div className="rounded-full bg-primary/10 dark:bg-primary/20 p-5 mb-5 transition-transform hover:scale-105">
+                                <Tag className="h-10 w-10 text-primary" />
                             </div>
-                            <h3 className="text-lg font-semibold">{t("noOffersFound")}</h3>
-                            <p className="text-sm text-muted-foreground mt-2 mb-6 max-w-sm">
+                            <h3 className="text-xl font-semibold">{t("noOffersFound")}</h3>
+                            <p className="text-sm text-muted-foreground mt-2 mb-8 max-w-sm">
                                 {t("createFirstOffer")}
                             </p>
                             {canCreate && (
-                                <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
-                                    <Plus className="mr-2 h-4 w-4" />
+                                <Button size="lg" onClick={() => { resetForm(); setIsDialogOpen(true); }} className="shadow-sm">
+                                    <Plus className="mr-2 h-5 w-5" />
                                     {t("createOffer")}
                                 </Button>
                             )}
@@ -594,12 +616,12 @@ export default function OffersPage() {
                 ) : (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {offers.map((offer) => (
-                            <Card key={offer.id} className="group overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300 border-muted/60">
+                            <Card key={offer.id} className="group overflow-hidden flex flex-col rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300">
                                 {/* Image Area */}
                                 <div className="relative w-full aspect-video bg-muted overflow-hidden">
                                     {offer.isActive && (
                                         <div className="absolute top-3 left-3 z-10">
-                                            <span className="inline-flex items-center rounded-full bg-green-500/90 px-2.5 py-0.5 text-xs font-medium text-white shadow-sm backdrop-blur-sm">
+                                            <span className="inline-flex items-center rounded-full bg-green-500/90 px-2.5 py-0.5 text-xs font-medium text-white shadow-sm">
                                                 {t("active")}
                                             </span>
                                         </div>
@@ -618,17 +640,15 @@ export default function OffersPage() {
                                     )}
                                 </div>
 
-                                <CardHeader className="space-y-1 pb-4">
-                                    <div className="flex justify-between items-start gap-2">
-                                        <CardTitle className="text-xl line-clamp-1">{offer.title}</CardTitle>
-                                    </div>
+                                <CardHeader className="space-y-1 pb-2 pt-4">
+                                    <CardTitle className="text-xl line-clamp-1">{offer.title}</CardTitle>
                                     <CardDescription className="line-clamp-2 min-h-[40px]">
                                         {offer.description || offer.content}
                                     </CardDescription>
                                 </CardHeader>
 
-                                <CardContent className="space-y-4 flex-1">
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-2 rounded-md">
+                                <CardContent className="space-y-4 flex-1 pb-4">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-2 rounded-lg">
                                         <Calendar className="h-4 w-4 shrink-0 text-primary" />
                                         <span className="font-medium text-xs">
                                             {format(new Date(offer.validFrom), "MMM dd")} - {format(new Date(offer.validTo), "MMM dd, yyyy")}
@@ -636,38 +656,40 @@ export default function OffersPage() {
                                     </div>
 
                                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                                        <div className="bg-muted/30 p-2 rounded">
+                                        <div className="bg-muted/30 p-2 rounded-lg">
                                             <div className="font-bold text-base">{offer.recipientsCount || 0}</div>
                                             <div className="text-muted-foreground">Sent</div>
                                         </div>
-                                        <div className="bg-muted/30 p-2 rounded">
+                                        <div className="bg-muted/30 p-2 rounded-lg">
                                             <div className="font-bold text-base">{offer.singleSendCount || 0}</div>
                                             <div className="text-muted-foreground">Direct</div>
                                         </div>
-                                        <div className="bg-muted/30 p-2 rounded">
+                                        <div className="bg-muted/30 p-2 rounded-lg">
                                             <div className="font-bold text-base">{offer.bulkSendCount || 0}</div>
                                             <div className="text-muted-foreground">Bulk</div>
                                         </div>
                                     </div>
                                 </CardContent>
 
-                                <CardFooter className="pt-2 gap-2 border-t bg-muted/5 p-4">
+                                <CardFooter className="pt-0 pb-4 px-4 gap-2 border-t bg-muted/5 flex-wrap">
                                     <Button
                                         variant="default"
-                                        className="flex-1 shadow-sm"
+                                        size="sm"
+                                        className="flex-1 min-w-0 shadow-sm"
                                         onClick={() => openSendDialog(offer)}
                                     >
-                                        <Send className="mr-2 h-4 w-4" />
-                                        {t("sendOffer")}
+                                        <Send className="mr-2 h-4 w-4 shrink-0" />
+                                        <span className="truncate">{t("sendOffer")}</span>
                                     </Button>
 
                                     {canEdit && (
                                         <Button
-                                            variant="outline"
+                                            variant="default"
                                             size="icon"
-                                            className="text-primary hover:text-primary hover:bg-primary/10 border-primary/20"
+                                            className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
                                             onClick={() => openEditDialog(offer)}
                                             title={t("edit")}
+                                            aria-label={t("edit")}
                                         >
                                             <Edit className="h-4 w-4" />
                                         </Button>
@@ -675,11 +697,12 @@ export default function OffersPage() {
 
                                     {canDelete && (
                                         <Button
-                                            variant="outline"
+                                            variant="destructive"
                                             size="icon"
-                                            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                                            className="shrink-0"
                                             onClick={() => handleDeleteClick(offer.id)}
                                             title={t("delete")}
+                                            aria-label={t("delete")}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>

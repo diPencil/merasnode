@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { requireDeleteAllowed, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
+import { requireAuthWithScope, requireDeleteAllowed, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
+import { hasPermission } from "@/lib/permissions"
+import type { UserRole } from "@/lib/permissions"
 
-// GET /api/offers/[id]
+// GET /api/offers/[id] — view_offer required
 export async function GET(
-    request: Request,
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const scope = await requireAuthWithScope(request)
+        const role = scope.role as UserRole
+        if (!hasPermission(role, "view_offers")) {
+            return forbiddenResponse("You do not have permission to view this offer.")
+        }
         const { id } = await params
         const offer = await prisma.offer.findUnique({
             where: { id },
@@ -24,8 +31,10 @@ export async function GET(
             success: true,
             offer,
         })
-    } catch (error) {
-        console.error("Error fetching offer:", error)
+    } catch (e) {
+        if (e instanceof Error && e.message === "Unauthorized") return unauthorizedResponse()
+        if (e instanceof Error && e.message === "Forbidden") return forbiddenResponse()
+        console.error("Error fetching offer:", e)
         return NextResponse.json(
             { success: false, error: "Failed to fetch offer" },
             { status: 500 }
@@ -33,31 +42,40 @@ export async function GET(
     }
 }
 
-// PUT /api/offers/[id]
+// PUT /api/offers/[id] — edit_offer required (Admin, Supervisor only)
 export async function PUT(
-    request: Request,
+    request: NextRequest,
     props: { params: Promise<{ id: string }> }
 ) {
     try {
-        const params = await props.params;
-        const id = params.id;
+        const scope = await requireAuthWithScope(request)
+        const role = scope.role as UserRole
+        if (!hasPermission(role, "edit_offer")) {
+            return forbiddenResponse("You do not have permission to edit offers.")
+        }
 
-        let body;
+        const { id } = await props.params
+
+        let body: Record<string, unknown>
         try {
-            body = await request.json();
-        } catch (e) {
+            body = await request.json()
+        } catch {
             return NextResponse.json(
                 { success: false, error: "Invalid JSON body" },
                 { status: 400 }
-            );
+            )
         }
 
-        const { title, description, content, imageUrl, validFrom, validTo, isActive } = body;
+        const { title, description, content, imageUrl, validFrom, validTo, isActive } = body as {
+            title?: string; description?: string; content?: string; imageUrl?: string;
+            validFrom?: string; validTo?: string; isActive?: boolean;
+        }
 
-        // Ensure mandatory fields are present if needed, or allow partial updates
         if (!title || !content || !validFrom || !validTo) {
-            // Basic validation for required fields on update if full update is expected
-            // Alternatively, we can make update partial. For now, let's assume update form sends all fields.
+            return NextResponse.json(
+                { success: false, error: "Missing required fields: title, content, validFrom, validTo" },
+                { status: 400 }
+            )
         }
 
         const safeImageUrl =
@@ -65,27 +83,29 @@ export async function PUT(
                 ? typeof imageUrl === "string" && imageUrl.startsWith("data:")
                     ? null
                     : imageUrl || null
-                : undefined;
+                : undefined
 
         const offer = await prisma.offer.update({
             where: { id },
             data: {
                 title,
-                description: description || null,
+                description: description ?? null,
                 content,
-                imageUrl: safeImageUrl,
+                ...(safeImageUrl !== undefined && { imageUrl: safeImageUrl }),
                 validFrom: new Date(validFrom),
                 validTo: new Date(validTo),
-                isActive: isActive ?? true, // Default to true if undefined, but form should send it
+                isActive: isActive ?? true,
             },
-        });
+        })
 
         return NextResponse.json({
             success: true,
             offer,
         })
-    } catch (error) {
-        console.error("Error updating offer:", error)
+    } catch (e) {
+        if (e instanceof Error && e.message === "Unauthorized") return unauthorizedResponse()
+        if (e instanceof Error && e.message === "Forbidden") return forbiddenResponse()
+        console.error("Error updating offer:", e)
         return NextResponse.json(
             { success: false, error: "Failed to update offer" },
             { status: 500 }

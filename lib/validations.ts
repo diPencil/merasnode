@@ -173,9 +173,10 @@ export const updateNoteSchema = z.object({
     content: z.string().min(1).max(10000),
 })
 
-// File upload validations
-export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+// File upload validations (offers: jpg, png, webp only per product requirement)
+export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB (Next.js default body limit is 4MB in some runtimes)
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+export const ALLOWED_IMAGE_TYPES_WITH_GIF = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 export const ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
 export const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/mpeg', 'video/webm']
 export const ALLOWED_AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg']
