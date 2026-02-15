@@ -592,7 +592,7 @@ export default function InboxPage() {
             : c
         ).sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()))
       } else {
-        toast({ title: t("error"), description: t("failedToSendMessage"), variant: "destructive" })
+        toast({ title: t("error"), description: data.error || t("failedToSendMessage"), variant: "destructive" })
       }
     } catch (error) {
       toast({ title: t("error"), description: t("failedToSendMessage"), variant: "destructive" })

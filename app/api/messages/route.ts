@@ -8,6 +8,8 @@ import {
     forbiddenResponse,
 } from "@/lib/api-auth"
 
+const WHATSAPP_SERVICE_URL = process.env.WHATSAPP_SERVICE_URL || 'http://localhost:3001'
+
 // GET - Fetch messages for a conversation (auth + scope check)
 export async function GET(request: NextRequest) {
     try {
@@ -143,7 +145,6 @@ export async function POST(request: NextRequest) {
         if (accountId && scope.role === 'AGENT' && !scope.whatsappAccountIds.includes(accountId)) {
             return forbiddenResponse('You do not have access to this WhatsApp account')
         }
-
         // 2. Send via WhatsApp Service (if OUTGOING)
         if (direction === 'OUTGOING') {
             if (process.env.NODE_ENV === 'development' || process.env.SKIP_WHATSAPP === 'true') {
@@ -167,7 +168,7 @@ export async function POST(request: NextRequest) {
                     }
 
                     if (!accountId) {
-                        // For non-admin users, prefer their assigned connected accounts
+                        // For non-admin users, prefer their assigned connected accounts (direct user–account link)
                         if (scope.role !== 'ADMIN' && scope.whatsappAccountIds.length > 0) {
                             const connectedAccount = await prisma.whatsAppAccount.findFirst({
                                 where: {
@@ -179,7 +180,19 @@ export async function POST(request: NextRequest) {
                             if (connectedAccount) accountId = connectedAccount.id;
                         }
 
-                        // Fallback: any connected account (admin, or if agent has none assigned)
+                        // For SUPERVISOR (and others) with no direct account: prefer account in their branches
+                        if (!accountId && scope.role === 'SUPERVISOR' && scope.branchIds.length > 0) {
+                            const accountInBranch = await prisma.whatsAppAccount.findFirst({
+                                where: {
+                                    status: 'CONNECTED',
+                                    branchId: { in: scope.branchIds },
+                                },
+                                orderBy: { createdAt: 'desc' },
+                            });
+                            if (accountInBranch) accountId = accountInBranch.id;
+                        }
+
+                        // Fallback: any connected account (admin, or when no scoped account found)
                         if (!accountId) {
                             const connectedAccount = await prisma.whatsAppAccount.findFirst({
                                 where: { status: 'CONNECTED' },
@@ -190,7 +203,7 @@ export async function POST(request: NextRequest) {
                         }
                     }
 
-                    const whatsappRes = await fetch('http://localhost:3001/send', {
+                    const whatsappRes = await fetch(`${WHATSAPP_SERVICE_URL}/send`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -206,9 +219,10 @@ export async function POST(request: NextRequest) {
                     if (!whatsappData.success) {
                         throw new Error(whatsappData.error || 'WhatsApp Service delivery failed');
                     }
-                } catch (error: any) {
+                } catch (error: unknown) {
+                    const errMsg = error instanceof Error ? error.message : 'Unknown WhatsApp Error';
                     console.error('WhatsApp Send Error:', error);
-                    return NextResponse.json({ success: false, error: error.message || 'Unknown WhatsApp Error' }, { status: 502 });
+                    return NextResponse.json({ success: false, error: errMsg }, { status: 502 });
                 }
             }
         }
@@ -296,22 +310,24 @@ export async function POST(request: NextRequest) {
             success: true,
             data: message
         }, { status: 201 })
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof Error) {
             if (error.message === 'Unauthorized') return unauthorizedResponse()
             if (error.message === 'Forbidden') return forbiddenResponse()
         }
         console.error('Error creating message:', error)
 
-        if (error.code === 'P2003') {
+        const err = error as { code?: string }
+        if (err.code === 'P2003') {
             return NextResponse.json(
                 { success: false, error: "Conversation not found" },
                 { status: 404 }
             )
         }
 
+        const message = error instanceof Error ? error.message : "Failed to create message"
         return NextResponse.json(
-            { success: false, error: "Failed to create message" },
+            { success: false, error: message },
             { status: 500 }
         )
     }
