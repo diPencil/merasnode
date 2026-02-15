@@ -151,11 +151,12 @@ app.post('/initialize/:accountId', async (req, res) => {
 app.post('/send', async (req, res) => {
     try {
         const {
-            accountId,      // ← Which account to send from (REQUIRED!)
+            accountId,
             phoneNumber,
             message,
             chatId,
-            mediaUrl
+            mediaUrl,
+            quotedMessageId
         } = req.body;
 
         // Validate
@@ -173,13 +174,13 @@ app.post('/send', async (req, res) => {
             });
         }
 
-        // Send message
         const result = await manager.sendMessage(
             accountId,
             phoneNumber,
             message,
             mediaUrl,
-            chatId
+            chatId,
+            quotedMessageId
         );
 
         res.json({

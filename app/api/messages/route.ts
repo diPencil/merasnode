@@ -215,6 +215,16 @@ export async function POST(request: NextRequest) {
                         }
                     }
 
+                    let quotedMessageId: string | null = null
+                    if (replyToId) {
+                        const quoted = await prisma.message.findUnique({
+                            where: { id: replyToId },
+                            select: { metadata: true }
+                        })
+                        const meta = quoted?.metadata as { waMessageId?: string } | null
+                        if (meta?.waMessageId) quotedMessageId = meta.waMessageId
+                    }
+
                     const whatsappRes = await fetch(`${WHATSAPP_SERVICE_URL}/send`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -223,7 +233,8 @@ export async function POST(request: NextRequest) {
                             phoneNumber: waPhone,
                             message: content,
                             mediaUrl,
-                            isGroup: isGroup
+                            isGroup: isGroup,
+                            quotedMessageId: quotedMessageId || undefined
                         })
                     });
 

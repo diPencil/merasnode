@@ -222,7 +222,8 @@ export async function POST(request: NextRequest) {
                     mentions: Array.isArray(body.mentions) ? body.mentions : [],
                     quotedMsg: body.quotedMsg || null,
                     authorName: (body.authorName != null ? String(body.authorName).trim() : null) || null,
-                    authorId: body.authorId || null
+                    authorId: body.authorId || null,
+                    waMessageId: body.waMessageId || null
                 }
             }
         })

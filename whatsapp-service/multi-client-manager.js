@@ -243,6 +243,7 @@ class MultiClientManager extends EventEmitter {
             // Forward to webhook with accountId — full body + caption (no truncation)
             const bodyText = message.body != null ? String(message.body) : ''
             const captionText = message.caption != null ? String(message.caption) : ''
+            const waMessageId = (message.id && (message.id._serialized || message.id.id)) ? (message.id._serialized || message.id.id) : null;
             const payload = {
                 accountId,
                 from: message.from,
@@ -260,7 +261,8 @@ class MultiClientManager extends EventEmitter {
                 media: mediaData,
                 location: locationData,
                 type: message.type,
-                mentions: mentionsWithNames
+                mentions: mentionsWithNames,
+                waMessageId
             };
 
             await fetch(`${this.nextAppUrl}/api/whatsapp/webhook`, {
@@ -278,7 +280,7 @@ class MultiClientManager extends EventEmitter {
     /**
      * Send message from specific account
      */
-    async sendMessage(accountId, phoneNumber, message, mediaUrl = null, chatId = null) {
+    async sendMessage(accountId, phoneNumber, message, mediaUrl = null, chatId = null, quotedMessageId = null) {
         const clientData = this.clients.get(accountId);
 
         if (!clientData) {
@@ -290,7 +292,6 @@ class MultiClientManager extends EventEmitter {
 
         const { client } = clientData;
 
-        // Determine chat ID
         let targetChatId;
         if (chatId) {
             targetChatId = chatId;
@@ -301,18 +302,34 @@ class MultiClientManager extends EventEmitter {
             targetChatId = `${formattedNumber}@c.us`;
         }
 
-        console.log(`📤 [${accountId}] Sending to ${targetChatId}`);
+        const quotedOpt = quotedMessageId ? { quotedMessageId } : {};
 
-        // Send message
-        if (mediaUrl) {
-            const media = await MessageMedia.fromUrl(mediaUrl);
-            if (message) {
-                await client.sendMessage(targetChatId, media, { caption: message });
+        console.log(`📤 [${accountId}] Sending to ${targetChatId}` + (quotedMessageId ? ' (reply)' : ''));
+
+        try {
+            if (mediaUrl) {
+                const media = await MessageMedia.fromUrl(mediaUrl);
+                if (message) {
+                    await client.sendMessage(targetChatId, media, { caption: message, ...quotedOpt });
+                } else {
+                    await client.sendMessage(targetChatId, media, quotedOpt);
+                }
             } else {
-                await client.sendMessage(targetChatId, media);
+                await client.sendMessage(targetChatId, message, quotedOpt);
             }
-        } else {
-            await client.sendMessage(targetChatId, message);
+        } catch (err) {
+            if (quotedMessageId) {
+                console.warn(`⚠️ Reply failed (e.g. old/invalid quoted id), sending as normal message: ${err.message || err}`);
+                if (mediaUrl) {
+                    const media = await MessageMedia.fromUrl(mediaUrl);
+                    if (message) await client.sendMessage(targetChatId, media, { caption: message });
+                    else await client.sendMessage(targetChatId, media);
+                } else {
+                    await client.sendMessage(targetChatId, message);
+                }
+            } else {
+                throw err;
+            }
         }
 
         return { success: true, chatId: targetChatId };

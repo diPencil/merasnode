@@ -1428,20 +1428,20 @@ export default function InboxPage() {
                       <div className={`chat-bubble-wrap group flex flex-col ${isOutgoing ? "outgoing items-end" : "incoming items-start"}`}>
                         <div
                           className={cn(
-                            "chat-bubble px-4 py-2 rounded-2xl shadow-sm text-sm",
+                            "chat-bubble rounded-[7.5px] px-2.5 py-1.5 shadow-sm text-sm",
                             isOutgoing
                               ? cn(
                                 "bg-[#dcf8c6] dark:bg-[#005c4b] text-slate-800 dark:text-slate-100",
                                 dir === 'rtl' ? "rounded-tl-none" : "rounded-tr-none"
                               )
                               : cn(
-                                "bg-white dark:bg-[#202c33] text-gray-800 dark:text-slate-100 border dark:border-none",
+                                "bg-white dark:bg-[#202c33] text-gray-800 dark:text-slate-100 border border-gray-200 dark:border-white/10",
                                 dir === 'rtl' ? "rounded-tr-none" : "rounded-tl-none"
                               )
                           )}
                         >
                           {!isOutgoing && (message as any).metadata?.authorName && (
-                            <div className="text-[10px] font-bold text-teal-600 dark:text-teal-400 mb-1 leading-none uppercase tracking-tighter break-keep whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
+                            <div className="text-[11px] font-semibold text-teal-600 dark:text-teal-400 mb-1 leading-tight break-words overflow-visible">
                               {String((message as any).metadata.authorName).trim()}
                             </div>
                           )}
