@@ -1445,7 +1445,7 @@ export default function InboxPage() {
                           )}
                         >
                           {!isOutgoing && (message as any).metadata?.authorName && (
-                            <div className="text-[11px] font-semibold text-teal-600 dark:text-teal-400 mb-1 leading-tight break-words overflow-visible">
+                            <div className="text-[11px] font-semibold text-teal-600 dark:text-teal-400 mb-1 leading-tight wrap-break-word overflow-visible">
                               {String((message as any).metadata.authorName).trim()}
                             </div>
                           )}
@@ -1568,7 +1568,7 @@ export default function InboxPage() {
                             </a>
                           ) : (
                             <div
-                              className="text-sm whitespace-pre-wrap break-words leading-relaxed text-gray-800 dark:text-gray-100 w-full max-w-full overflow-visible inline-block min-w-[1ch]"
+                              className="text-sm whitespace-pre-wrap wrap-break-word leading-relaxed text-gray-800 dark:text-gray-100 w-full max-w-full overflow-visible inline-block min-w-[1ch]"
                               style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
                               dir="auto"
                             >
