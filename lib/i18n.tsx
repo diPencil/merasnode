@@ -922,6 +922,7 @@ const translations: Translations = {
   automationLabel: { en: "Automation", ar: "الأتمتة" },
   systemLabel: { en: "System", ar: "النظام" },
   merasTeamLabel: { en: "Meras Team", ar: "فريق المراس" },
+  noContactsToMention: { en: "No contacts to mention", ar: "لا جهات اتصال للذكر" },
   sentBy: { en: "Sent by", ar: "أرسل بواسطة" },
   whatsAppWeb: { en: "WhatsApp Web", ar: "واتساب ويب" },
   generateQrCode: { en: "Generate QR Code", ar: "إنشاء رمز QR" },

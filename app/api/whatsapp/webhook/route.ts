@@ -219,9 +219,9 @@ export async function POST(request: NextRequest) {
                 mediaUrl: mediaUrl,
                 whatsappAccountId: accountId || null,
                 metadata: {
-                    mentions: body.mentions || [],
+                    mentions: Array.isArray(body.mentions) ? body.mentions : [],
                     quotedMsg: body.quotedMsg || null,
-                    authorName: body.authorName || null,
+                    authorName: (body.authorName != null ? String(body.authorName).trim() : null) || null,
                     authorId: body.authorId || null
                 }
             }

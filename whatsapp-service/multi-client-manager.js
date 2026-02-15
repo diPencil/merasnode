@@ -211,6 +211,35 @@ class MultiClientManager extends EventEmitter {
                 console.log(`📍 [${accountId}] Location received: ${locationData.latitude}, ${locationData.longitude}`);
             }
 
+            // Resolve mentions (id + name) for correct display in chat
+            let mentionsWithNames = []
+            try {
+                const mentionContacts = await message.getMentions().catch(() => [])
+                if (mentionContacts && mentionContacts.length > 0) {
+                    mentionsWithNames = mentionContacts.map((c) => {
+                        const id = (c.id && (c.id.user || c.id._serialized)) ? (c.id.user || (typeof c.id._serialized === 'string' ? c.id._serialized.replace(/@c\.us|@g\.us/g, '') : '')) : ''
+                        const name = (c.pushname || c.name || c.number || '').trim() || id
+                        return { id, name }
+                    }).filter((m) => m.id)
+                } else {
+                    const raw = message.mentionedIds
+                    if (Array.isArray(raw)) {
+                        mentionsWithNames = raw.map((id) => ({
+                            id: typeof id === 'string' ? id.replace(/@c\.us|@g\.us/g, '') : String(id || ''),
+                            name: ''
+                        })).filter((m) => m.id)
+                    }
+                }
+            } catch (e) {
+                const raw = message.mentionedIds
+                if (Array.isArray(raw)) {
+                    mentionsWithNames = raw.map((id) => ({
+                        id: typeof id === 'string' ? id.replace(/@c\.us|@g\.us/g, '') : String(id || ''),
+                        name: ''
+                    })).filter((m) => m.id)
+                }
+            }
+
             // Forward to webhook with accountId — full body + caption (no truncation)
             const bodyText = message.body != null ? String(message.body) : ''
             const captionText = message.caption != null ? String(message.caption) : ''
@@ -223,14 +252,15 @@ class MultiClientManager extends EventEmitter {
                 timestamp: message.timestamp,
                 isGroup: chat.isGroup,
                 senderName: displaySenderName,
-                authorName: authorName,
+                authorName: (authorName || '').trim(),
                 authorId: message.author || message.from,
                 senderId: message.author || message.from,
                 fromMe: message.fromMe,
                 hasMedia: message.hasMedia,
                 media: mediaData,
                 location: locationData,
-                type: message.type
+                type: message.type,
+                mentions: mentionsWithNames
             };
 
             await fetch(`${this.nextAppUrl}/api/whatsapp/webhook`, {

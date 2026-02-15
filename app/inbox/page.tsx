@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useRef, useMemo, type ReactNode } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { AppLayout } from "@/components/app-layout"
@@ -176,6 +176,8 @@ export default function InboxPage() {
   const [forwardMessage, setForwardMessage] = useState<Message | null>(null)
   const [forwardTargetConversation, setForwardTargetConversation] = useState<Conversation | null>(null)
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false)
+  const [mentionPickerOpen, setMentionPickerOpen] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState("")
   const { toast } = useToast()
   const { t, language, dir } = useI18n()
   const dateLocale = language === "ar" ? ar : undefined
@@ -966,24 +968,39 @@ export default function InboxPage() {
     }
   }
 
-  const formatMessageContent = (content: string | null | undefined) => {
+  const formatMessageContent = (content: string | null | undefined, msg?: Message) => {
     const text = content != null ? String(content) : ""
     if (!text) return ""
-    // Regex to find JIDs like @12036...
-    const mentionRegex = /@(\d+)(?:@g\.us|@c\.us)?/g
-    const parts = text.split(mentionRegex)
-
-    if (parts.length === 1) return text
-
-    return parts.map((part, i) => {
-      if (i % 2 === 1) {
-        const phone = part
-        const knownContact = conversations.find(c => c.contact.phone.replace(/\D/g, '').includes(phone))
-        const name = knownContact ? knownContact.contact.name : phone
-        return <span key={i} className="text-blue-500 font-medium mx-0.5">@{name}</span>
+    const mentions = (msg?.metadata as any)?.mentions as Array<{ id: string; name?: string }> | undefined
+    const mentionMap = new Map<string, string>()
+    if (Array.isArray(mentions)) {
+      mentions.forEach((m) => {
+        const digits = (m.id || '').replace(/\D/g, '')
+        if (digits && (m.name || '').trim()) mentionMap.set(digits, (m.name || '').trim())
+      })
+    }
+    const resolveName = (digits: string): string => {
+      if (mentionMap.has(digits)) return mentionMap.get(digits)!
+      const known = conversations.find((c) => c.contact.phone.replace(/\D/g, '').includes(digits) || digits.includes(c.contact.phone.replace(/\D/g, '')))
+      return known ? known.contact.name : digits
+    }
+    const combinedRegex = /@(\d{10,})(?:@[cg]\.us)?|(\d{10,})@(?:[cg]\.us)?/g
+    const parts: (string | ReactNode)[] = []
+    let lastIndex = 0
+    let match
+    let key = 0
+    while ((match = combinedRegex.exec(text)) !== null) {
+      const num = (match[1] || match[2] || '').replace(/\D/g, '')
+      if (num) {
+        if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
+        parts.push(<span key={key++} className="text-blue-500 font-medium mx-0.5">@{resolveName(num)}</span>)
+        lastIndex = match.index + match[0].length
       }
-      return part
-    })
+    }
+    if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+    if (parts.length === 0) return text
+    if (parts.length === 1 && typeof parts[0] === 'string') return parts[0]
+    return <>{parts}</>
   }
 
   return (
@@ -1424,8 +1441,8 @@ export default function InboxPage() {
                           )}
                         >
                           {!isOutgoing && (message as any).metadata?.authorName && (
-                            <div className="text-[10px] font-bold text-teal-600 dark:text-teal-400 mb-1 leading-none uppercase tracking-tighter">
-                              {(message as any).metadata.authorName}
+                            <div className="text-[10px] font-bold text-teal-600 dark:text-teal-400 mb-1 leading-none uppercase tracking-tighter break-keep whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
+                              {String((message as any).metadata.authorName).trim()}
                             </div>
                           )}
                           {message.quotedMessage && (
@@ -1551,7 +1568,7 @@ export default function InboxPage() {
                               style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
                               dir="auto"
                             >
-                              {formatMessageContent(message.content)}
+                              {formatMessageContent(message.content, message)}
                             </div>
                           )}
                         </div>
@@ -1571,7 +1588,7 @@ export default function InboxPage() {
                             )}
                             aria-label={t("sentBy")}
                           >
-                            — {t("sentBy")}: {message.sender?.name?.trim() || message.sender?.username || (message.direction === "OUTGOING" ? t("merasTeamLabel") : t("systemLabel"))}
+                            — {t("sentBy")}: <span className="break-keep whitespace-nowrap inline-block max-w-full overflow-hidden text-ellipsis align-bottom">{message.sender?.name?.trim() || message.sender?.username || (message.direction === "OUTGOING" ? t("merasTeamLabel") : t("systemLabel"))}</span>
                           </div>
                         )}
                         {/* Reply / Forward — visible on hover */}
@@ -1649,14 +1666,57 @@ export default function InboxPage() {
                     </PopoverContent>
                   </Popover>
 
-                  <Input
-                    dir={dir}
-                    className="border-none bg-transparent shadow-none focus-visible:ring-0 flex-1 min-w-0 h-9 px-2 text-base"
-                    placeholder={t("typeYourMessage")}
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                  />
+                  <div className="relative flex-1 min-w-0 flex flex-col">
+                    <Input
+                      dir={dir}
+                      className="border-none bg-transparent shadow-none focus-visible:ring-0 flex-1 min-w-0 h-9 px-2 text-base"
+                      placeholder={t("typeYourMessage")}
+                      value={newMessage}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        setNewMessage(v)
+                        const lastAt = v.lastIndexOf("@")
+                        if (lastAt >= 0) {
+                          const after = v.slice(lastAt + 1)
+                          if (!after.includes(" ") && !after.includes("\n")) {
+                            setMentionQuery(after.toLowerCase())
+                            setMentionPickerOpen(true)
+                            return
+                          }
+                        }
+                        setMentionPickerOpen(false)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSendMessage()
+                        if (mentionPickerOpen && (e.key === "Escape" || e.key === "Backspace" && !mentionQuery)) setMentionPickerOpen(false)
+                      }}
+                    />
+                    {mentionPickerOpen && selectedConversation && (
+                      <div className="absolute bottom-full left-0 right-0 mb-1 max-h-40 overflow-y-auto rounded-lg border bg-popover shadow-md z-50">
+                        {conversations
+                          .filter((c) => c.id !== selectedConversation.id && c.contact?.name?.toLowerCase().includes(mentionQuery))
+                          .slice(0, 8)
+                          .map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
+                              onClick={() => {
+                                const lastAt = newMessage.lastIndexOf("@")
+                                const before = lastAt >= 0 ? newMessage.slice(0, lastAt) : newMessage
+                                setNewMessage(before + "@" + (c.contact?.name || c.contact?.phone || "") + " ")
+                                setMentionPickerOpen(false)
+                              }}
+                            >
+                              <span className="font-medium">{c.contact?.name || c.contact?.phone}</span>
+                            </button>
+                          ))}
+                        {conversations.filter((c) => c.id !== selectedConversation.id && c.contact?.name?.toLowerCase().includes(mentionQuery)).length === 0 && (
+                          <div className="px-3 py-2 text-xs text-muted-foreground">{t("noContactsToMention") || "No contacts to mention"}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Attachments Group */}
                   <div className="flex items-center gap-0.5 shrink-0">
