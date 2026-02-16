@@ -626,6 +626,12 @@ const translations: Translations = {
   internalNotePlaceholder: { en: "Add a private note...", ar: "أضف ملاحظة خاصة..." },
   tagToAssign: { en: "Tag to assign when sending", ar: "وسم يُضاف عند الإرسال" },
   tagToAssignPlaceholder: { en: "e.g. Laser Campaign - Feb 2026", ar: "مثال: حملة الليزر - فبراير 2026" },
+  tagToAssignExplanation: {
+    en: "When you send this offer to contacts, this tag is automatically added to each contact. Use it to track who received which campaign (e.g. filter contacts by this tag later). You can choose an existing tag or type a new one.",
+    ar: "عند إرسال هذا العرض لأي جهة اتصال، يُضاف هذا الوسم تلقائياً لجهة الاتصال. استخدمه لتتبع من استلم أي حملة (مثلاً تصفية جهات الاتصال بهذا الوسم لاحقاً). يمكنك اختيار وسم موجود أو كتابة وسم جديد.",
+  },
+  tagOptionNone: { en: "No tag", ar: "بدون وسم" },
+  tagOptionTypeNew: { en: "Type new tag...", ar: "اكتب وسم جديد..." },
   filterByTag: { en: "Filter by tag", ar: "تصفية بالوسم" },
   allTags: { en: "All tags", ar: "كل الوسوم" },
   createdBy: { en: "Created by", ar: "أنشئ بواسطة" },

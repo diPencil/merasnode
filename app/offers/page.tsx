@@ -91,6 +91,10 @@ export default function OffersPage() {
     })
 
     const [whatsappAccounts, setWhatsappAccounts] = useState<{ id: string; name: string; phone: string }[]>([])
+    /** Unique tags from contacts + offers (for "Tag to assign" dropdown). */
+    const [existingTags, setExistingTags] = useState<string[]>([])
+    /** '__none__' = no tag, '__new__' = typing new tag, else = selected existing tag. */
+    const [tagChoice, setTagChoice] = useState<"__none__" | "__new__" | string>("__none__")
 
     // Base URL helper (same idea as Inbox) so الصور تشتغل حتى لو اتحرك السيرفر أو اتغيّر الدومين
     const baseUrl =
@@ -130,6 +134,16 @@ export default function OffersPage() {
     const canEdit = hasPermission((userRole || "AGENT") as UserRole, "edit_offer")
     const canDelete = hasPermission((userRole || "AGENT") as UserRole, "delete_offer")
 
+    const fetchTags = async () => {
+        try {
+            const res = await authenticatedFetch("/api/tags")
+            const data = await res.json()
+            if (data.success && Array.isArray(data.data)) setExistingTags(data.data)
+        } catch {
+            setExistingTags([])
+        }
+    }
+
     useEffect(() => {
         fetchOffers()
         fetchContacts()
@@ -151,6 +165,10 @@ export default function OffersPage() {
                 // تجاهل لو فشل — النموذج يظل يعمل بدون اختيار رقم
             })
     }, [])
+
+    useEffect(() => {
+        if (isDialogOpen) fetchTags()
+    }, [isDialogOpen])
 
     const fetchOffers = async () => {
         try {
@@ -211,8 +229,15 @@ export default function OffersPage() {
 
             const url = editingOffer ? `/api/offers/${editingOffer.id}` : "/api/offers"
             const method = editingOffer ? "PUT" : "POST"
+            const effectiveTag =
+                tagChoice === "__new__"
+                    ? formData.tagToAssign
+                    : tagChoice === "__none__"
+                      ? ""
+                      : tagChoice
             const payload = {
                 ...formData,
+                tagToAssign: effectiveTag.trim() || undefined,
                 imageUrl,
                 whatsappAccountId: formData.whatsappAccountId || undefined,
             }
@@ -264,6 +289,7 @@ export default function OffersPage() {
             whatsappAccountId: "",
             tagToAssign: "",
         })
+        setTagChoice("__none__")
         setEditingOffer(null)
         setImageUploading(false)
         setIsSubmitting(false)
@@ -284,6 +310,7 @@ export default function OffersPage() {
             whatsappAccountId: offer.whatsappAccountId || "",
             tagToAssign: offer.tagToAssign || "",
         })
+        setTagChoice(offer.tagToAssign || "__none__")
         setIsDialogOpen(true)
     }
 
@@ -630,12 +657,44 @@ export default function OffersPage() {
 
                                         <div className="grid gap-2">
                                             <Label htmlFor="tagToAssign">{t("tagToAssign")}</Label>
-                                            <Input
-                                                id="tagToAssign"
-                                                placeholder={t("tagToAssignPlaceholder")}
-                                                value={formData.tagToAssign}
-                                                onChange={(e) => setFormData({ ...formData, tagToAssign: e.target.value })}
-                                            />
+                                            <p className="text-sm text-muted-foreground">
+                                                {t("tagToAssignExplanation")}
+                                            </p>
+                                            <Select
+                                                value={tagChoice}
+                                                onValueChange={(v) => {
+                                                    setTagChoice(v)
+                                                    if (v !== "__new__") setFormData((prev) => ({ ...prev, tagToAssign: v === "__none__" ? "" : v }))
+                                                }}
+                                            >
+                                                <SelectTrigger id="tagToAssign">
+                                                    <SelectValue placeholder={t("tagOptionNone")} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="__none__">{t("tagOptionNone")}</SelectItem>
+                                                    {existingTags.map((tag) => (
+                                                        <SelectItem key={tag} value={tag}>
+                                                            {tag}
+                                                        </SelectItem>
+                                                    ))}
+                                                    {tagChoice &&
+                                                        tagChoice !== "__new__" &&
+                                                        tagChoice !== "__none__" &&
+                                                        !existingTags.includes(tagChoice) && (
+                                                            <SelectItem value={tagChoice}>{tagChoice}</SelectItem>
+                                                        )}
+                                                    <SelectItem value="__new__">{t("tagOptionTypeNew")}</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            {tagChoice === "__new__" && (
+                                                <Input
+                                                    placeholder={t("tagToAssignPlaceholder")}
+                                                    value={formData.tagToAssign}
+                                                    onChange={(e) =>
+                                                        setFormData((prev) => ({ ...prev, tagToAssign: e.target.value }))
+                                                    }
+                                                />
+                                            )}
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
