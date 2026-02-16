@@ -22,6 +22,7 @@ interface TeamMember {
   lastLoginAt?: string | null
   lastLogoutAt?: string | null
   lastActivityAt?: string | null
+  branches?: { id: string; name: string }[]
 }
 
 interface Message {
@@ -37,9 +38,11 @@ interface OtherUser {
   id: string
   name: string
   status: "ONLINE" | "OFFLINE" | "AWAY"
+  role?: string
   lastLoginAt?: string | null
   lastLogoutAt?: string | null
   lastActivityAt?: string | null
+  branches?: { id: string; name: string }[]
 }
 
 export default function InternalChatPage() {
@@ -139,6 +142,17 @@ export default function InternalChatPage() {
 
   const myId = currentUser?.id
   const selectedMember = teamMembers.find((u) => u.id === selectedId)
+
+  const getRoleLabel = (role: string) => {
+    if (role === "ADMIN") return t("admin")
+    if (role === "SUPERVISOR") return t("supervisor")
+    if (role === "AGENT") return t("agentRole")
+    return role
+  }
+  const getBranchLabel = (branches?: { id: string; name: string }[]) => {
+    if (!branches?.length) return t("noBranchesAvailable")
+    return branches.map((b) => b.name).join(", ")
+  }
 
   const partner = other ?? selectedMember
   const lastSeenAt = partner?.lastActivityAt || partner?.lastLogoutAt
@@ -250,6 +264,9 @@ export default function InternalChatPage() {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm truncate">{u.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                      {getRoleLabel(u.role)} · {getBranchLabel(u.branches)}
+                    </p>
                   </div>
                   <Badge
                     variant={u.status === "ONLINE" ? "default" : u.status === "AWAY" ? "secondary" : "outline"}
@@ -301,6 +318,9 @@ export default function InternalChatPage() {
                   >
                     {(other?.status ?? selectedMember?.status) ?? "OFFLINE"}
                   </Badge>
+                  <p className="text-[11px] text-muted-foreground truncate mt-1">
+                    {getRoleLabel((other?.role ?? selectedMember?.role) ?? "")} · {getBranchLabel(other?.branches ?? selectedMember?.branches)}
+                  </p>
                 </div>
                 {(lastSeenLabel || sessionLabel) && (
                   <div className="shrink-0 text-end text-xs text-muted-foreground">

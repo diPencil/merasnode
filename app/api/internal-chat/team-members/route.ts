@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
                 lastLoginAt: true,
                 lastLogoutAt: true,
                 lastActivityAt: true,
+                branches: { select: { id: true, name: true } },
             },
             orderBy: { name: "asc" },
         })

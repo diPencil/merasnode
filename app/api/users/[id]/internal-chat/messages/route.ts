@@ -27,9 +27,11 @@ export async function GET(
                 id: true,
                 name: true,
                 status: true,
+                role: true,
                 lastLoginAt: true,
                 lastLogoutAt: true,
                 lastActivityAt: true,
+                branches: { select: { id: true, name: true } },
             },
         })
         if (!other) {
