@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
 import { hasPermission } from "@/lib/permissions"
 import type { UserRole } from "@/lib/permissions"
+import { notifyOnEntityCreate } from "@/lib/notifications"
 
 // GET /api/offers — view_offers required (Admin, Supervisor, Agent)
 export async function GET(request: NextRequest) {
@@ -109,6 +110,16 @@ export async function POST(request: NextRequest) {
                 tagToAssign: typeof tagToAssign === "string" ? tagToAssign.trim() || null : null,
             },
         })
+
+        if (role === "AGENT" || role === "SUPERVISOR") {
+            notifyOnEntityCreate({
+                creatorId: scope.userId,
+                creatorBranchIds: scope.branchIds ?? [],
+                entityType: "offer",
+                entityName: offer.title,
+                entityId: offer.id,
+            }).catch(() => {})
+        }
 
         return NextResponse.json({
             success: true,

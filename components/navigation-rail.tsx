@@ -7,6 +7,7 @@ import {
     LayoutDashboard,
     Users,
     MessageSquare,
+    MessagesSquare,
     FileText,
     Activity,
     Settings,
@@ -43,7 +44,7 @@ const MENU_GROUPS = [
     { id: "main", items: [{ icon: LayoutDashboard, label: "dashboard", href: "/dashboard" }, { icon: MessageSquare, label: "inbox", href: "/inbox" }, { icon: Calendar, label: "bookings", href: "/bookings" }] },
     { id: "crm", items: [{ icon: Users, label: "contacts", href: "/contacts" }, { icon: Building2, label: "branches", href: "/branches" }, { icon: Tag, label: "offers", href: "/offers" }, { icon: Receipt, label: "invoices", href: "/invoices" }] },
     { id: "automation", items: [{ icon: FileText, label: "templates", href: "/templates" }, { icon: Bot, label: "botFlows", href: "/bot-flows" }] },
-    { id: "system", items: [{ icon: BarChart3, label: "analytics", href: "/analytics" }, { icon: UserPlus, label: "users", href: "/users" }, { icon: MessageSquare, label: "internalChat", href: "/internal-chat" }, { icon: LinkIcon, label: "whatsappAccounts", href: "/accounts" }, { icon: Activity, label: "activityLogs", href: "/logs" }] },
+    { id: "system", items: [{ icon: BarChart3, label: "analytics", href: "/analytics" }, { icon: UserPlus, label: "users", href: "/users" }, { icon: MessagesSquare, label: "internalChat", href: "/internal-chat" }, { icon: LinkIcon, label: "whatsappAccounts", href: "/accounts" }, { icon: Activity, label: "activityLogs", href: "/logs" }] },
 ]
 
 export function NavigationRail() {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
+import { notifyOnEntityCreate } from "@/lib/notifications"
 
 // GET - جلب Bot Flows (center-scoped: non-Admin only see flows for their branches)
 export async function GET(request: NextRequest) {
@@ -78,6 +79,16 @@ export async function POST(request: NextRequest) {
                 createdById: scope.userId,
             }
         })
+
+        if (scope.role === "AGENT" || scope.role === "SUPERVISOR") {
+            notifyOnEntityCreate({
+                creatorId: scope.userId,
+                creatorBranchIds: scope.branchIds ?? [],
+                entityType: "bot_flow",
+                entityName: botFlow.name,
+                entityId: botFlow.id,
+            }).catch(() => {})
+        }
 
         return NextResponse.json({
             success: true,

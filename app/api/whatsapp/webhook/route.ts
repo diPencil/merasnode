@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { alsoNotifyAdmins } from '@/lib/notifications'
 
 // POST - Receive incoming WhatsApp message from service
 // Auto-assign branch + agent based on WhatsApp account mapping
@@ -236,6 +237,47 @@ export async function POST(request: NextRequest) {
                 isRead: !!fromMe // If I sent it, it's read
             }
         })
+
+        // Notify relevant user(s) for INCOMING messages only
+        if (!fromMe) {
+            try {
+                const preview = finalContent ? (String(finalContent).slice(0, 60) + (finalContent.length > 60 ? '…' : '')) : '📎 Media'
+                const title = 'WhatsApp'
+                const messageText = `${contact.name}: ${preview}`
+                const link = `/inbox?id=${conversation.id}`
+
+                const conv = await prisma.conversation.findUnique({
+                    where: { id: conversation.id },
+                    select: { assignedToId: true },
+                })
+
+                const notifiedIds: string[] = []
+                if (conv?.assignedToId) {
+                    await prisma.notification.create({
+                        data: { userId: conv.assignedToId, title, message: messageText, type: 'INFO', link },
+                    })
+                    notifiedIds.push(conv.assignedToId)
+                } else if (accountId) {
+                    const users = await prisma.whatsAppAccount.findUnique({
+                        where: { id: accountId },
+                        select: { users: { select: { id: true } } },
+                    })
+                    if (users?.users?.length) {
+                        await Promise.all(
+                            users.users.map((u) =>
+                                prisma.notification.create({
+                                    data: { userId: u.id, title, message: messageText, type: 'INFO', link },
+                                })
+                            )
+                        )
+                        notifiedIds.push(...users.users.map((u) => u.id))
+                    }
+                }
+                await alsoNotifyAdmins({ title, message: messageText, type: 'INFO', link }, notifiedIds)
+            } catch (_) {
+                /* non-blocking */
+            }
+        }
 
         return NextResponse.json({
             success: true,

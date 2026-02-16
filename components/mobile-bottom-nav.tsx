@@ -27,6 +27,7 @@ import {
   Activity,
   Settings,
   LogOut,
+  MessagesSquare,
 } from "lucide-react"
 import { getUserRole, logout } from "@/lib/auth"
 import { canAccessPage, type PageRoute } from "@/lib/permissions"
@@ -46,7 +47,7 @@ const EXTRA_NAV = [
   { icon: Bot, label: "botFlows", href: "/bot-flows" },
   { icon: BarChart3, label: "analytics", href: "/analytics" },
   { icon: UserPlus, label: "users", href: "/users" },
-  { icon: MessageSquare, label: "internalChat", href: "/internal-chat" },
+  { icon: MessagesSquare, label: "internalChat", href: "/internal-chat" },
   { icon: LinkIcon, label: "whatsappAccounts", href: "/accounts" },
   { icon: Activity, label: "activityLogs", href: "/logs" },
 ]

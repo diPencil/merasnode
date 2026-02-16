@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { logActivity } from "@/lib/logger"
 import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
+import { notifyOnEntityCreate } from "@/lib/notifications"
 
 // GET - جلب القوالب (center-scoped: non-Admin only see templates for their WhatsApp accounts)
 export async function GET(request: NextRequest) {
@@ -118,6 +119,17 @@ export async function POST(request: NextRequest) {
             },
             description: `Created new template: ${template.name}`
         })
+
+        if (scope.role === "AGENT" || scope.role === "SUPERVISOR") {
+            notifyOnEntityCreate({
+                creatorId: scope.userId,
+                creatorBranchIds: scope.branchIds ?? [],
+                entityType: "template",
+                entityName: template.name,
+                entityId: template.id,
+            }).catch(() => {})
+        }
+
         return NextResponse.json({
             success: true,
             data: template

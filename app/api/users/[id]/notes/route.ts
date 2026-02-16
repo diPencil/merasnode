@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
+import { alsoNotifyAdmins } from "@/lib/notifications"
 
 /**
  * GET /api/users/[id]/notes
@@ -91,6 +92,18 @@ export async function POST(
                 },
             },
         })
+
+        try {
+            const title = "Internal note"
+            const message = `A note was added to your profile by ${note.createdBy.name}.`
+            const link = `/internal-chat?with=${scope.userId}`
+            await prisma.notification.create({
+                data: { userId, title, message, type: "INFO", link },
+            })
+            await alsoNotifyAdmins({ title, message, type: "INFO", link }, [userId])
+        } catch (_) {
+            /* non-blocking */
+        }
 
         return NextResponse.json({
             success: true,

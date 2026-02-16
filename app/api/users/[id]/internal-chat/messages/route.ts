@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
+import { alsoNotifyAdmins } from "@/lib/notifications"
 
 /**
  * GET /api/users/[id]/internal-chat/messages
@@ -120,6 +121,19 @@ export async function POST(
                 sender: { select: { id: true, name: true } },
             },
         })
+
+        try {
+            const preview = content ? (content.slice(0, 80) + (content.length > 80 ? "…" : "")) : (mediaUrl ? "📷 Image" : "")
+            const title = "Internal Chat"
+            const message = preview ? `${message.sender.name}: ${preview}` : `New message from ${message.sender.name}`
+            const link = `/internal-chat?with=${currentUserId}`
+            await prisma.notification.create({
+                data: { userId: otherId, title, message, type: "INFO", link },
+            })
+            await alsoNotifyAdmins({ title, message, type: "INFO", link }, [otherId])
+        } catch (_) {
+            /* non-blocking */
+        }
 
         return NextResponse.json({
             success: true,
