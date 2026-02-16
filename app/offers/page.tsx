@@ -628,17 +628,18 @@ export default function OffersPage() {
                                             />
                                         </div>
 
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="tagToAssign">{t("tagToAssign")}</Label>
+                                            <Input
+                                                id="tagToAssign"
+                                                placeholder={t("tagToAssignPlaceholder")}
+                                                value={formData.tagToAssign}
+                                                onChange={(e) => setFormData({ ...formData, tagToAssign: e.target.value })}
+                                            />
+                                        </div>
+
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="grid gap-2">
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor="tagToAssign">{t("tagToAssign")}</Label>
-                                                    <Input
-                                                        id="tagToAssign"
-                                                        placeholder={t("tagToAssignPlaceholder")}
-                                                        value={formData.tagToAssign}
-                                                        onChange={(e) => setFormData({ ...formData, tagToAssign: e.target.value })}
-                                                    />
-                                                </div>
                                                 <Label htmlFor="validFrom">{t("validFrom")} *</Label>
                                                 <Input
                                                     id="validFrom"
@@ -720,14 +721,14 @@ export default function OffersPage() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {offers.map((offer) => (
-                            <Card key={offer.id} className="group overflow-hidden flex flex-col rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300">
-                                {/* Image Area */}
-                                <div className="relative w-full aspect-video bg-muted overflow-hidden">
+                            <Card key={offer.id} className="group overflow-hidden flex flex-col rounded-lg border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300">
+                                {/* Image Area — أصغر ارتفاع */}
+                                <div className="relative w-full aspect-[5/3] max-h-32 bg-muted overflow-hidden shrink-0">
                                     {offer.isActive && (
-                                        <div className="absolute top-3 left-3 z-10">
-                                            <span className="inline-flex items-center rounded-full bg-green-500/90 px-2.5 py-0.5 text-xs font-medium text-white shadow-sm">
+                                        <div className="absolute top-1.5 left-1.5 z-10">
+                                            <span className="inline-flex items-center rounded-full bg-green-500/90 px-2 py-0.5 text-[10px] font-medium text-white shadow-sm">
                                                 {t("active")}
                                             </span>
                                         </div>
@@ -738,62 +739,61 @@ export default function OffersPage() {
                                             alt={offer.title}
                                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             onError={(e) => {
-                                                // لو في بيانات قديمة (localhost أو دومين غلط) نخبّي الصورة ونظهر placeholder
                                                 e.currentTarget.style.display = "none"
                                             }}
                                         />
                                     ) : (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground/40 bg-muted/50">
-                                            <ImageIcon className="h-12 w-12 mb-2" />
-                                            <span className="text-xs font-medium uppercase tracking-wider">{t("offerImage")}</span>
+                                            <ImageIcon className="h-8 w-8 mb-1" />
+                                            <span className="text-[10px] font-medium uppercase tracking-wider">{t("offerImage")}</span>
                                         </div>
                                     )}
                                 </div>
 
-                                <CardHeader className="space-y-1 pb-2 pt-4">
-                                    <CardTitle className="text-xl line-clamp-1">{offer.title}</CardTitle>
-                                    <CardDescription className="line-clamp-2 min-h-[40px]">
+                                <CardHeader className="space-y-0.5 pb-1 pt-2 px-3">
+                                    <CardTitle className="text-base line-clamp-1">{offer.title}</CardTitle>
+                                    <CardDescription className="line-clamp-2 min-h-0 text-xs">
                                         {offer.description || offer.content}
                                     </CardDescription>
                                 </CardHeader>
 
-                                <CardContent className="space-y-4 flex-1 pb-4">
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-2 rounded-lg">
-                                        <Calendar className="h-4 w-4 shrink-0 text-primary" />
-                                        <span className="font-medium text-xs">
-                                            {format(new Date(offer.validFrom), "MMM dd")} - {format(new Date(offer.validTo), "MMM dd, yyyy")}
+                                <CardContent className="space-y-2 flex-1 pb-2 px-3 pt-0">
+                                    <div className="flex items-center gap-1.5 text-muted-foreground bg-muted/30 px-2 py-1 rounded text-xs">
+                                        <Calendar className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                        <span>
+                                            {format(new Date(offer.validFrom), "MMM d")} - {format(new Date(offer.validTo), "MMM d, yyyy")}
                                         </span>
                                     </div>
                                     {offer.createdBy?.name && (
-                                        <p className="text-xs text-muted-foreground">
+                                        <p className="text-[11px] text-muted-foreground">
                                             {t("createdBy")}: {offer.createdBy.name}
                                         </p>
                                     )}
 
-                                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                                        <div className="bg-muted/30 p-2 rounded-lg">
-                                            <div className="font-bold text-base">{offer.recipientsCount || 0}</div>
+                                    <div className="grid grid-cols-3 gap-1 text-center text-[11px]">
+                                        <div className="bg-muted/30 py-1.5 rounded">
+                                            <div className="font-bold text-sm">{offer.recipientsCount || 0}</div>
                                             <div className="text-muted-foreground">Sent</div>
                                         </div>
-                                        <div className="bg-muted/30 p-2 rounded-lg">
-                                            <div className="font-bold text-base">{offer.singleSendCount || 0}</div>
+                                        <div className="bg-muted/30 py-1.5 rounded">
+                                            <div className="font-bold text-sm">{offer.singleSendCount || 0}</div>
                                             <div className="text-muted-foreground">Direct</div>
                                         </div>
-                                        <div className="bg-muted/30 p-2 rounded-lg">
-                                            <div className="font-bold text-base">{offer.bulkSendCount || 0}</div>
+                                        <div className="bg-muted/30 py-1.5 rounded">
+                                            <div className="font-bold text-sm">{offer.bulkSendCount || 0}</div>
                                             <div className="text-muted-foreground">Bulk</div>
                                         </div>
                                     </div>
                                 </CardContent>
 
-                                <CardFooter className="pt-0 pb-4 px-4 gap-2 border-t bg-muted/5 flex-wrap">
+                                <CardFooter className="pt-2 pb-2 px-3 gap-1.5 border-t bg-muted/5 flex-wrap">
                                     <Button
                                         variant="default"
                                         size="sm"
-                                        className="flex-1 min-w-0 shadow-sm"
+                                        className="flex-1 min-w-0 shadow-sm h-8 text-xs"
                                         onClick={() => openSendDialog(offer)}
                                     >
-                                        <Send className="mr-2 h-4 w-4 shrink-0" />
+                                        <Send className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                                         <span className="truncate">{t("sendOffer")}</span>
                                     </Button>
 
@@ -801,12 +801,12 @@ export default function OffersPage() {
                                         <Button
                                             variant="default"
                                             size="icon"
-                                            className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+                                            className="shrink-0 h-8 w-8 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
                                             onClick={() => openEditDialog(offer)}
                                             title={t("edit")}
                                             aria-label={t("edit")}
                                         >
-                                            <Edit className="h-4 w-4" />
+                                            <Edit className="h-3.5 w-3.5" />
                                         </Button>
                                     )}
 
@@ -814,12 +814,12 @@ export default function OffersPage() {
                                         <Button
                                             variant="destructive"
                                             size="icon"
-                                            className="shrink-0"
+                                            className="shrink-0 h-8 w-8"
                                             onClick={() => handleDeleteClick(offer.id)}
                                             title={t("delete")}
                                             aria-label={t("delete")}
                                         >
-                                            <Trash2 className="h-4 w-4" />
+                                            <Trash2 className="h-3.5 w-3.5" />
                                         </Button>
                                     )}
                                 </CardFooter>
