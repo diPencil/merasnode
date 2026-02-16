@@ -61,6 +61,7 @@ export type PageRoute =
     | '/logs'
     | '/whatsapp'
     | '/bot-flows'
+    | '/internal-chat'
 
 // Permissions matrix for each role
 const rolePermissions: Record<UserRole, Permission[]> = {
@@ -131,6 +132,7 @@ const pageAccess: Record<PageRoute, UserRole[]> = {
     '/logs': ['ADMIN', 'SUPERVISOR'], // No AGENT
     '/whatsapp': ['ADMIN'], // ADMIN only
     '/bot-flows': ['ADMIN', 'SUPERVISOR', 'AGENT'],
+    '/internal-chat': ['ADMIN', 'SUPERVISOR', 'AGENT'],
 }
 
 /**

@@ -970,7 +970,7 @@ export default function UsersPage() {
               <DialogTitle>{t("userDetails")}</DialogTitle>
               <DialogDescription>{t("userDetailsDescription")}</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-3 items-center gap-4">
                 <Label className="text-end font-semibold">{t("nameLabel")}</Label>
                 <p className="col-span-2">{selectedUser?.name}</p>
@@ -1064,7 +1064,7 @@ export default function UsersPage() {
                   {loadingNotes ? (
                     <p className="text-sm text-muted-foreground">{t("loading")}</p>
                   ) : (
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                    <div className="space-y-2 min-h-0 max-h-44 overflow-y-auto rounded-md border bg-muted/30 p-2">
                       {internalNotes.length === 0 ? (
                         <p className="text-sm text-muted-foreground">{t("noInternalNotes")}</p>
                       ) : (
@@ -1094,6 +1094,17 @@ export default function UsersPage() {
               )}
             </div>
             <DialogFooter>
+              {selectedUser?.id && (
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    setIsDetailsDialogOpen(false)
+                    router.push(`/users/${selectedUser.id}/internal-chat`)
+                  }}
+                >
+                  {t("openInternalChat")}
+                </Button>
+              )}
               <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>{t("close")}</Button>
             </DialogFooter>
           </DialogContent>

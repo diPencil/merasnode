@@ -42,6 +42,9 @@ model User {
   createdUserNotes UserNote[]  @relation("UserNoteCreator")
   templatesCreated Template[]
   botFlowsCreated  BotFlow[]
+  /// Internal chat: messages sent by this user
+  internalMessagesSent    InternalMessage[] @relation("InternalMessageSender")
+  internalMessagesReceived InternalMessage[] @relation("InternalMessageReceiver")
 }
 
 enum UserRole {
@@ -211,6 +214,20 @@ model UserNote {
 
   @@index([userId])
   @@index([createdById])
+}
+
+// شات داخلي بين مستخدمين (Admin/Supervisor مع Agent أو بين بعض)
+model InternalMessage {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("InternalMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("InternalMessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  content    String   @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([senderId, receiverId])
+  @@index([receiverId, senderId])
 }
 
 // سير العمل الآلي (مرتبط بالفرع/المركز)
