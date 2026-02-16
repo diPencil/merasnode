@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { AppLayout } from "@/components/app-layout"
 import { useI18n } from "@/lib/i18n"
 import { authenticatedFetch, getUser } from "@/lib/auth"
-import { format } from "date-fns"
-import { ArrowLeft, Send, User, MessageSquare } from "lucide-react"
+import { format, formatDistanceToNow } from "date-fns"
+import { ArrowLeft, Send, User, MessageSquare, Paperclip } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -19,11 +19,15 @@ interface TeamMember {
   email: string
   status: "ONLINE" | "OFFLINE" | "AWAY"
   role: string
+  lastLoginAt?: string | null
+  lastLogoutAt?: string | null
+  lastActivityAt?: string | null
 }
 
 interface Message {
   id: string
   content: string
+  mediaUrl?: string | null
   createdAt: string
   senderId: string
   sender: { id: string; name: string }
@@ -33,6 +37,9 @@ interface OtherUser {
   id: string
   name: string
   status: "ONLINE" | "OFFLINE" | "AWAY"
+  lastLoginAt?: string | null
+  lastLogoutAt?: string | null
+  lastActivityAt?: string | null
 }
 
 export default function InternalChatPage() {
@@ -133,6 +140,76 @@ export default function InternalChatPage() {
   const myId = currentUser?.id
   const selectedMember = teamMembers.find((u) => u.id === selectedId)
 
+  const partner = other ?? selectedMember
+  const lastSeenAt = partner?.lastActivityAt || partner?.lastLogoutAt
+  const isOnline = (partner?.status ?? "OFFLINE") === "ONLINE"
+  const AWAY_MS = 5 * 60 * 1000
+  const isActiveNow =
+    isOnline &&
+    partner?.lastActivityAt &&
+    Date.now() - new Date(partner.lastActivityAt).getTime() < AWAY_MS
+  const lastSeenLabel = isActiveNow
+    ? t("activeNow")
+    : lastSeenAt
+      ? `${t("lastSeen")} ${formatDistanceToNow(new Date(lastSeenAt), { addSuffix: true })}`
+      : null
+  const loginAt = partner?.lastLoginAt ? new Date(partner.lastLoginAt).getTime() : null
+  const logoutAt = partner?.lastLogoutAt ? new Date(partner.lastLogoutAt).getTime() : null
+  const now = Date.now()
+  let sessionLabel: string | null = null
+  if (isOnline && loginAt) {
+    const mins = Math.floor((now - loginAt) / 60000)
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    sessionLabel = h > 0 ? `${t("sessionTime")}: ${h}h ${m}m` : `${t("sessionTime")}: ${m}m`
+  } else if (logoutAt && loginAt && logoutAt > loginAt) {
+    const mins = Math.floor((logoutAt - loginAt) / 60000)
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    sessionLabel = `${t("lastSession")}: ${h > 0 ? `${h}h ` : ""}${m}m`
+  }
+
+  const baseUrl =
+    (typeof window !== "undefined" ? window.location.origin : "") || ""
+  const getImageUrl = (url: string) =>
+    url.startsWith("http") ? url : `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`
+
+  const handleAttachImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !selectedId || sending) return
+    const allowed = ["image/jpeg", "image/png", "image/webp"]
+    if (!allowed.includes(file.type)) {
+      toast({ title: t("error"), description: "JPEG, PNG, WebP only", variant: "destructive" })
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: t("error"), description: "Max 5MB", variant: "destructive" })
+      return
+    }
+    setSending(true)
+    try {
+      const form = new FormData()
+      form.append("file", file)
+      const res = await authenticatedFetch("/api/upload", { method: "POST", body: form })
+      const data = await res.json()
+      if (!data.success || !data.url) throw new Error(data.error || "Upload failed")
+      const sendRes = await authenticatedFetch(`/api/users/${selectedId}/internal-chat/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: "", mediaUrl: data.url }),
+      })
+      const sendData = await sendRes.json()
+      if (sendData.success && sendData.data) {
+        setMessages((prev) => [...prev, sendData.data])
+      } else throw new Error(sendData.error)
+    } catch (err) {
+      toast({ title: t("error"), description: err instanceof Error ? err.message : "Failed", variant: "destructive" })
+    } finally {
+      setSending(false)
+      e.target.value = ""
+    }
+  }
+
   return (
     <AppLayout title={t("internalChat")} fullBleed>
       <div className="flex h-full min-h-0 bg-card border rounded-lg overflow-hidden">
@@ -225,6 +302,12 @@ export default function InternalChatPage() {
                     {(other?.status ?? selectedMember?.status) ?? "OFFLINE"}
                   </Badge>
                 </div>
+                {(lastSeenLabel || sessionLabel) && (
+                  <div className="shrink-0 text-end text-xs text-muted-foreground">
+                    {lastSeenLabel && <p>{lastSeenLabel}</p>}
+                    {sessionLabel && <p className="mt-0.5">{sessionLabel}</p>}
+                  </div>
+                )}
               </div>
 
               {/* Messages */}
@@ -249,7 +332,23 @@ export default function InternalChatPage() {
                               : "bg-muted"
                           )}
                         >
-                          <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                          {m.mediaUrl && (
+                            <a
+                              href={getImageUrl(m.mediaUrl)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block rounded overflow-hidden my-1"
+                            >
+                              <img
+                                src={getImageUrl(m.mediaUrl)}
+                                alt=""
+                                className="max-w-full max-h-48 object-contain rounded"
+                              />
+                            </a>
+                          )}
+                          {m.content ? (
+                            <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                          ) : null}
                           <p
                             className={cn(
                               "text-[10px] mt-1",
@@ -268,12 +367,31 @@ export default function InternalChatPage() {
 
               {/* Input */}
               <div className="flex gap-2 p-3 border-t bg-background shrink-0">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  id="internal-chat-attach"
+                  onChange={handleAttachImage}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  disabled={sending}
+                  onClick={() => document.getElementById("internal-chat-attach")?.click()}
+                  title={t("attachImage")}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
                 <Input
                   placeholder={t("typeMessage")}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                   disabled={sending}
+                  className="min-w-0"
                 />
                 <Button size="icon" onClick={handleSend} disabled={!input.trim() || sending}>
                   <Send className="h-4 w-4" />

@@ -224,6 +224,7 @@ model InternalMessage {
   receiverId String
   receiver   User     @relation("InternalMessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
   content    String   @db.Text
+  mediaUrl   String?
   createdAt  DateTime @default(now())
 
   @@index([senderId, receiverId])

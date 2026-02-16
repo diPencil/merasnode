@@ -23,7 +23,14 @@ export async function GET(
 
         const other = await prisma.user.findUnique({
             where: { id: otherId },
-            select: { id: true, name: true, status: true },
+            select: {
+                id: true,
+                name: true,
+                status: true,
+                lastLoginAt: true,
+                lastLogoutAt: true,
+                lastActivityAt: true,
+            },
         })
         if (!other) {
             return NextResponse.json(
@@ -92,9 +99,10 @@ export async function POST(
 
         const body = await request.json()
         const content = typeof body.content === "string" ? body.content.trim() : ""
-        if (!content) {
+        const mediaUrl = typeof body.mediaUrl === "string" ? body.mediaUrl.trim() || null : null
+        if (!content && !mediaUrl) {
             return NextResponse.json(
-                { success: false, error: "Message content is required." },
+                { success: false, error: "Message content or image is required." },
                 { status: 400 }
             )
         }
@@ -103,7 +111,8 @@ export async function POST(
             data: {
                 senderId: currentUserId,
                 receiverId: otherId,
-                content,
+                content: content || "",
+                mediaUrl,
             },
             include: {
                 sender: { select: { id: true, name: true } },
