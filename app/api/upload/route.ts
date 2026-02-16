@@ -64,15 +64,34 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(bytes);
         await writeFile(filePath, buffer);
 
-        const host = request.headers.get('host') || 'localhost:3000';
-        const protocol = request.headers.get('x-forwarded-proto') || 'http';
-        const baseUrl = `${protocol}://${host}`;
-        const url = `${baseUrl}/uploads/${filename}`;
+        // حدد base URL للصور:
+        // 1) لو NEXT_PUBLIC_APP_URL (أو BASE_URL) متضبوطة → استخدمها (مثلاً https://meraschat.com)
+        // 2) غير كده: ابنيها من الهيدر (host + x-forwarded-proto)، مع تفضيل https لغير localhost/IP
+        const envBase =
+            process.env.NEXT_PUBLIC_APP_URL ||
+            process.env.NEXT_PUBLIC_BASE_URL ||
+            process.env.NEXT_APP_URL ||
+            "";
+
+        let baseUrl: string;
+        if (envBase) {
+            baseUrl = envBase.replace(/\/+$/, "");
+        } else {
+            const hostHeader = request.headers.get("host") || "localhost:3000";
+            const xfProto = request.headers.get("x-forwarded-proto");
+            const isIpOrLocalhost = /^(\d{1,3}\.){3}\d{1,3}(:\d+)?$/.test(hostHeader) || hostHeader.startsWith("localhost");
+            const protocol = xfProto || (isIpOrLocalhost ? "http" : "https");
+            baseUrl = `${protocol}://${hostHeader}`;
+        }
+
+        const relativePath = `/uploads/${filename}`;
+        const url = `${baseUrl}${relativePath}`;
 
         return NextResponse.json({
             success: true,
             url,
             filename,
+            path: relativePath,
         });
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Upload failed';
