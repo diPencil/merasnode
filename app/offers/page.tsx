@@ -97,16 +97,10 @@ export default function OffersPage() {
 
     const getFullImageUrl = (url?: string | null) => {
         if (!url) return ""
-        // لو الرابط كامل بالفعل، نحاول نوحّده على نفس الدومين (يعالج حالات localhost القديمة)
-        try {
-            const parsed = new URL(url)
-            const path = `${parsed.pathname}${parsed.search}${parsed.hash}`
-            return baseUrl ? `${baseUrl}${path}` : url
-        } catch {
-            // لو مش URL كامل (أو خطأ)، نعتبره مسار نسبي
-            if (url.startsWith("http://") || url.startsWith("https://")) return url
-            return baseUrl ? `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}` : url
-        }
+        // لو الرابط كامل بالفعل نستخدمه كما هو، علشان ما نخربش روابط شغّالة (زي IP مباشر)
+        if (url.startsWith("http://") || url.startsWith("https://")) return url
+        // مسار نسبي → نركّبه على baseUrl (دومين التطبيق الحالي)
+        return baseUrl ? `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}` : url
     }
 
     // Upload & Submit State
