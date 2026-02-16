@@ -546,7 +546,11 @@ export default function InboxPage() {
   type SendMessageOptions = { replyToId?: string; forwarded?: boolean; type?: string; targetConversationId?: string }
 
   const handleSendMessage = async (text?: string, mediaUrl?: string, options?: SendMessageOptions) => {
-    const contentToSend = text !== undefined ? text : newMessage;
+    let contentToSend = text !== undefined ? text : newMessage;
+    // Replace template variables so {{name}}, {{date}}, etc. are resolved before sending
+    if (typeof contentToSend === "string" && contentToSend.trim()) {
+      contentToSend = replaceTemplateVariables(contentToSend)
+    }
     const targetConv = options?.targetConversationId
       ? conversations.find(c => c.id === options.targetConversationId)
       : selectedConversation;
@@ -664,28 +668,33 @@ export default function InboxPage() {
     }
   }
 
-  const handleUseTemplate = (content: string) => {
-    let finalContent = content
+  /** Replaces template variables in content. Used when inserting template in chat. */
+  const replaceTemplateVariables = (content: string): string => {
     const contact = selectedConversation?.contact
+    // Allow optional spaces inside {{ variable }} for robustness
+    const repl = (pattern: string, value: string) =>
+      new RegExp(`\\{\\{\\s*${pattern}\\s*\\}\\}`, 'gi')
+    let out = content
 
     if (contact) {
-      // Basic Contact Info
-      finalContent = finalContent.replace(/{{name}}/gi, contact.name || "")
-      finalContent = finalContent.replace(/{{phone}}/gi, contact.phone || "")
-      finalContent = finalContent.replace(/{{email}}/gi, contact.email || "")
+      out = out.replace(repl('name'), contact.name || "")
+      out = out.replace(repl('phone'), contact.phone || "")
+      out = out.replace(repl('email'), contact.email || "")
     }
+    out = out.replace(repl('company_name'), settings?.companyName || "")
+    out = out.replace(repl('order_id'), lastOrderId || "N/A")
+    const dateStr = format(
+      new Date(),
+      language === "ar" ? "d MMMM yyyy" : "MMM d, yyyy",
+      { locale: dateLocale }
+    )
+    out = out.replace(repl('date'), dateStr)
 
-    // Company Settings
-    if (settings?.companyName) {
-      finalContent = finalContent.replace(/{{company_name}}/gi, settings.companyName)
-    }
+    return out
+  }
 
-    // Order/Booking Info
-    finalContent = finalContent.replace(/{{order_id}}/gi, lastOrderId || "N/A")
-
-    // Date Info
-    finalContent = finalContent.replace(/{{date}}/gi, format(new Date(), 'yyyy-MM-dd'))
-
+  const handleUseTemplate = (content: string) => {
+    const finalContent = replaceTemplateVariables(content)
     setNewMessage(finalContent)
     setIsTemplatesOpen(false)
   }
