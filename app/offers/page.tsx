@@ -784,7 +784,7 @@ export default function OffersPage() {
                         {offers.map((offer) => (
                             <Card key={offer.id} className="group overflow-hidden flex flex-col rounded-lg border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300">
                                 {/* Image Area — أصغر ارتفاع */}
-                                <div className="relative w-full aspect-[5/3] max-h-32 bg-muted overflow-hidden shrink-0">
+                                <div className="relative w-full aspect-5/3 max-h-32 bg-muted overflow-hidden shrink-0">
                                     {offer.isActive && (
                                         <div className="absolute top-1.5 left-1.5 z-10">
                                             <span className="inline-flex items-center rounded-full bg-green-500/90 px-2 py-0.5 text-[10px] font-medium text-white shadow-sm">
