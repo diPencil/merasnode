@@ -644,6 +644,7 @@ const translations: Translations = {
   tagOptionNone: { en: "No tag", ar: "بدون وسم" },
   tagOptionTypeNew: { en: "Type new tag...", ar: "اكتب وسم جديد..." },
   filterByTag: { en: "Filter by tag", ar: "تصفية بالوسم" },
+  filterByBranch: { en: "Filter by branch", ar: "تصفية بالفرع" },
   allTags: { en: "All tags", ar: "كل الوسوم" },
   createdBy: { en: "Created by", ar: "أنشئ بواسطة" },
   // nameLabel: { en: "Name:", ar: "الاسم:" }, // Duplicate of line 302

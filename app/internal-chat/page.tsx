@@ -7,9 +7,22 @@ import { useI18n } from "@/lib/i18n"
 import { authenticatedFetch, getUser } from "@/lib/auth"
 import { format, formatDistanceToNow } from "date-fns"
 import { ArrowLeft, Send, User, MessageSquare, Paperclip } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 
@@ -62,7 +75,22 @@ export default function InternalChatPage() {
   const [loadingChat, setLoadingChat] = useState(false)
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
+  const [branchFilterId, setBranchFilterId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  const branchesFromMembers = (() => {
+    const map = new Map<string, string>()
+    teamMembers.forEach((u) => {
+      u.branches?.forEach((b) => map.set(b.id, b.name))
+    })
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name, "ar"))
+  })()
+
+  const filteredMembers =
+    branchFilterId == null
+      ? teamMembers
+      : teamMembers.filter((u) => u.branches?.some((b) => b.id === branchFilterId))
 
   // Sync selection from URL
   useEffect(() => {
@@ -249,9 +277,27 @@ export default function InternalChatPage() {
             selectedId ? "hidden md:flex" : "flex"
           )}
         >
-          <div className="p-3 border-b shrink-0">
+          <div className="p-3 border-b shrink-0 space-y-2">
             <h2 className="font-semibold text-sm">{t("internalChat")}</h2>
             <p className="text-xs text-muted-foreground">{t("internalChatConversations")}</p>
+            {!loadingList && teamMembers.length > 0 && branchesFromMembers.length > 0 && (
+              <Select
+                value={branchFilterId ?? "__all__"}
+                onValueChange={(v) => setBranchFilterId(v === "__all__" ? null : v)}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder={t("filterByBranch")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">{t("allBranches")}</SelectItem>
+                  {branchesFromMembers.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="flex-1 overflow-y-auto min-h-0">
             {loadingList ? (
@@ -261,8 +307,12 @@ export default function InternalChatPage() {
                 <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-50" />
                 <p>{t("noInternalConversations")}</p>
               </div>
+            ) : filteredMembers.length === 0 ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                <p>{t("noMatchingBranches")}</p>
+              </div>
             ) : (
-              teamMembers.map((u) => (
+              filteredMembers.map((u) => (
                 <button
                   key={u.id}
                   type="button"
@@ -367,19 +417,18 @@ export default function InternalChatPage() {
                           )}
                         >
                           {m.mediaUrl && (
-                            <a
-                              href={getImageUrl(m.mediaUrl)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block rounded overflow-hidden my-1 bg-muted/50"
+                            <button
+                              type="button"
+                              onClick={() => setImagePreviewUrl(getImageUrl(m.mediaUrl))}
+                              className="block rounded overflow-hidden my-1 bg-muted/50 text-start w-full"
                             >
                               <img
                                 src={getImageUrl(m.mediaUrl)}
                                 alt=""
-                                className="max-w-full max-h-48 object-contain rounded"
+                                className="max-w-full max-h-48 object-contain rounded cursor-pointer"
                                 loading="lazy"
                               />
-                            </a>
+                            </button>
                           )}
                           {m.content ? (
                             <p className="whitespace-pre-wrap break-words">{m.content}</p>
@@ -436,6 +485,22 @@ export default function InternalChatPage() {
           )}
         </div>
       </div>
+
+      {/* Image preview in same page (no new tab) */}
+      <Dialog open={!!imagePreviewUrl} onOpenChange={() => setImagePreviewUrl(null)}>
+        <DialogContent className="max-w-[95vw] max-h-[90vh] p-2 flex items-center justify-center">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{t("attachImage")}</DialogTitle>
+          </DialogHeader>
+          {imagePreviewUrl && (
+            <img
+              src={imagePreviewUrl}
+              alt=""
+              className="max-w-full max-h-[85vh] object-contain rounded"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   )
 }
