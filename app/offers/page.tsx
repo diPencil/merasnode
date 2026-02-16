@@ -54,6 +54,7 @@ interface Offer {
     validFrom: string
     validTo: string
     isActive: boolean
+    tagToAssign?: string | null
     createdAt: string
     recipientsCount?: number
     singleSendCount?: number
@@ -85,6 +86,7 @@ export default function OffersPage() {
         validTo: "",
         isActive: true,
         whatsappAccountId: "" as string,
+        tagToAssign: "" as string,
     })
 
     const [whatsappAccounts, setWhatsappAccounts] = useState<{ id: string; name: string; phone: string }[]>([])
@@ -254,6 +256,7 @@ export default function OffersPage() {
             validTo: "",
             isActive: true,
             whatsappAccountId: "",
+            tagToAssign: "",
         })
         setEditingOffer(null)
         setImageUploading(false)
@@ -273,6 +276,7 @@ export default function OffersPage() {
             validTo: offer.validTo.split("T")[0],
             isActive: offer.isActive,
             whatsappAccountId: offer.whatsappAccountId || "",
+            tagToAssign: offer.tagToAssign || "",
         })
         setIsDialogOpen(true)
     }
@@ -409,6 +413,15 @@ export default function OffersPage() {
                 })
             })
             const data = await response.json()
+            if (data.success && offer.tagToAssign?.trim()) {
+                try {
+                    await authenticatedFetch(`/api/contacts/${contactId}/add-tag`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ tag: offer.tagToAssign.trim() }),
+                    })
+                } catch (_) { /* non-blocking */ }
+            }
             return data.success
         } catch (error) {
             console.error(`Error sending to ${contactId}:`, error)
@@ -602,6 +615,15 @@ export default function OffersPage() {
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="grid gap-2">
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="tagToAssign">{t("tagToAssign")}</Label>
+                                                    <Input
+                                                        id="tagToAssign"
+                                                        placeholder={t("tagToAssignPlaceholder")}
+                                                        value={formData.tagToAssign}
+                                                        onChange={(e) => setFormData({ ...formData, tagToAssign: e.target.value })}
+                                                    />
+                                                </div>
                                                 <Label htmlFor="validFrom">{t("validFrom")} *</Label>
                                                 <Input
                                                     id="validFrom"

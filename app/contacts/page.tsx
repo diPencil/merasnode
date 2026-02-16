@@ -50,6 +50,7 @@ export default function ContactsPage() {
   const { t, language, dir } = useI18n()
   const dateLocale = language === "ar" ? ar : undefined
   const [searchQuery, setSearchQuery] = useState("")
+  const [tagFilter, setTagFilter] = useState("")
   const [selectedContact, setSelectedContact] = useState<any>(null)
   const [groupInfo, setGroupInfo] = useState<any>(null)
   const [isLoadingGroup, setIsLoadingGroup] = useState(false)
@@ -85,7 +86,8 @@ export default function ContactsPage() {
   const fetchContacts = async () => {
     try {
       setIsLoading(true)
-      const response = await authenticatedFetch('/api/contacts')
+      const url = '/api/contacts' + (tagFilter.trim() ? `?tag=${encodeURIComponent(tagFilter.trim())}` : '')
+      const response = await authenticatedFetch(url)
       const data = await response.json()
 
       if (data.success) {
@@ -425,10 +427,10 @@ export default function ContactsPage() {
   }
 
 
-  // جلب جهات الاتصال من API
+  // جلب جهات الاتصال من API (وإعادة الجلب عند تغيير فلتر الوسم)
   useEffect(() => {
     fetchContacts()
-  }, [])
+  }, [tagFilter])
 
 
   const handleAddContact = async (e: React.FormEvent) => {
@@ -648,6 +650,22 @@ export default function ContactsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+            </div>
+            {/* Filter by tag */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Tag className="h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder={t("filterByTag")}
+                className="h-10 md:h-9 w-40 bg-card"
+                value={tagFilter}
+                onChange={(e) => setTagFilter(e.target.value)}
+              />
+              {tagFilter && (
+                <Button variant="ghost" size="sm" className="h-9 px-2" onClick={() => setTagFilter("")} title={t("allTags")}>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
 
             {/* Actions Row — Filters / Import / Export */}

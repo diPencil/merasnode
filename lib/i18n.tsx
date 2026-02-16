@@ -620,6 +620,14 @@ const translations: Translations = {
   deactivateUserConfirmDesc: { en: "This will prevent them from logging in without deleting their data.", ar: "سيتم منعهم من تسجيل الدخول دون حذف بياناتهم." },
   userDetails: { en: "User Details", ar: "تفاصيل المستخدم" },
   userDetailsDescription: { en: "Comprehensive information about this user account", ar: "معلومات شاملة عن هذا الحساب" },
+  internalNotes: { en: "Internal Notes (Private)", ar: "ملاحظات داخلية (خاصة)" },
+  internalNotesDescription: { en: "Visible only to Supervisor and Admin. Not visible to the user or customers.", ar: "تظهر للمشرف والمدير فقط. غير مرئية للمستخدم أو العملاء." },
+  noInternalNotes: { en: "No internal notes yet", ar: "لا توجد ملاحظات داخلية بعد" },
+  internalNotePlaceholder: { en: "Add a private note...", ar: "أضف ملاحظة خاصة..." },
+  tagToAssign: { en: "Tag to assign when sending", ar: "وسم يُضاف عند الإرسال" },
+  tagToAssignPlaceholder: { en: "e.g. Laser Campaign - Feb 2026", ar: "مثال: حملة الليزر - فبراير 2026" },
+  filterByTag: { en: "Filter by tag", ar: "تصفية بالوسم" },
+  allTags: { en: "All tags", ar: "كل الوسوم" },
   // nameLabel: { en: "Name:", ar: "الاسم:" }, // Duplicate of line 302
   // emailLabel: { en: "Email:", ar: "البريد:" }, // Duplicate of line 201
   activeLabel: { en: "Active:", ar: "نشط:" },

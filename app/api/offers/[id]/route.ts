@@ -73,9 +73,9 @@ export async function PUT(
             )
         }
 
-        const { title, description, content, imageUrl, validFrom, validTo, isActive, whatsappAccountId } = body as {
+        const { title, description, content, imageUrl, validFrom, validTo, isActive, whatsappAccountId, tagToAssign } = body as {
             title?: string; description?: string; content?: string; imageUrl?: string;
-            validFrom?: string; validTo?: string; isActive?: boolean; whatsappAccountId?: string;
+            validFrom?: string; validTo?: string; isActive?: boolean; whatsappAccountId?: string; tagToAssign?: string;
         }
 
         if (!title || !content || !validFrom || !validTo) {
@@ -137,6 +137,7 @@ export async function PUT(
                 validTo: new Date(validTo),
                 isActive: isActive ?? true,
                 whatsappAccountId: nextWhatsappAccountId,
+                tagToAssign: tagToAssign !== undefined ? (typeof tagToAssign === "string" ? tagToAssign.trim() || null : null) : undefined,
             },
         })
 

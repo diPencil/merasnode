@@ -16,12 +16,7 @@ export const metadata: Metadata = {
   description: "Omnichannel System by Meras Holding Company - Customer engagement and support",
   generator: "v0.app",
   icons: {
-    icon: [
-      {
-        url: "/favicon.png",
-        type: "image/png",
-      },
-    ],
+    icon: "/favicon.png",
     shortcut: "/favicon.png",
     apple: "/favicon.png",
   },

@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { logActivity } from "@/lib/logger"
-import { requireDeleteAllowed, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
+import { requireAuthWithScope, requireDeleteAllowed, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
 
-// PUT - Update Template
+// PUT - Update Template (center-scoped: non-Admin can only update templates for their WhatsApp accounts)
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params
+        const scope = await requireAuthWithScope(request)
+        const { id } = await params
         const body = await request.json()
 
         if (!body.name || !body.content) {
@@ -19,6 +20,19 @@ export async function PUT(
             )
         }
 
+        const existing = await prisma.template.findUnique({ where: { id } })
+        if (!existing) {
+            return NextResponse.json(
+                { success: false, error: "Template not found" },
+                { status: 404 }
+            )
+        }
+        if (scope.role !== "ADMIN") {
+            if (!existing.whatsappAccountId || !scope.whatsappAccountIds?.includes(existing.whatsappAccountId)) {
+                return forbiddenResponse("You cannot update this template.")
+            }
+        }
+
         const updateData: any = {
             name: body.name,
             content: body.content,
@@ -26,7 +40,12 @@ export async function PUT(
             language: body.language,
             status: body.status
         }
-        if (body.whatsappAccountId !== undefined) updateData.whatsappAccountId = body.whatsappAccountId || null
+        if (body.whatsappAccountId !== undefined) {
+            if (scope.role !== "ADMIN" && body.whatsappAccountId && !scope.whatsappAccountIds?.includes(body.whatsappAccountId)) {
+                return forbiddenResponse("You cannot assign this template to that WhatsApp account.")
+            }
+            updateData.whatsappAccountId = body.whatsappAccountId || null
+        }
         if (body.triggerKeywords !== undefined) updateData.triggerKeywords = body.triggerKeywords
 
         const template = await prisma.template.update({
@@ -43,8 +62,10 @@ export async function PUT(
         })
 
         return NextResponse.json({ success: true, data: template })
-    } catch (error) {
-        console.error('Error updating template:', error)
+    } catch (e) {
+        if (e instanceof Error && e.message === "Unauthorized") return unauthorizedResponse()
+        if (e instanceof Error && e.message === "Forbidden") return forbiddenResponse()
+        console.error('Error updating template:', e)
         return NextResponse.json(
             { success: false, error: "Failed to update template" },
             { status: 500 }
@@ -55,10 +76,10 @@ export async function PUT(
 // DELETE - Delete Template (ADMIN only; Supervisor blocked and audited)
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params
+        const { id } = await params
         const template = await prisma.template.findUnique({ where: { id } })
         const prevState = template ? { name: template.name, category: template.category } : undefined
         const allowed = await requireDeleteAllowed(request, "Template", id, prevState)

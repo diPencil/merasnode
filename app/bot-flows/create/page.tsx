@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
@@ -33,8 +33,19 @@ export default function CreateBotFlowPage() {
     name: '',
     description: '',
     trigger: '',
-    isActive: true
+    isActive: true,
+    branchId: '' as string
   })
+
+  const [branches, setBranches] = useState<{ id: string; name: string }[]>([])
+  useEffect(() => {
+    authenticatedFetch('/api/branches')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && Array.isArray(d.branches)) setBranches(d.branches)
+      })
+      .catch(() => {})
+  }, [])
 
   const [steps, setSteps] = useState<Step[]>([
     {
@@ -87,6 +98,7 @@ export default function CreateBotFlowPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
+          branchId: formData.branchId || undefined,
           steps: steps
         })
       })
@@ -163,6 +175,22 @@ export default function CreateBotFlowPage() {
                     required
                   />
                 </div>
+                {branches.length > 0 && (
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="branch">{t("branchLabel")} / {t("selectBranch")}</Label>
+                    <select
+                      id="branch"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={formData.branchId}
+                      onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
+                    >
+                      <option value="">{t("noScope") || "No branch (global)"}</option>
+                      {branches.map((b) => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">{t("descriptionLabel")}</Label>

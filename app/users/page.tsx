@@ -62,6 +62,10 @@ export default function UsersPage() {
   const canAddUser = currentRole === "ADMIN"
   const canDeactivateUser = currentRole === "ADMIN"
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
+  const [internalNotes, setInternalNotes] = useState<{ id: string; content: string; createdAt: string; createdBy?: { name: string } }[]>([])
+  const [internalNoteInput, setInternalNoteInput] = useState("")
+  const [loadingNotes, setLoadingNotes] = useState(false)
+  const [addingNote, setAddingNote] = useState(false)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -311,6 +315,50 @@ export default function UsersPage() {
       branchIds: [],
       whatsappAccountIds: []
     })
+  }
+
+  const canSeeInternalNotes = currentRole === "ADMIN" || currentRole === "SUPERVISOR"
+
+  useEffect(() => {
+    if (!isDetailsDialogOpen || !selectedUser?.id || !canSeeInternalNotes) {
+      setInternalNotes([])
+      return
+    }
+    let cancelled = false
+    setLoadingNotes(true)
+    authenticatedFetch(`/api/users/${selectedUser.id}/notes`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data.success && Array.isArray(data.data)) {
+          setInternalNotes(data.data)
+        }
+      })
+      .catch(() => { if (!cancelled) setInternalNotes([]) })
+      .finally(() => { if (!cancelled) setLoadingNotes(false) })
+    return () => { cancelled = true }
+  }, [isDetailsDialogOpen, selectedUser?.id, canSeeInternalNotes])
+
+  const handleAddInternalNote = async () => {
+    if (!selectedUser?.id || !internalNoteInput.trim()) return
+    setAddingNote(true)
+    try {
+      const res = await authenticatedFetch(`/api/users/${selectedUser.id}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: internalNoteInput.trim() }),
+      })
+      const data = await res.json()
+      if (data.success && data.data) {
+        setInternalNotes((prev) => [data.data, ...prev])
+        setInternalNoteInput("")
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (e: any) {
+      toast({ title: t("error"), description: e.message || "Failed to add note", variant: "destructive" })
+    } finally {
+      setAddingNote(false)
+    }
   }
 
   const openEditDialog = (user: User) => {
@@ -1008,6 +1056,42 @@ export default function UsersPage() {
                   </p>
                 </div>
               </div>
+
+              {canSeeInternalNotes && (
+                <div className="border-t pt-4 space-y-2">
+                  <Label className="font-semibold">{t("internalNotes")}</Label>
+                  <p className="text-xs text-muted-foreground">{t("internalNotesDescription")}</p>
+                  {loadingNotes ? (
+                    <p className="text-sm text-muted-foreground">{t("loading")}</p>
+                  ) : (
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {internalNotes.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">{t("noInternalNotes")}</p>
+                      ) : (
+                        internalNotes.map((note) => (
+                          <div key={note.id} className="text-sm p-2 rounded bg-muted/50 border">
+                            <p className="whitespace-pre-wrap">{note.content}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {note.createdBy?.name} · {format(new Date(note.createdAt), "PPp")}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder={t("internalNotePlaceholder")}
+                      value={internalNoteInput}
+                      onChange={(e) => setInternalNoteInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddInternalNote()}
+                    />
+                    <Button type="button" size="sm" onClick={handleAddInternalNote} disabled={!internalNoteInput.trim() || addingNote}>
+                      {addingNote ? t("adding") : t("add")}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>{t("close")}</Button>

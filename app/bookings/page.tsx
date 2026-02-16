@@ -1,5 +1,8 @@
 "use client"
 
+// Force dynamic rendering to avoid build-time prerender errors on /bookings
+export const dynamic = "force-dynamic"
+
 import { useState, useEffect } from "react"
 import { getUserRole, authenticatedFetch } from "@/lib/auth"
 import { AppLayout } from "@/components/app-layout"

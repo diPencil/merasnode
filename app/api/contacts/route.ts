@@ -7,12 +7,13 @@ import {
     forbiddenResponse,
 } from "@/lib/api-auth"
 
-// GET - Fetch contacts (scoped by branch)
+// GET - Fetch contacts (center-scoped; optional tag filter)
 export async function GET(request: NextRequest) {
     try {
         const scope = await requireAuthWithScope(request)
+        const { searchParams } = new URL(request.url)
+        const tagFilter = searchParams.get('tag')?.trim() || undefined
 
-        // Build where clause based on role (aligned with dashboard stats logic)
         let where: any = {}
 
         if (scope.role === 'ADMIN') {
@@ -22,7 +23,6 @@ export async function GET(request: NextRequest) {
             const hasWaScope = scope.whatsappAccountIds && scope.whatsappAccountIds.length > 0
 
             const orClauses: any[] = []
-
             if (hasBranchScope) {
                 orClauses.push({ branchId: { in: scope.branchIds } })
             }
@@ -39,20 +39,55 @@ export async function GET(request: NextRequest) {
             }
 
             if (orClauses.length === 0) {
-                return NextResponse.json({
-                    success: true,
-                    data: [],
-                    count: 0
-                })
+                return NextResponse.json({ success: true, data: [], count: 0 })
             }
-
             where = orClauses.length === 1 ? orClauses[0] : { OR: orClauses }
         } else {
-            // AGENT: contacts that have at least one conversation assigned to this agent
-            // This matches the dashboard's contact visibility
-            where = {
-                conversations: { some: { assignedToId: scope.userId } }
+            // AGENT: center-specific — contacts belonging to their branch(s) or WA account(s) or assigned to them
+            const hasBranchScope = scope.branchIds && scope.branchIds.length > 0
+            const hasWaScope = scope.whatsappAccountIds && scope.whatsappAccountIds.length > 0
+            const orClauses: any[] = [
+                { conversations: { some: { assignedToId: scope.userId } } },
+            ]
+            if (hasBranchScope) {
+                orClauses.push({ branchId: { in: scope.branchIds } })
             }
+            if (hasWaScope) {
+                orClauses.push({
+                    conversations: {
+                        some: {
+                            messages: {
+                                some: { whatsappAccountId: { in: scope.whatsappAccountIds } },
+                            },
+                        },
+                    },
+                })
+            }
+            where = { OR: orClauses }
+        }
+
+        if (tagFilter) {
+            where.AND = where.AND || []
+            where.AND.push({
+                OR: [
+                    { tags: { path: '$', equals: tagFilter } },
+                    { tags: { string_contains: tagFilter } },
+                ],
+            })
+            // MySQL JSON: simpler approach — filter in memory or use JsonFilter
+            delete where.AND
+            const baseWhere = { ...where }
+            const contactsAll = await prisma.contact.findMany({
+                where: baseWhere,
+                orderBy: { createdAt: 'desc' },
+            })
+            const contacts = contactsAll.filter((c) => {
+                const tags = c.tags
+                if (!tags) return false
+                const arr = Array.isArray(tags) ? (tags as string[]) : [String(tags)]
+                return arr.some((t) => String(t).trim().toLowerCase() === tagFilter.toLowerCase())
+            })
+            return NextResponse.json({ success: true, data: contacts, count: contacts.length })
         }
 
         const contacts = await prisma.contact.findMany({

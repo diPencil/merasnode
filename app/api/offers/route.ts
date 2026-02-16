@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
             return forbiddenResponse("You do not have permission to create offers.")
         }
         const body = await request.json()
-        const { title, description, content, imageUrl, validFrom, validTo, isActive, whatsappAccountId } = body
+        const { title, description, content, imageUrl, validFrom, validTo, isActive, whatsappAccountId, tagToAssign } = body
 
         if (!title || !content || !validFrom || !validTo) {
             return NextResponse.json(
@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
                 isActive: isActive !== undefined ? isActive : true,
                 whatsappAccountId: offerWhatsappAccountId,
                 createdById: scope.userId,
+                tagToAssign: typeof tagToAssign === "string" ? tagToAssign.trim() || null : null,
             },
         })
 

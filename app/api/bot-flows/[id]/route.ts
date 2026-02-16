@@ -9,15 +9,25 @@ import {
 import { hasPermission } from "@/lib/permissions"
 import type { UserRole } from "@/lib/permissions"
 
-// PATCH - تحديث Bot Flow معين (Admin only: edit/delete; Supervisor/Agent cannot edit)
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+// PATCH - تحديث Bot Flow معين (center-scoped: non-Admin only flows in their branches)
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const scope = await requireAuthWithScope(request)
         if (!hasPermission(scope.role as UserRole, "edit_bot_flow")) {
             return forbiddenResponse("You do not have permission to edit bot flows")
         }
-        const { id } = params
+        const { id } = await params
         const body = await request.json()
+
+        const existing = await prisma.botFlow.findUnique({ where: { id } })
+        if (!existing) {
+            return NextResponse.json({ success: false, error: "Bot flow not found" }, { status: 404 })
+        }
+        if (scope.role !== 'ADMIN') {
+            if (!existing.branchId || !scope.branchIds?.includes(existing.branchId)) {
+                return forbiddenResponse("You cannot update this bot flow.")
+            }
+        }
 
         const updateData: any = {}
         if (body.isActive !== undefined) updateData.isActive = body.isActive
@@ -25,6 +35,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         if (body.description !== undefined) updateData.description = body.description
         if (body.trigger) updateData.trigger = body.trigger
         if (body.steps) updateData.steps = body.steps
+        if (body.branchId !== undefined) {
+            if (scope.role !== 'ADMIN' && body.branchId && !scope.branchIds?.includes(body.branchId)) {
+                return forbiddenResponse("You cannot assign this bot flow to that branch.")
+            }
+            updateData.branchId = body.branchId || null
+        }
 
         const botFlow = await prisma.botFlow.update({
             where: { id },
@@ -61,9 +77,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 // DELETE - حذف Bot Flow (Admin only; Supervisor blocked and audited)
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = params
+        const { id } = await params
         const flow = await prisma.botFlow.findUnique({ where: { id } })
         const prevState = flow ? { name: flow.name, trigger: flow.trigger } : undefined
         const allowed = await requireDeleteAllowed(request, "BotFlow", id, prevState)

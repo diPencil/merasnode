@@ -37,6 +37,9 @@ model User {
   whatsappAccounts WhatsAppAccount[]
   createdNotes     Note[]
   offers           Offer[]
+  /// Private internal notes about this user (Supervisor/Admin only)
+  internalNotes    UserNote[]
+  createdUserNotes UserNote[]  @relation("UserNoteCreator")
 }
 
 enum UserRole {
@@ -190,7 +193,22 @@ enum TemplateStatus {
   REJECTED
 }
 
-// سير العمل الآلي
+// ملاحظات داخلية خاصة بالمستخدم (Supervisor + Admin فقط — لا تظهر للعميل)
+model UserNote {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content    String   @db.Text
+  createdById String
+  createdBy  User     @relation("UserNoteCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdById])
+}
+
+// سير العمل الآلي (مرتبط بالفرع/المركز)
 model BotFlow {
   id           String            @id @default(uuid())
   name         String
@@ -198,9 +216,13 @@ model BotFlow {
   trigger      String
   steps        Json
   isActive     Boolean           @default(false)
+  branchId     String?
+  branch       Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
   interactions FlowInteraction[]
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
+
+  @@index([branchId])
 }
 
 model FlowInteraction {
@@ -233,6 +255,7 @@ model Branch {
   whatsappAccounts WhatsAppAccount[]
   users            User[]
   contacts         Contact[]
+  botFlows         BotFlow[]
 }
 
 // حسابات WhatsApp
@@ -362,6 +385,8 @@ model Offer {
   validFrom          DateTime
   validTo            DateTime
   isActive           Boolean  @default(true)
+  /// عند إرسال هذا العرض، يُضاف هذا الوسم تلقائياً لجهات الاتصال المستلمة (مثال: Laser Campaign - Feb 2026)
+  tagToAssign        String?
   targetAudience     Json? // JSON array of contact IDs or filters
   recipientsCount    Int      @default(0) // إجمالي الأرقام اللي اتبعتلها
   singleSendCount    Int      @default(0) // عدد مرات الإرسال فردي
