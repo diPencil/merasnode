@@ -7,10 +7,10 @@ import { sanitizeFilename, MAX_FILE_SIZE, ALLOWED_IMAGE_TYPES } from '@/lib/vali
 // Allow larger body for file upload (Next.js may limit; 4MB is safe for most runtimes)
 export const maxDuration = 60;
 
-// Upload allowed for Admin and Supervisor only (Agent cannot create offers)
+// Upload allowed for Admin, Supervisor, and Agent (e.g. for offer images)
 export async function POST(request: NextRequest) {
     try {
-        await requireRole(request, ['ADMIN', 'SUPERVISOR']);
+        await requireRole(request, ['ADMIN', 'SUPERVISOR', 'AGENT']);
     } catch (e) {
         if (e instanceof Error && e.message === 'Unauthorized') return unauthorizedResponse();
         if (e instanceof Error && e.message === 'Forbidden') return forbiddenResponse('You do not have permission to upload images.');
