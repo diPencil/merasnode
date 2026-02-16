@@ -106,10 +106,11 @@ export default function OffersPage() {
         return baseUrl ? `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}` : url
     }
 
-    // Upload & Submit State
+    // Upload & Submit State (blob URL = معاينة فورية بعد الرفع بدون الاعتماد على رابط السيرفر)
     const [imageUploading, setImageUploading] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [imagePreviewError, setImagePreviewError] = useState(false)
+    const [imagePreviewBlobUrl, setImagePreviewBlobUrl] = useState<string | null>(null)
 
     // Send Dialog State
     const [isSendDialogOpen, setIsSendDialogOpen] = useState(false)
@@ -248,6 +249,10 @@ export default function OffersPage() {
     }
 
     const resetForm = () => {
+        if (imagePreviewBlobUrl) {
+            URL.revokeObjectURL(imagePreviewBlobUrl)
+            setImagePreviewBlobUrl(null)
+        }
         setFormData({
             title: "",
             description: "",
@@ -348,6 +353,9 @@ export default function OffersPage() {
             if (response.ok && data.success && data.url) {
                 setImagePreviewError(false)
                 setFormData((prev) => ({ ...prev, imageUrl: data.url }))
+                // معاينة فورية من الملف نفسه عشان الصورة تظهر حتى لو رابط السيرفر مش شغال هنا
+                if (imagePreviewBlobUrl) URL.revokeObjectURL(imagePreviewBlobUrl)
+                setImagePreviewBlobUrl(URL.createObjectURL(file))
                 toast({ title: t("success"), description: "Image uploaded successfully" })
             } else {
                 throw new Error(data.error || "Upload failed")
@@ -496,7 +504,7 @@ export default function OffersPage() {
                                                     {formData.imageUrl && !imagePreviewError ? (
                                                         <>
                                                             <img
-                                                                src={getFullImageUrl(formData.imageUrl)}
+                                                                src={imagePreviewBlobUrl || getFullImageUrl(formData.imageUrl)}
                                                                 alt="Preview"
                                                                 className="absolute inset-0 w-full h-full object-cover"
                                                                 onLoad={() => setImagePreviewError(false)}
@@ -508,7 +516,10 @@ export default function OffersPage() {
                                                                     variant="destructive"
                                                                     size="icon"
                                                                     className="h-8 w-8"
-                                                                    onClick={() => { setFormData({ ...formData, imageUrl: "" }); setImagePreviewError(false); }}
+                                                                    onClick={() => {
+                                                                        if (imagePreviewBlobUrl) { URL.revokeObjectURL(imagePreviewBlobUrl); setImagePreviewBlobUrl(null) }
+                                                                        setFormData({ ...formData, imageUrl: "" }); setImagePreviewError(false);
+                                                                    }}
                                                                 >
                                                                     <X className="h-4 w-4" />
                                                                 </Button>
@@ -523,7 +534,10 @@ export default function OffersPage() {
                                                                 variant="outline"
                                                                 size="sm"
                                                                 className="mt-1"
-                                                                onClick={() => { setFormData({ ...formData, imageUrl: "" }); setImagePreviewError(false); }}
+                                                                onClick={() => {
+                                                                    if (imagePreviewBlobUrl) { URL.revokeObjectURL(imagePreviewBlobUrl); setImagePreviewBlobUrl(null) }
+                                                                    setFormData({ ...formData, imageUrl: "" }); setImagePreviewError(false);
+                                                                }}
                                                             >
                                                                 Remove URL
                                                             </Button>
