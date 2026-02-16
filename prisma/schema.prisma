@@ -36,6 +36,7 @@ model User {
   branches         Branch[]
   whatsappAccounts WhatsAppAccount[]
   createdNotes     Note[]
+  offers           Offer[]
 }
 
 enum UserRole {
@@ -251,6 +252,7 @@ model WhatsAppAccount {
   users     User[]
   messages  Message[]
   templates Template[]
+  offers    Offer[]
 
   @@index([branchId])
 }
@@ -351,6 +353,12 @@ model Offer {
   description        String?  @db.Text
   content            String   @db.Text
   imageUrl           String?  // صورة العرض — تظهر عند الإرسال
+  /// العرض مرتبط بأي رقم واتساب؟ (علشان كل أجينت/سوبرفيزر يشوف أرقام حساباته بس)
+  whatsappAccountId  String?
+  whatsappAccount    WhatsAppAccount? @relation(fields: [whatsappAccountId], references: [id], onDelete: SetNull)
+  /// مين اللي أنشأ العرض (للتتبع فقط)
+  createdById        String?
+  createdBy          User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
   validFrom          DateTime
   validTo            DateTime
   isActive           Boolean  @default(true)
@@ -364,6 +372,7 @@ model Offer {
   @@index([isActive])
   @@index([validFrom])
   @@index([validTo])
+  @@index([whatsappAccountId])
 }
 
 // الفواتير

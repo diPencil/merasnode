@@ -27,6 +27,13 @@ export async function GET(
             )
         }
 
+        // Non-admins can only access offers that belong to their scoped WhatsApp accounts
+        if (role !== "ADMIN") {
+            if (!scope.whatsappAccountIds.includes(offer.whatsappAccountId || "")) {
+                return forbiddenResponse("You do not have permission to view this offer.")
+            }
+        }
+
         return NextResponse.json({
             success: true,
             offer,
@@ -66,9 +73,9 @@ export async function PUT(
             )
         }
 
-        const { title, description, content, imageUrl, validFrom, validTo, isActive } = body as {
+        const { title, description, content, imageUrl, validFrom, validTo, isActive, whatsappAccountId } = body as {
             title?: string; description?: string; content?: string; imageUrl?: string;
-            validFrom?: string; validTo?: string; isActive?: boolean;
+            validFrom?: string; validTo?: string; isActive?: boolean; whatsappAccountId?: string;
         }
 
         if (!title || !content || !validFrom || !validTo) {
@@ -85,6 +92,40 @@ export async function PUT(
                     : imageUrl || null
                 : undefined
 
+        const existing = await prisma.offer.findUnique({ where: { id } })
+        if (!existing) {
+            return NextResponse.json(
+                { success: false, error: "Offer not found" },
+                { status: 404 }
+            )
+        }
+
+        // Non-admins can only edit offers for their own WhatsApp accounts
+        let nextWhatsappAccountId: string | null | undefined = existing.whatsappAccountId
+        if (role === "ADMIN") {
+            // Admin can move offer between accounts or set to null
+            if (whatsappAccountId !== undefined) {
+                nextWhatsappAccountId = whatsappAccountId || null
+            }
+        } else {
+            const allowedIds = scope.whatsappAccountIds || []
+            if (allowedIds.length === 0) {
+                return forbiddenResponse("You do not have any assigned WhatsApp accounts for offers.")
+            }
+
+            // Existing offer must already belong to scoped account
+            if (!existing.whatsappAccountId || !allowedIds.includes(existing.whatsappAccountId)) {
+                return forbiddenResponse("You cannot edit this offer.")
+            }
+
+            if (whatsappAccountId !== undefined) {
+                if (!allowedIds.includes(whatsappAccountId)) {
+                    return forbiddenResponse("You cannot move offer to this WhatsApp account.")
+                }
+                nextWhatsappAccountId = whatsappAccountId
+            }
+        }
+
         const offer = await prisma.offer.update({
             where: { id },
             data: {
@@ -95,6 +136,7 @@ export async function PUT(
                 validFrom: new Date(validFrom),
                 validTo: new Date(validTo),
                 isActive: isActive ?? true,
+                whatsappAccountId: nextWhatsappAccountId,
             },
         })
 
@@ -119,10 +161,21 @@ export async function DELETE(
     props: { params: Promise<{ id: string }> }
 ) {
     try {
+        const scope = await requireAuthWithScope(request)
+        const role = scope.role as UserRole
+
         const params = await props.params;
         const id = params.id;
         const offer = await prisma.offer.findUnique({ where: { id } })
         const prevState = offer ? { title: offer.title, status: offer.isActive } : undefined
+
+        // Non-admins cannot delete offers (enforced by requireDeleteAllowed), but
+        // we also double-check scope in case rules change in المستقبل.
+        if (offer && role !== "ADMIN") {
+            if (!scope.whatsappAccountIds.includes(offer.whatsappAccountId || "")) {
+                return forbiddenResponse()
+            }
+        }
         const allowed = await requireDeleteAllowed(request, "Offer", id, prevState)
         if (allowed instanceof NextResponse) return allowed
 

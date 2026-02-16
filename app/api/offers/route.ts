@@ -12,7 +12,24 @@ export async function GET(request: NextRequest) {
         if (!hasPermission(role, "view_offers")) {
             return forbiddenResponse("You do not have permission to view offers.")
         }
+
+        // Scope offers by WhatsApp accounts for non-admins:
+        // - ADMIN: يرى كل العروض
+        // - SUPERVISOR / AGENT: يشوف العروض اللي على أرقام الواتساب المعينة له فقط
+        const where: any = {}
+        if (role !== "ADMIN") {
+            if (!scope.whatsappAccountIds || scope.whatsappAccountIds.length === 0) {
+                return NextResponse.json({
+                    success: true,
+                    offers: [],
+                    count: 0,
+                })
+            }
+            where.whatsappAccountId = { in: scope.whatsappAccountIds }
+        }
+
         const offers = await prisma.offer.findMany({
+            where,
             orderBy: { createdAt: "desc" },
         })
         return NextResponse.json({
@@ -40,7 +57,7 @@ export async function POST(request: NextRequest) {
             return forbiddenResponse("You do not have permission to create offers.")
         }
         const body = await request.json()
-        const { title, description, content, imageUrl, validFrom, validTo, isActive } = body
+        const { title, description, content, imageUrl, validFrom, validTo, isActive, whatsappAccountId } = body
 
         if (!title || !content || !validFrom || !validTo) {
             return NextResponse.json(
@@ -51,6 +68,32 @@ export async function POST(request: NextRequest) {
         const safeImageUrl =
             typeof imageUrl === "string" && imageUrl.startsWith("data:") ? null : imageUrl || null
 
+        // Determine which WhatsApp account this offer belongs to
+        let offerWhatsappAccountId: string | null = null
+        if (role === "ADMIN") {
+            // Admin can choose any account (or leave it global)
+            offerWhatsappAccountId = whatsappAccountId || null
+        } else {
+            // Supervisor فقط (Agent حالياً view فقط) — يجب أن يكون الرقم من الأرقام المعيّنة له
+            const allowedIds = scope.whatsappAccountIds || []
+            if (allowedIds.length === 0) {
+                return forbiddenResponse("You do not have any assigned WhatsApp accounts for offers.")
+            }
+            const targetId: string | null =
+                whatsappAccountId || (allowedIds.length === 1 ? allowedIds[0] : null)
+
+            if (!targetId) {
+                return NextResponse.json(
+                    { success: false, error: "Please choose a WhatsApp account for this offer." },
+                    { status: 400 }
+                )
+            }
+            if (!allowedIds.includes(targetId)) {
+                return forbiddenResponse("You cannot create offers for this WhatsApp account.")
+            }
+            offerWhatsappAccountId = targetId
+        }
+
         const offer = await prisma.offer.create({
             data: {
                 title,
@@ -60,6 +103,8 @@ export async function POST(request: NextRequest) {
                 validFrom: new Date(validFrom),
                 validTo: new Date(validTo),
                 isActive: isActive !== undefined ? isActive : true,
+                whatsappAccountId: offerWhatsappAccountId,
+                createdById: scope.userId,
             },
         })
 

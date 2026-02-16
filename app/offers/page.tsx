@@ -50,6 +50,7 @@ interface Offer {
     description?: string
     content: string
     imageUrl?: string | null
+    whatsappAccountId?: string | null
     validFrom: string
     validTo: string
     isActive: boolean
@@ -83,7 +84,10 @@ export default function OffersPage() {
         validFrom: "",
         validTo: "",
         isActive: true,
+        whatsappAccountId: "" as string,
     })
+
+    const [whatsappAccounts, setWhatsappAccounts] = useState<{ id: string; name: string; phone: string }[]>([])
 
     // Upload & Submit State
     const [imageUploading, setImageUploading] = useState(false)
@@ -111,6 +115,23 @@ export default function OffersPage() {
     useEffect(() => {
         fetchOffers()
         fetchContacts()
+        // تحميل أرقام الواتساب المسموح بها لهذا المستخدم (Agent/Supervisor/Admin)
+        authenticatedFetch("/api/whatsapp/accounts")
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.success && data.accounts) {
+                    setWhatsappAccounts(
+                        data.accounts.map((acc: any) => ({
+                            id: acc.id,
+                            name: acc.name,
+                            phone: acc.phone,
+                        }))
+                    )
+                }
+            })
+            .catch(() => {
+                // تجاهل لو فشل — النموذج يظل يعمل بدون اختيار رقم
+            })
     }, [])
 
     const fetchOffers = async () => {
@@ -172,7 +193,11 @@ export default function OffersPage() {
 
             const url = editingOffer ? `/api/offers/${editingOffer.id}` : "/api/offers"
             const method = editingOffer ? "PUT" : "POST"
-            const payload = { ...formData, imageUrl }
+            const payload = {
+                ...formData,
+                imageUrl,
+                whatsappAccountId: formData.whatsappAccountId || undefined,
+            }
 
             const response = await authenticatedFetch(url, {
                 method,
@@ -214,6 +239,7 @@ export default function OffersPage() {
             validFrom: "",
             validTo: "",
             isActive: true,
+            whatsappAccountId: "",
         })
         setEditingOffer(null)
         setImageUploading(false)
@@ -232,6 +258,7 @@ export default function OffersPage() {
             validFrom: offer.validFrom.split("T")[0],
             validTo: offer.validTo.split("T")[0],
             isActive: offer.isActive,
+            whatsappAccountId: offer.whatsappAccountId || "",
         })
         setIsDialogOpen(true)
     }
