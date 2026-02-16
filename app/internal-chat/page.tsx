@@ -184,9 +184,23 @@ export default function InternalChatPage() {
   }
 
   const baseUrl =
-    (typeof window !== "undefined" ? window.location.origin : "") || ""
-  const getImageUrl = (url: string) =>
-    url.startsWith("http") ? url : `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`
+    (typeof window !== "undefined"
+      ? (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || window.location.origin)
+      : (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "")) || ""
+  const getImageUrl = (url: string | undefined) => {
+    if (!url) return ""
+    const origin = typeof window !== "undefined" ? window.location.origin : baseUrl
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      try {
+        const u = new URL(url)
+        if (origin && u.origin !== origin) return `${origin}${u.pathname}`
+      } catch {
+        /* ignore */
+      }
+      return url
+    }
+    return baseUrl ? `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}` : url
+  }
 
   const handleAttachImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -357,12 +371,13 @@ export default function InternalChatPage() {
                               href={getImageUrl(m.mediaUrl)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="block rounded overflow-hidden my-1"
+                              className="block rounded overflow-hidden my-1 bg-muted/50"
                             >
                               <img
                                 src={getImageUrl(m.mediaUrl)}
                                 alt=""
                                 className="max-w-full max-h-48 object-contain rounded"
+                                loading="lazy"
                               />
                             </a>
                           )}
