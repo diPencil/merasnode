@@ -89,6 +89,26 @@ export default function OffersPage() {
 
     const [whatsappAccounts, setWhatsappAccounts] = useState<{ id: string; name: string; phone: string }[]>([])
 
+    // Base URL helper (same idea as Inbox) so الصور تشتغل حتى لو اتحرك السيرفر أو اتغيّر الدومين
+    const baseUrl =
+        (typeof window !== "undefined"
+            ? (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || window.location.origin)
+            : (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "")) || ""
+
+    const getFullImageUrl = (url?: string | null) => {
+        if (!url) return ""
+        // لو الرابط كامل بالفعل، نحاول نوحّده على نفس الدومين (يعالج حالات localhost القديمة)
+        try {
+            const parsed = new URL(url)
+            const path = `${parsed.pathname}${parsed.search}${parsed.hash}`
+            return baseUrl ? `${baseUrl}${path}` : url
+        } catch {
+            // لو مش URL كامل (أو خطأ)، نعتبره مسار نسبي
+            if (url.startsWith("http://") || url.startsWith("https://")) return url
+            return baseUrl ? `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}` : url
+        }
+    }
+
     // Upload & Submit State
     const [imageUploading, setImageUploading] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -390,7 +410,8 @@ export default function OffersPage() {
                     content: messageContent,
                     direction: 'OUTGOING',
                     type: offer.imageUrl ? 'IMAGE' : 'TEXT',
-                    mediaUrl: offer.imageUrl || undefined,
+                    // نرسل للرسايل لينك كامل ومُوحّد (يعالج روابط localhost القديمة)
+                    mediaUrl: offer.imageUrl ? getFullImageUrl(offer.imageUrl) : undefined,
                 })
             })
             const data = await response.json()
@@ -467,7 +488,7 @@ export default function OffersPage() {
                                                     {formData.imageUrl && !imagePreviewError ? (
                                                         <>
                                                             <img
-                                                                src={formData.imageUrl}
+                                                                src={getFullImageUrl(formData.imageUrl)}
                                                                 alt="Preview"
                                                                 className="absolute inset-0 w-full h-full object-cover"
                                                                 onLoad={() => setImagePreviewError(false)}
@@ -682,9 +703,13 @@ export default function OffersPage() {
                                     )}
                                     {offer.imageUrl ? (
                                         <img
-                                            src={offer.imageUrl}
+                                            src={getFullImageUrl(offer.imageUrl)}
                                             alt={offer.title}
                                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            onError={(e) => {
+                                                // لو في بيانات قديمة (localhost أو دومين غلط) نخبّي الصورة ونظهر placeholder
+                                                e.currentTarget.style.display = "none"
+                                            }}
                                         />
                                     ) : (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground/40 bg-muted/50">
