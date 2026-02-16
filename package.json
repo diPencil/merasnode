@@ -22,6 +22,7 @@
     "generate:secret": "node -e \"console.log('JWT_SECRET=' + require('crypto').randomBytes(32).toString('base64'))\"",
     "verify": "node verify-all.js",
     "verify:send": "node verify-all.js --send",
+    "fix:offer-images": "node scripts/fix-offer-images.js",
     "start-phone": "node start-phone.js",
     "deploy": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1"
   },

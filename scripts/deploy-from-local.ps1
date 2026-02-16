@@ -4,7 +4,11 @@
 
 $ErrorActionPreference = "Stop"
 $scriptDir = $PSScriptRoot
-$projectRoot = Split-Path -Parent (Split-Path -Parent $scriptDir)
+
+# المشروع الحقيقي هو مجلد MerasNode نفسه، مش الأب بتاعه.
+# التصحيح: projectRoot = parent لـ scripts (يعني d:\Development\MerasNode)،
+# علشان ما يرفعش مجلدات تانية زي AboKhaledfiles بالغلط.
+$projectRoot = Split-Path -Parent $scriptDir
 Set-Location $projectRoot
 
 $localConfig = Join-Path $scriptDir "deploy.local.ps1"
