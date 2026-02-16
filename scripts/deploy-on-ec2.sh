@@ -35,6 +35,8 @@ echo "==> Installing dependencies..."
 npm install
 
 echo "==> بناء المشروع..."
+# زيادة ذاكرة Node أثناء البناء لتجنب exit code 1 على السيرفر (تحذيرات React key قد تظهر لكن البناء يكمل)
+export NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=4096"
 npm run build
 
 echo "==> إعادة تشغيل التطبيق (pm2)..."
