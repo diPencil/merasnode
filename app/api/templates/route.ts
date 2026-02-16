@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
 
         let templates = await prisma.template.findMany({
             where,
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            include: { createdBy: { select: { id: true, name: true } } },
         })
 
         // If trigger provided, filter templates whose triggerKeywords contain this trigger (case-insensitive)
@@ -101,6 +102,7 @@ export async function POST(request: NextRequest) {
                 language: body.language || 'en',
                 status: body.status || 'PENDING',
                 whatsappAccountId,
+                createdById: scope.userId,
                 triggerKeywords: body.triggerKeywords != null ? body.triggerKeywords : null
             }
         })

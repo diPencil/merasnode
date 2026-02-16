@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
 
         const botFlows = await prisma.botFlow.findMany({
             where,
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            include: { createdBy: { select: { id: true, name: true } } },
         })
 
         return NextResponse.json({
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
                 steps: body.steps,
                 isActive: body.isActive !== undefined ? body.isActive : true,
                 branchId,
+                createdById: scope.userId,
             }
         })
 

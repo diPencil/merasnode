@@ -628,6 +628,7 @@ const translations: Translations = {
   tagToAssignPlaceholder: { en: "e.g. Laser Campaign - Feb 2026", ar: "مثال: حملة الليزر - فبراير 2026" },
   filterByTag: { en: "Filter by tag", ar: "تصفية بالوسم" },
   allTags: { en: "All tags", ar: "كل الوسوم" },
+  createdBy: { en: "Created by", ar: "أنشئ بواسطة" },
   // nameLabel: { en: "Name:", ar: "الاسم:" }, // Duplicate of line 302
   // emailLabel: { en: "Email:", ar: "البريد:" }, // Duplicate of line 201
   activeLabel: { en: "Active:", ar: "نشط:" },

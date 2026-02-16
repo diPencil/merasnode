@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         const offers = await prisma.offer.findMany({
             where,
             orderBy: { createdAt: "desc" },
+            include: { createdBy: { select: { id: true, name: true } } },
         })
         return NextResponse.json({
             success: true,
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/offers — create_offer required (Admin, Supervisor only; Agent blocked)
+// POST /api/offers — create_offer required (Admin, Supervisor, Agent; non-Admin scoped to their WhatsApp accounts)
 export async function POST(request: NextRequest) {
     try {
         const scope = await requireAuthWithScope(request)
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
             // Admin can choose any account (or leave it global)
             offerWhatsappAccountId = whatsappAccountId || null
         } else {
-            // Supervisor فقط (Agent حالياً view فقط) — يجب أن يكون الرقم من الأرقام المعيّنة له
+            // Supervisor و Agent — العرض مرتبط بأحد أرقام الواتساب المعينة للمستخدم (الفرع/المركز)
             const allowedIds = scope.whatsappAccountIds || []
             if (allowedIds.length === 0) {
                 return forbiddenResponse("You do not have any assigned WhatsApp accounts for offers.")

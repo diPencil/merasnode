@@ -40,6 +40,8 @@ model User {
   /// Private internal notes about this user (Supervisor/Admin only)
   internalNotes    UserNote[]
   createdUserNotes UserNote[]  @relation("UserNoteCreator")
+  templatesCreated Template[]
+  botFlowsCreated  BotFlow[]
 }
 
 enum UserRole {
@@ -180,11 +182,14 @@ model Template {
   status            TemplateStatus   @default(PENDING)
   whatsappAccountId String?
   whatsappAccount   WhatsAppAccount? @relation(fields: [whatsappAccountId], references: [id], onDelete: SetNull)
+  createdById       String?
+  createdBy         User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
   triggerKeywords   Json? // array of trigger phrases e.g. ["Hi", "Hello", "مرحبا"]
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
   @@index([whatsappAccountId])
+  @@index([createdById])
 }
 
 enum TemplateStatus {
@@ -218,11 +223,14 @@ model BotFlow {
   isActive     Boolean           @default(false)
   branchId     String?
   branch       Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  createdById  String?
+  createdBy    User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
   interactions FlowInteraction[]
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 
   @@index([branchId])
+  @@index([createdById])
 }
 
 model FlowInteraction {

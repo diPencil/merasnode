@@ -34,6 +34,7 @@ interface Template {
   createdAt: string
   whatsappAccountId?: string | null
   triggerKeywords?: string[] | null
+  createdBy?: { id: string; name: string } | null
 }
 
 const AVAILABLE_VARIABLES = ['name', 'phone', 'email', 'company_name', 'order_id', 'date']
@@ -386,6 +387,9 @@ export default function TemplatesPage() {
                     <div>
                       <CardTitle className="text-lg">{template.name}</CardTitle>
                       <CardDescription className="mt-1">{template.category}</CardDescription>
+                      {template.createdBy?.name && (
+                        <p className="text-xs text-muted-foreground mt-1">{t("createdBy")}: {template.createdBy.name}</p>
+                      )}
                     </div>
                     {getStatusIcon(template.status)}
                   </div>

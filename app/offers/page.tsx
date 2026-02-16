@@ -59,6 +59,7 @@ interface Offer {
     recipientsCount?: number
     singleSendCount?: number
     bulkSendCount?: number
+    createdBy?: { id: string; name: string } | null
 }
 
 interface Contact {
@@ -749,6 +750,11 @@ export default function OffersPage() {
                                             {format(new Date(offer.validFrom), "MMM dd")} - {format(new Date(offer.validTo), "MMM dd, yyyy")}
                                         </span>
                                     </div>
+                                    {offer.createdBy?.name && (
+                                        <p className="text-xs text-muted-foreground">
+                                            {t("createdBy")}: {offer.createdBy.name}
+                                        </p>
+                                    )}
 
                                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
                                         <div className="bg-muted/30 p-2 rounded-lg">
