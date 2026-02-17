@@ -1,4 +1,4 @@
-"use client"
+\"use client\"
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -25,6 +25,17 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow"
 import "reactflow/dist/style.css"
+
+// Helper to turn a stored media path (e.g. "/uploads/xxx.jpg")
+// into a full URL for preview in the browser.
+function resolveMediaUrl(path: string | undefined | null): string {
+  if (!path) return ""
+  if (path.startsWith("http://") || path.startsWith("https://")) return path
+  if (typeof window === "undefined") return path
+  const base = window.location.origin.replace(/\/+$/, "")
+  const normalized = path.startsWith("/") ? path : `/${path}`
+  return `${base}${normalized}`
+}
 export default function FlowBuilderPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -557,9 +568,21 @@ export default function FlowBuilderPage() {
                           </Button>
                         </div>
                         {selectedStep.step.mediaUrl && (
-                          <p className="text-xs text-muted-foreground truncate" title={selectedStep.step.mediaUrl}>
-                            {selectedStep.step.mediaUrl}
-                          </p>
+                          <div className="space-y-1">
+                            <p
+                              className="text-[11px] text-muted-foreground truncate"
+                              title={selectedStep.step.mediaUrl}
+                            >
+                              {selectedStep.step.mediaUrl}
+                            </p>
+                            <div className="border rounded-md overflow-hidden bg-muted/40">
+                              <img
+                                src={resolveMediaUrl(selectedStep.step.mediaUrl)}
+                                alt="Flow image preview"
+                                className="max-h-40 w-full object-contain bg-black/5"
+                              />
+                            </div>
+                          </div>
                         )}
                         <Label className="text-xs">{t("imageCaption") || "Caption (optional)"}</Label>
                         <Textarea
