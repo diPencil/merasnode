@@ -269,6 +269,28 @@ model FlowInteraction {
   @@index([action])
 }
 
+// فئات العروض (مثلاً: جلدية، تجميل) — مربوطة بالفروع؛ عند الإرسال نوجّه العرض لجهات اتصال الفروع التابعة للفئة فقط
+model OfferCategory {
+  id          String    @id @default(uuid())
+  name        String
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  branches CategoryBranch[]
+  offers   Offer[]
+}
+
+// ربط الفئة بالفروع (فئة واحدة → عدة فروع)
+model CategoryBranch {
+  categoryId String
+  category   OfferCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  branchId   String
+  branch     Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, branchId])
+}
+
 // الفروع
 model Branch {
   id        String   @id @default(uuid())
@@ -284,6 +306,7 @@ model Branch {
   users            User[]
   contacts         Contact[]
   botFlows         BotFlow[]
+  categoryBranches CategoryBranch[]
 }
 
 // حسابات WhatsApp
@@ -407,6 +430,9 @@ model Offer {
   /// العرض مرتبط بأي رقم واتساب؟ (علشان كل أجينت/سوبرفيزر يشوف أرقام حساباته بس)
   whatsappAccountId  String?
   whatsappAccount    WhatsAppAccount? @relation(fields: [whatsappAccountId], references: [id], onDelete: SetNull)
+  /// فئة العرض (مثلاً جلدية) — عند الإرسال تظهر جهات اتصال الفروع التابعة للفئة فقط
+  categoryId         String?
+  category           OfferCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   /// مين اللي أنشأ العرض (للتتبع فقط)
   createdById        String?
   createdBy          User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
@@ -426,6 +452,7 @@ model Offer {
   @@index([validFrom])
   @@index([validTo])
   @@index([whatsappAccountId])
+  @@index([categoryId])
 }
 
 // الفواتير

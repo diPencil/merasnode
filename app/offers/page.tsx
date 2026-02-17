@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Plus, Tag, Calendar, Send, Edit, Trash2, Users, CheckSquare, X, ImageIcon, BarChart2, UploadCloud, Loader2 } from "lucide-react"
+import { Plus, Tag, Calendar, Send, Edit, Trash2, Users, CheckSquare, X, ImageIcon, BarChart2, UploadCloud, Loader2, FolderTree } from "lucide-react"
 import { useI18n } from "@/lib/i18n"
 import {
     Dialog,
@@ -51,6 +51,8 @@ interface Offer {
     content: string
     imageUrl?: string | null
     whatsappAccountId?: string | null
+    categoryId?: string | null
+    category?: { id: string; name: string } | null
     validFrom: string
     validTo: string
     isActive: boolean
@@ -88,9 +90,16 @@ export default function OffersPage() {
         isActive: true,
         whatsappAccountId: "" as string,
         tagToAssign: "" as string,
+        categoryId: "" as string,
     })
 
     const [whatsappAccounts, setWhatsappAccounts] = useState<{ id: string; name: string; phone: string }[]>([])
+    const [offerCategories, setOfferCategories] = useState<{ id: string; name: string; branchIds: string[] }[]>([])
+    const [isCategoriesDialogOpen, setIsCategoriesDialogOpen] = useState(false)
+    const [branches, setBranches] = useState<{ id: string; name: string }[]>([])
+    const [newCategoryName, setNewCategoryName] = useState("")
+    const [newCategoryBranchIds, setNewCategoryBranchIds] = useState<string[]>([])
+    const [isAddingCategory, setIsAddingCategory] = useState(false)
     /** Unique tags from contacts + offers (for "Tag to assign" dropdown). */
     const [existingTags, setExistingTags] = useState<string[]>([])
     /** '__none__' = no tag, '__new__' = typing new tag, else = selected existing tag. */
@@ -116,10 +125,11 @@ export default function OffersPage() {
     const [imagePreviewError, setImagePreviewError] = useState(false)
     const [imagePreviewBlobUrl, setImagePreviewBlobUrl] = useState<string | null>(null)
 
-    // Send Dialog State
+    // Send Dialog State (contacts in dialog = filtered by offer category when set)
     const [isSendDialogOpen, setIsSendDialogOpen] = useState(false)
     const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null)
     const [contacts, setContacts] = useState<Contact[]>([])
+    const [sendDialogContacts, setSendDialogContacts] = useState<Contact[]>([])
     const [selectedContactId, setSelectedContactId] = useState("")
     const [sendMode, setSendMode] = useState<"single" | "bulk">("single")
     const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
@@ -132,6 +142,7 @@ export default function OffersPage() {
     // Permissions
     const userRole = getUserRole()
     const canCreate = hasPermission((userRole || "AGENT") as UserRole, "create_offer")
+    const canManageCategories = userRole === "ADMIN"
     const canEdit = hasPermission((userRole || "AGENT") as UserRole, "edit_offer")
     const canDelete = hasPermission((userRole || "AGENT") as UserRole, "delete_offer")
 
@@ -145,9 +156,20 @@ export default function OffersPage() {
         }
     }
 
+    const fetchOfferCategories = async () => {
+        try {
+            const res = await authenticatedFetch("/api/offer-categories")
+            const data = await res.json()
+            if (data.success && Array.isArray(data.data)) setOfferCategories(data.data)
+        } catch {
+            setOfferCategories([])
+        }
+    }
+
     useEffect(() => {
         fetchOffers()
         fetchContacts()
+        fetchOfferCategories()
         // تحميل أرقام الواتساب المسموح بها لهذا المستخدم (Agent/Supervisor/Admin)
         authenticatedFetch("/api/whatsapp/accounts")
             .then((res) => res.json())
@@ -170,6 +192,18 @@ export default function OffersPage() {
     useEffect(() => {
         if (isDialogOpen) fetchTags()
     }, [isDialogOpen])
+
+    useEffect(() => {
+        if (isCategoriesDialogOpen) {
+            authenticatedFetch("/api/branches")
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data.success && data.branches) setBranches(data.branches)
+                    else setBranches([])
+                })
+                .catch(() => setBranches([]))
+        }
+    }, [isCategoriesDialogOpen])
 
     const fetchOffers = async () => {
         try {
@@ -200,6 +234,24 @@ export default function OffersPage() {
             }
         } catch (error) {
             console.error("Error fetching contacts:", error)
+        }
+    }
+
+    /** Fetch contacts for send dialog — when offer has a category, only contacts from that category's branches are returned */
+    const fetchContactsForSend = async (categoryId: string | null | undefined) => {
+        try {
+            const url = categoryId?.trim()
+                ? `/api/contacts?categoryId=${encodeURIComponent(categoryId)}`
+                : "/api/contacts"
+            const response = await authenticatedFetch(url)
+            const data = await response.json()
+            if (data.success) {
+                setSendDialogContacts(data.data || [])
+            } else {
+                setSendDialogContacts([])
+            }
+        } catch {
+            setSendDialogContacts([])
         }
     }
 
@@ -241,6 +293,7 @@ export default function OffersPage() {
                 tagToAssign: effectiveTag.trim() || undefined,
                 imageUrl,
                 whatsappAccountId: formData.whatsappAccountId || undefined,
+                categoryId: formData.categoryId?.trim() || undefined,
             }
 
             const response = await authenticatedFetch(url, {
@@ -289,6 +342,7 @@ export default function OffersPage() {
             isActive: true,
             whatsappAccountId: "",
             tagToAssign: "",
+            categoryId: "",
         })
         setTagChoice("__none__")
         setEditingOffer(null)
@@ -310,9 +364,56 @@ export default function OffersPage() {
             isActive: offer.isActive,
             whatsappAccountId: offer.whatsappAccountId || "",
             tagToAssign: offer.tagToAssign || "",
+            categoryId: offer.categoryId || "",
         })
         setTagChoice(offer.tagToAssign || "__none__")
         setIsDialogOpen(true)
+    }
+
+    const handleDeleteCategory = async (id: string) => {
+        try {
+            const res = await authenticatedFetch(`/api/offer-categories/${id}`, { method: "DELETE" })
+            const data = await res.json()
+            if (data.success) {
+                setOfferCategories((prev) => prev.filter((c) => c.id !== id))
+                toast({ title: t("success"), description: t("categoryDeleted"), variant: "default" })
+            } else throw new Error(data.error)
+        } catch (e) {
+            toast({ title: t("error"), description: e instanceof Error ? e.message : "Failed", variant: "destructive" })
+        }
+    }
+
+    const handleAddCategory = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!newCategoryName.trim()) {
+            toast({ title: t("error"), description: t("offerCategoryNameRequired"), variant: "destructive" })
+            return
+        }
+        setIsAddingCategory(true)
+        try {
+            const res = await authenticatedFetch("/api/offer-categories", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: newCategoryName.trim(), branchIds: newCategoryBranchIds }),
+            })
+            const data = await res.json()
+            if (data.success && data.data) {
+                setOfferCategories((prev) => [...prev, data.data])
+                setNewCategoryName("")
+                setNewCategoryBranchIds([])
+                toast({ title: t("success"), description: t("categoryCreated"), variant: "default" })
+            } else throw new Error(data.error || "Failed")
+        } catch (e) {
+            toast({ title: t("error"), description: e instanceof Error ? e.message : "Failed", variant: "destructive" })
+        } finally {
+            setIsAddingCategory(false)
+        }
+    }
+
+    const toggleBranchInNewCategory = (branchId: string) => {
+        setNewCategoryBranchIds((prev) =>
+            prev.includes(branchId) ? prev.filter((id) => id !== branchId) : [...prev, branchId]
+        )
     }
 
     const handleDeleteClick = (id: string) => {
@@ -408,6 +509,7 @@ export default function OffersPage() {
         setSelectedContactIds([])
         setSendMode("single")
         setIsSendDialogOpen(true)
+        fetchContactsForSend(offer.categoryId ?? null)
     }
 
     const toggleContactSelection = (contactId: string) => {
@@ -417,7 +519,7 @@ export default function OffersPage() {
     const sendOfferToContact = async (contactId: string, offer: Offer): Promise<boolean> => {
         // ... (Logic kept SAME as provided in original file, assuming it works) ...
         try {
-            const contact = contacts.find(c => c.id === contactId)
+            const contact = (sendDialogContacts.length ? sendDialogContacts : contacts).find(c => c.id === contactId)
             if (!contact) throw new Error("Contact not found")
 
             const conversationsResponse = await authenticatedFetch('/api/conversations')
@@ -523,6 +625,13 @@ export default function OffersPage() {
                         <p className="text-muted-foreground mt-1">{t("offersPageDescription")}</p>
                     </div>
 
+                    <div className="flex gap-2">
+                    {canManageCategories && (
+                        <Button variant="outline" size="lg" className="gap-2" onClick={() => setIsCategoriesDialogOpen(true)}>
+                            <FolderTree className="h-5 w-5" />
+                            {t("manageOfferCategories")}
+                        </Button>
+                    )}
                     {canCreate && (
                         <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
                             <DialogTrigger asChild>
@@ -531,7 +640,7 @@ export default function OffersPage() {
                                     {t("createOffer")}
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()}>
                                 <form onSubmit={handleSubmit}>
                                     <DialogHeader>
                                         <DialogTitle>{editingOffer ? t("editOffer") : t("createOffer")}</DialogTitle>
@@ -713,6 +822,29 @@ export default function OffersPage() {
                                             )}
                                         </div>
 
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="offerCategory">{t("offerCategory")}</Label>
+                                            <p className="text-sm text-muted-foreground">
+                                                {t("offerCategoryExplanation")}
+                                            </p>
+                                            <Select
+                                                value={formData.categoryId || "__none__"}
+                                                onValueChange={(v) => setFormData((prev) => ({ ...prev, categoryId: v === "__none__" ? "" : v }))}
+                                            >
+                                                <SelectTrigger id="offerCategory">
+                                                    <SelectValue placeholder={t("offerCategoryNone")} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="__none__">{t("offerCategoryNone")}</SelectItem>
+                                                    {offerCategories.map((cat) => (
+                                                        <SelectItem key={cat.id} value={cat.id}>
+                                                            {cat.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="grid gap-2">
                                                 <Label htmlFor="validFrom">{t("validFrom")} *</Label>
@@ -762,7 +894,69 @@ export default function OffersPage() {
                             </DialogContent>
                         </Dialog>
                     )}
+                    </div>
                 </div>
+
+                {/* Manage Offer Categories Dialog (ADMIN only) */}
+                <Dialog open={isCategoriesDialogOpen} onOpenChange={setIsCategoriesDialogOpen}>
+                    <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>{t("manageOfferCategories")}</DialogTitle>
+                            <DialogDescription>{t("manageOfferCategoriesDesc")}</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <form onSubmit={handleAddCategory} className="space-y-3 border rounded-lg p-3 bg-muted/30">
+                                <Label>{t("addCategory")}</Label>
+                                <Input
+                                    placeholder={t("offerCategoryNamePlaceholder")}
+                                    value={newCategoryName}
+                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                />
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">{t("linkBranches")}</Label>
+                                    <div className="max-h-32 overflow-y-auto border rounded p-2 mt-1 space-y-1">
+                                        {branches.length === 0 ? (
+                                            <p className="text-sm text-muted-foreground">{t("noBranches")}</p>
+                                        ) : (
+                                            branches.map((b) => (
+                                                <label key={b.id} className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={newCategoryBranchIds.includes(b.id)}
+                                                        onChange={() => toggleBranchInNewCategory(b.id)}
+                                                    />
+                                                    <span className="text-sm">{b.name}</span>
+                                                </label>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                                <Button type="submit" size="sm" disabled={isAddingCategory || !newCategoryName.trim()}>
+                                    {isAddingCategory ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                    {t("addCategory")}
+                                </Button>
+                            </form>
+                            <div>
+                                <Label className="text-xs text-muted-foreground">{t("existingCategories")}</Label>
+                                <ul className="mt-2 space-y-1">
+                                    {offerCategories.length === 0 ? (
+                                        <li className="text-sm text-muted-foreground">{t("noCategoriesYet")}</li>
+                                    ) : (
+                                        offerCategories.map((c) => (
+                                            <li key={c.id} className="flex items-center justify-between gap-2 py-1 border-b">
+                                                <span className="font-medium">{c.name}</span>
+                                                <span className="text-xs text-muted-foreground">{c.branchIds.length} {t("branches")}</span>
+                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteCategory(c.id)} title={t("delete")}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </li>
+                                        ))
+                                    )}
+                                </ul>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
 
                 {/* Content */}
                 {isLoading ? (
@@ -827,6 +1021,11 @@ export default function OffersPage() {
 
                                 <CardHeader className="space-y-0.5 pb-1 pt-2 px-3">
                                     <CardTitle className="text-base line-clamp-1">{offer.title}</CardTitle>
+                                    {offer.category && (
+                                        <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary w-fit">
+                                            {offer.category.name}
+                                        </span>
+                                    )}
                                     <CardDescription className="line-clamp-2 min-h-0 text-xs">
                                         {offer.description || offer.content}
                                     </CardDescription>
@@ -960,6 +1159,11 @@ export default function OffersPage() {
                                 </div>
                             </div>
 
+                            {selectedOffer?.categoryId && selectedOffer?.category && (
+                                <p className="text-sm text-muted-foreground rounded-md bg-muted/50 px-2 py-1.5">
+                                    {t("offerCategory")}: <span className="font-medium text-foreground">{selectedOffer.category.name}</span> — {t("onlyContactsInCategory")}
+                                </p>
+                            )}
                             {sendMode === "single" && (
                                 <div className="grid gap-2">
                                     <Label htmlFor="contact">{t("selectContactRequired")}</Label>
@@ -977,12 +1181,12 @@ export default function OffersPage() {
                                             <SelectValue placeholder={t("chooseContact")} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {(contacts || []).length === 0 ? (
+                                            {(sendDialogContacts || []).length === 0 ? (
                                                 <SelectItem value="none" disabled>
-                                                    No contacts available
+                                                    {selectedOffer?.categoryId ? t("noContactsInCategory") : t("noContactsAvailable")}
                                                 </SelectItem>
                                             ) : (
-                                                (contacts || [])
+                                                (sendDialogContacts || [])
                                                     .filter((contact) => {
                                                         const q = singleSearch.trim().toLowerCase()
                                                         if (!q) return true
@@ -1020,7 +1224,7 @@ export default function OffersPage() {
                                             size="sm"
                                             className="h-7 text-xs"
                                             onClick={() => {
-                                                const contactsList = contacts || []
+                                                const contactsList = sendDialogContacts || []
                                                 if (selectedContactIds.length === contactsList.length) {
                                                     setSelectedContactIds([])
                                                 } else {
@@ -1028,14 +1232,14 @@ export default function OffersPage() {
                                                 }
                                             }}
                                         >
-                                            {selectedContactIds.length === (contacts?.length || 0) && contacts?.length > 0 ? t("deselectAll") : t("selectAll")}
+                                            {selectedContactIds.length === (sendDialogContacts?.length || 0) && (sendDialogContacts?.length || 0) > 0 ? t("deselectAll") : t("selectAll")}
                                         </Button>
                                     </div>
                                     <div className="max-h-[300px] overflow-y-auto border rounded-lg p-2 space-y-2">
-                                        {(contacts || []).length === 0 ? (
-                                            <p className="text-sm text-muted-foreground text-center py-4">{t("noContactsAvailable")}</p>
+                                        {(sendDialogContacts || []).length === 0 ? (
+                                            <p className="text-sm text-muted-foreground text-center py-4">{selectedOffer?.categoryId ? t("noContactsInCategory") : t("noContactsAvailable")}</p>
                                         ) : (
-                                            (contacts || []).map((contact) => (
+                                            (sendDialogContacts || []).map((contact) => (
                                                 <div
                                                     key={contact.id}
                                                     className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-colors ${selectedContactIds.includes(contact.id)

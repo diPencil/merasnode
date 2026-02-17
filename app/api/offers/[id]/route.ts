@@ -18,6 +18,7 @@ export async function GET(
         const { id } = await params
         const offer = await prisma.offer.findUnique({
             where: { id },
+            include: { category: { select: { id: true, name: true } } },
         })
 
         if (!offer) {
@@ -73,9 +74,9 @@ export async function PUT(
             )
         }
 
-        const { title, description, content, imageUrl, validFrom, validTo, isActive, whatsappAccountId, tagToAssign } = body as {
+        const { title, description, content, imageUrl, validFrom, validTo, isActive, whatsappAccountId, tagToAssign, categoryId } = body as {
             title?: string; description?: string; content?: string; imageUrl?: string;
-            validFrom?: string; validTo?: string; isActive?: boolean; whatsappAccountId?: string; tagToAssign?: string;
+            validFrom?: string; validTo?: string; isActive?: boolean; whatsappAccountId?: string; tagToAssign?: string; categoryId?: string;
         }
 
         if (!title || !content || !validFrom || !validTo) {
@@ -138,6 +139,7 @@ export async function PUT(
                 isActive: isActive ?? true,
                 whatsappAccountId: nextWhatsappAccountId,
                 tagToAssign: tagToAssign !== undefined ? (typeof tagToAssign === "string" ? tagToAssign.trim() || null : null) : undefined,
+                categoryId: categoryId !== undefined ? (typeof categoryId === "string" && categoryId.trim() ? categoryId.trim() : null) : undefined,
             },
         })
 

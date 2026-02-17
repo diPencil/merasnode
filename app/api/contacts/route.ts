@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
         const scope = await requireAuthWithScope(request)
         const { searchParams } = new URL(request.url)
         const tagFilter = searchParams.get('tag')?.trim() || undefined
+        const categoryId = searchParams.get('categoryId')?.trim() || undefined
 
         let where: any = {}
 
@@ -64,6 +65,19 @@ export async function GET(request: NextRequest) {
                 })
             }
             where = { OR: orClauses }
+        }
+
+        // Filter by offer category: only contacts whose branch is in this category's branches
+        if (categoryId) {
+            const category = await prisma.offerCategory.findUnique({
+                where: { id: categoryId },
+                include: { branches: { select: { branchId: true } } },
+            })
+            const branchIds = category?.branches?.map((b) => b.branchId) ?? []
+            if (branchIds.length === 0) {
+                return NextResponse.json({ success: true, data: [], count: 0 })
+            }
+            where = { AND: [where, { branchId: { in: branchIds } }] }
         }
 
         if (tagFilter) {

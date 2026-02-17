@@ -32,7 +32,10 @@ export async function GET(request: NextRequest) {
         const offers = await prisma.offer.findMany({
             where,
             orderBy: { createdAt: "desc" },
-            include: { createdBy: { select: { id: true, name: true } } },
+            include: {
+                createdBy: { select: { id: true, name: true } },
+                category: { select: { id: true, name: true } },
+            },
         })
         return NextResponse.json({
             success: true,
@@ -59,7 +62,7 @@ export async function POST(request: NextRequest) {
             return forbiddenResponse("You do not have permission to create offers.")
         }
         const body = await request.json()
-        const { title, description, content, imageUrl, validFrom, validTo, isActive, whatsappAccountId, tagToAssign } = body
+        const { title, description, content, imageUrl, validFrom, validTo, isActive, whatsappAccountId, tagToAssign, categoryId } = body
 
         if (!title || !content || !validFrom || !validTo) {
             return NextResponse.json(
@@ -108,6 +111,7 @@ export async function POST(request: NextRequest) {
                 whatsappAccountId: offerWhatsappAccountId,
                 createdById: scope.userId,
                 tagToAssign: typeof tagToAssign === "string" ? tagToAssign.trim() || null : null,
+                categoryId: typeof categoryId === "string" && categoryId.trim() ? categoryId.trim() : null,
             },
         })
 
