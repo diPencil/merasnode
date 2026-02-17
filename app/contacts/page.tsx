@@ -37,6 +37,7 @@ interface Contact {
   id: string
   name: string
   phone: string
+  externalId?: string | null
   email?: string | null
   avatar?: string | null
   tags: string | null
@@ -943,7 +944,36 @@ export default function ContactsPage() {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{contact.phone}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            <div className="flex flex-col">
+                              {/* Phone / Group ID */}
+                              <span>
+                                {isGroup
+                                  ? (contact.phone?.includes("@g.us")
+                                      ? contact.phone.replace("@g.us", "")
+                                      : contact.phone)
+                                  : (contact.phone || "-")}
+                              </span>
+                              {/* Meta ID (externalId or very long platform ID) */}
+                              {(() => {
+                                const rawPhone = contact.phone || ""
+                                const looksLikeMetaId =
+                                  !rawPhone.startsWith("+") && rawPhone.replace(/[^0-9]/g, "").length > 15
+                                const metaId =
+                                  contact.externalId && contact.externalId !== contact.phone
+                                    ? contact.externalId
+                                    : looksLikeMetaId
+                                    ? rawPhone
+                                    : null
+                                if (!metaId) return null
+                                return (
+                                  <span className="text-[11px] text-muted-foreground/70">
+                                    Meta ID: {metaId}
+                                  </span>
+                                )
+                              })()}
+                            </div>
+                          </TableCell>
                           <TableCell className="text-muted-foreground">{contact.email || "-"}</TableCell>
                           <TableCell>
                             <div className="flex gap-1 flex-wrap">
