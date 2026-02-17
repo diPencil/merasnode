@@ -850,6 +850,26 @@ const translations: Translations = {
   minutesAgo: { en: "{n} min", ar: "منذ {n} د" },
   debugMatchFound: { en: "DEBUG: Match Found ({name})", ar: "تصحيح: تطابق ({name})" },
 
+  // Bot Flows - visual builder
+  flowBuilder: { en: "Flow Builder", ar: "منشئ السير الآلي" },
+  flowCanvas: { en: "Flow Canvas", ar: "مخطط السير" },
+  flowCanvasHint: { en: "Click nodes to edit and add new steps from the right panel.", ar: "انقر على العقد لتعديلها وأضِف خطوات جديدة من اللوحة اليمنى." },
+  availableSteps: { en: "Available Steps", ar: "الخطوات المتاحة" },
+  dragOrClickToAddStep: { en: "Click a step to add it to the flow.", ar: "اضغط على نوع الخطوة لإضافته إلى السير." },
+  stepDetails: { en: "Step Details", ar: "تفاصيل الخطوة" },
+  clickNodeToEdit: { en: "Select a node from the canvas to edit.", ar: "اختر عقدة من المخطط لتعديلها." },
+  noStepSelected: { en: "No step selected.", ar: "لم يتم اختيار أي خطوة." },
+  startBotFlow: { en: "Start Bot Flow", ar: "بداية السير" },
+  text: { en: "Text", ar: "رسالة نصية" },
+  waitStepLabel: { en: "Wait / Delay", ar: "انتظار / تأخير" },
+  image: { en: "Image", ar: "صورة" },
+  comingSoon: { en: "coming soon", ar: "قريبًا" },
+  messageStepLabel: { en: "Message Step", ar: "خطوة رسالة" },
+  messageContent: { en: "Message content", ar: "نص الرسالة" },
+  waitDurationMs: { en: "Wait duration (milliseconds)", ar: "مدة الانتظار (ملّي ثانية)" },
+  deleteStep: { en: "Delete step", ar: "حذف الخطوة" },
+  typeYourMessage: { en: "Write your bot message here...", ar: "اكتب رسالة البوت هنا..." },
+
   // WhatsApp accounts
   manageWhatsAppAccounts: { en: "Manage your WhatsApp business accounts", ar: "إدارة حسابات واتساب للأعمال" },
   connectWhatsAppAccount: { en: "Connect WhatsApp Account", ar: "ربط حساب واتساب" },
