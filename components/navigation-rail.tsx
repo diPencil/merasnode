@@ -142,7 +142,7 @@ export function NavigationRail() {
                     variant="ghost"
                     size="sm"
                     className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-primary/10 hover:text-primary text-muted-foreground h-9 text-start transition-colors"
-                    onClick={() => setQuickCreateBotFlowOpen(true)}
+                    onClick={() => router.push("/bot-flows/builder")}
                 >
                     <Workflow className="h-4 w-4 shrink-0 order-first" />
                     {t("createBotFlow")}
