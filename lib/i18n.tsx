@@ -148,6 +148,7 @@ const translations: Translations = {
   steps: { en: "Steps", ar: "الخطوات" },
   active: { en: "Active", ar: "نشط" },
   inactive: { en: "Inactive", ar: "غير نشط" },
+  searchByNameOrPhone: { en: "Search by name or phone", ar: "ابحث بالاسم أو رقم الجوال" },
 
   // Accounts
   connectAccount: { en: "Connect Account", ar: "ربط حساب" },

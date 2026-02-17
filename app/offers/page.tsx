@@ -123,6 +123,7 @@ export default function OffersPage() {
     const [selectedContactId, setSelectedContactId] = useState("")
     const [sendMode, setSendMode] = useState<"single" | "bulk">("single")
     const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
+    const [singleSearch, setSingleSearch] = useState("")
 
     // Delete State
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -933,7 +934,7 @@ export default function OffersPage() {
                             <DialogTitle>{t("sendOfferDialogTitle")}</DialogTitle>
                             <DialogDescription>{t("sendOfferDialogDesc")}</DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4 py-4">
+                <div className="space-y-4 py-4">
                             {/* Simple render logic for Send Dialog content from previous version */}
                             <div className="grid gap-2">
                                 <Label>Send Mode</Label>
@@ -962,22 +963,47 @@ export default function OffersPage() {
                             {sendMode === "single" && (
                                 <div className="grid gap-2">
                                     <Label htmlFor="contact">{t("selectContactRequired")}</Label>
-                                    <Select value={selectedContactId || "none"} onValueChange={(value) => setSelectedContactId(value === "none" ? "" : value)}>
+                                    <Input
+                                        type="text"
+                                        placeholder={t("searchByNameOrPhone")}
+                                        value={singleSearch}
+                                        onChange={(e) => setSingleSearch(e.target.value)}
+                                    />
+                                    <Select
+                                        value={selectedContactId || "none"}
+                                        onValueChange={(value) => setSelectedContactId(value === "none" ? "" : value)}
+                                    >
                                         <SelectTrigger id="contact">
                                             <SelectValue placeholder={t("chooseContact")} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {(contacts || []).length === 0 ? (
-                                                <SelectItem value="none" disabled>No contacts available</SelectItem>
+                                                <SelectItem value="none" disabled>
+                                                    No contacts available
+                                                </SelectItem>
                                             ) : (
-                                                (contacts || []).map((contact) => (
-                                                    <SelectItem key={contact.id} value={contact.id}>
-                                                        <div className="flex items-center gap-2">
-                                                            <Users className="h-4 w-4" />
-                                                            <span>{contact.name}</span>
-                                                        </div>
-                                                    </SelectItem>
-                                                ))
+                                                (contacts || [])
+                                                    .filter((contact) => {
+                                                        const q = singleSearch.trim().toLowerCase()
+                                                        if (!q) return true
+                                                        return (
+                                                            contact.name?.toLowerCase().includes(q) ||
+                                                            contact.phone?.toLowerCase().includes(q)
+                                                        )
+                                                    })
+                                                    .map((contact) => (
+                                                        <SelectItem key={contact.id} value={contact.id}>
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Users className="h-4 w-4" />
+                                                                    <span>{contact.name || contact.phone}</span>
+                                                                </div>
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    {contact.phone}
+                                                                </span>
+                                                            </div>
+                                                        </SelectItem>
+                                                    ))
                                             )}
                                         </SelectContent>
                                     </Select>
