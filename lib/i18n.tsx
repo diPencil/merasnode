@@ -905,6 +905,9 @@ const translations: Translations = {
   manageAccountInfo: { en: "Manage your account information", ar: "إدارة معلومات حسابك" },
   profilePicture: { en: "Profile Picture", ar: "صورة الملف الشخصي" },
   imageUrlPlaceholder: { en: "Image URL or path", ar: "رابط الصورة أو المسار" },
+  changeImage: { en: "Change image", ar: "تغيير الصورة" },
+  imageCaption: { en: "Caption (optional)", ar: "تعليق (اختياري)" },
+  imageUploaded: { en: "Image uploaded", ar: "تم رفع الصورة" },
   enterYourName: { en: "Enter your name", ar: "أدخل اسمك" },
 
   // Integrations API

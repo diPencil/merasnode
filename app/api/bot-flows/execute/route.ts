@@ -34,6 +34,9 @@ class FlowExecutor {
       case 'send_message':
         await this.executeSendMessage(step)
         break
+      case 'send_image':
+        await this.executeSendImage(step)
+        break
       case 'wait':
         await this.executeWait(step)
         break
@@ -106,6 +109,62 @@ class FlowExecutor {
       }
     } catch (error) {
       console.error('❌ Error sending message:', error)
+    }
+  }
+
+  private async executeSendImage(step: any): Promise<void> {
+    const mediaUrl = step.mediaUrl || step.imageUrl || ''
+    if (!mediaUrl) {
+      console.log('⚠️ Image step has no mediaUrl, skipping')
+      return
+    }
+    const caption = this.processTemplate(step.content || step.caption || '')
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3003'
+    const fullMediaUrl = mediaUrl.startsWith('http') ? mediaUrl : `${baseUrl.replace(/\/+$/, '')}${mediaUrl.startsWith('/') ? '' : '/'}${mediaUrl}`
+
+    console.log(`📤 Sending image: ${fullMediaUrl}`)
+
+    try {
+      const conversation = await prisma.conversation.findFirst({
+        where: {
+          contactId: this.context.contactId,
+          status: 'ACTIVE'
+        },
+        orderBy: { createdAt: 'desc' }
+      })
+
+      if (!conversation) {
+        console.log('⚠️ No active conversation found for contact')
+        return
+      }
+
+      const internalToken =
+        process.env.FLOW_INTERNAL_TOKEN ||
+        process.env.JWT_SECRET ||
+        "dev-flow-internal-token"
+
+      const response = await fetch(`${baseUrl}/api/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-flow-token': internalToken,
+        },
+        body: JSON.stringify({
+          conversationId: conversation.id,
+          content: caption,
+          type: 'IMAGE',
+          mediaUrl: fullMediaUrl,
+          direction: 'OUTGOING'
+        })
+      })
+
+      if (response.ok) {
+        console.log(`✅ Image sent successfully`)
+      } else {
+        console.error(`❌ Failed to send image:`, await response.text())
+      }
+    } catch (error) {
+      console.error('❌ Error sending image:', error)
     }
   }
 

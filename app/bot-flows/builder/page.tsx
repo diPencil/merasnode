@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
@@ -47,6 +47,7 @@ export default function FlowBuilderPage() {
 
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
+  const imageUploadRef = useRef<HTMLInputElement>(null)
 
   const rebuildLinearEdges = useCallback(
     (nodesList: any[]) => {
@@ -98,15 +99,21 @@ export default function FlowBuilderPage() {
       const stepNodes =
         steps?.map((step: any, index: number) => {
           const isWait = step.type === "wait"
+          const isImage = step.type === "send_image"
           const baseX = 260 * (index + 1)
-          const baseY = isWait ? 140 : 0
+          const baseY = isWait ? 140 : isImage ? 70 : 0
+          const label = isWait
+            ? (t("waitStepLabel") || "Wait")
+            : isImage
+              ? (t("image") || "Image")
+              : (t("messageStepLabel") || "Message")
           return {
             id: `step-${index}`,
             type: "default",
             position: { x: baseX, y: baseY },
             data: {
-              label: isWait ? (t("waitStepLabel") || "Wait") : (t("messageStepLabel") || "Message"),
-              kind: isWait ? "wait" : "message",
+              label,
+              kind: isWait ? "wait" : isImage ? "image" : "message",
               order: index,
             },
             style: {
@@ -137,6 +144,14 @@ export default function FlowBuilderPage() {
           return {
             type: "wait",
             delay: typeof prev.delay === "number" ? prev.delay : 1000,
+          }
+        }
+        if (n.data?.kind === "image") {
+          return {
+            type: "send_image",
+            mediaUrl: typeof prev.mediaUrl === "string" ? prev.mediaUrl : "",
+            content: typeof prev.content === "string" ? prev.content : "",
+            delay: typeof prev.delay === "number" ? prev.delay : 0,
           }
         }
         return {
@@ -247,13 +262,15 @@ export default function FlowBuilderPage() {
     }
   }
 
-  const addStepNode = (kind: "message" | "wait") => {
+  const addStepNode = (kind: "message" | "wait" | "image") => {
     setFlow(prev => {
       const nextSteps = [
         ...prev.steps,
         kind === "wait"
           ? { type: "wait", delay: 1000 }
-          : { type: "send_message", content: "", delay: 0 }
+          : kind === "image"
+            ? { type: "send_image", mediaUrl: "", content: "", delay: 0 }
+            : { type: "send_message", content: "", delay: 0 }
       ]
       syncNodesFromSteps(nextSteps)
       return { ...prev, steps: nextSteps }
@@ -448,11 +465,11 @@ export default function FlowBuilderPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="w-full justify-start gap-2 opacity-60 cursor-not-allowed"
-                  disabled
+                  className="w-full justify-start gap-2"
+                  onClick={() => addStepNode("image")}
                 >
-                  <ImageIcon className="h-4 w-4" />
-                  {t("image") || "Image"} ({t("comingSoon") || "coming soon"})
+                  <ImageIcon className="h-4 w-4 text-primary" />
+                  {t("image") || "Image"}
                 </Button>
               </CardContent>
             </Card>
@@ -476,7 +493,9 @@ export default function FlowBuilderPage() {
                     <p className="text-xs font-medium text-muted-foreground">
                       {selectedStep.step.type === "wait"
                         ? (t("waitStepLabel") || "Wait step")
-                        : (t("messageStepLabel") || "Message step")}
+                        : selectedStep.step.type === "send_image"
+                          ? (t("image") || "Image step")
+                          : (t("messageStepLabel") || "Message step")}
                     </p>
                     {selectedStep.step.type === "send_message" && (
                       <div className="space-y-2">
@@ -494,6 +513,62 @@ export default function FlowBuilderPage() {
                             }))
                           }
                           placeholder={t("typeYourMessage") || "اكتب رسالة البوت هنا..."}
+                        />
+                      </div>
+                    )}
+                    {selectedStep.step.type === "send_image" && (
+                      <div className="space-y-2">
+                        <input
+                          ref={imageUploadRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0]
+                            if (!file) return
+                            try {
+                              const form = new FormData()
+                              form.append("file", file)
+                              const res = await authenticatedFetch("/api/upload", { method: "POST", body: form })
+                              const data = await res.json()
+                              if (data.success && data.path) {
+                                updateSelectedStep(prev => ({ ...prev, type: "send_image", mediaUrl: data.path }))
+                                toast({ title: t("success") || "Success", description: t("imageUploaded") || "Image uploaded" })
+                              } else {
+                                toast({ title: t("errorTitle"), description: data.error || "Upload failed", variant: "destructive" })
+                              }
+                            } catch {
+                              toast({ title: t("errorTitle"), description: "Upload failed", variant: "destructive" })
+                            }
+                            e.target.value = ""
+                          }}
+                        />
+                        <Label className="text-xs">{t("image") || "Image"}</Label>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => imageUploadRef.current?.click()}
+                          >
+                            <ImageIcon className="h-3 w-3 mr-1" />
+                            {selectedStep.step.mediaUrl ? (t("changeImage") || "Change image") : (t("uploadImage") || "Upload image")}
+                          </Button>
+                        </div>
+                        {selectedStep.step.mediaUrl && (
+                          <p className="text-xs text-muted-foreground truncate" title={selectedStep.step.mediaUrl}>
+                            {selectedStep.step.mediaUrl}
+                          </p>
+                        )}
+                        <Label className="text-xs">{t("imageCaption") || "Caption (optional)"}</Label>
+                        <Textarea
+                          rows={2}
+                          value={selectedStep.step.content || ""}
+                          onChange={(e) =>
+                            updateSelectedStep(prev => ({ ...prev, type: "send_image", content: e.target.value }))
+                          }
+                          placeholder={t("typeYourMessage") || "Caption for the image..."}
                         />
                       </div>
                     )}
