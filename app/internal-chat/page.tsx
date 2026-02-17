@@ -248,11 +248,12 @@ export default function InternalChatPage() {
       form.append("file", file)
       const res = await authenticatedFetch("/api/upload", { method: "POST", body: form })
       const data = await res.json()
-      if (!data.success || !data.url) throw new Error(data.error || "Upload failed")
+      const mediaPath: string | undefined = data.path || data.url
+      if (!data.success || !mediaPath) throw new Error(data.error || "Upload failed")
       const sendRes = await authenticatedFetch(`/api/users/${selectedId}/internal-chat/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: "", mediaUrl: data.url }),
+        body: JSON.stringify({ content: "", mediaUrl: mediaPath }),
       })
       const sendData = await sendRes.json()
       if (sendData.success && sendData.data) {
