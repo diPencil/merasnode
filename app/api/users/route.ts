@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
 
         // Build where clause
         const where: any = {}
+        // Never show hidden users (e.g. super admin) in the list
+        where.hiddenFromUserList = { not: true }
         // Supervisors must NOT see Admin users (strict RBAC)
         if (currentUser.role === 'SUPERVISOR') {
             where.role = { in: ['SUPERVISOR', 'AGENT'] }

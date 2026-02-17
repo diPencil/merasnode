@@ -21,6 +21,8 @@ model User {
   gender       Gender     @default(MALE)
   status          UserStatus @default(OFFLINE)
   isActive        Boolean    @default(true)
+  /// When true, user is excluded from the Users list (e.g. super admin)
+  hiddenFromUserList Boolean @default(false)
   lastLoginAt     DateTime?
   lastLogoutAt    DateTime?
   lastActivityAt  DateTime?
