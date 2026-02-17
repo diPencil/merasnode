@@ -354,7 +354,7 @@ export default function BranchesPage() {
                                             b.createdAt,
                                             b.updatedAt,
                                         ])
-                                        const csv = [header, ...rows]
+                                        const csvBody = [header, ...rows]
                                             .map((cols) =>
                                                 cols
                                                     .map((v) => {
@@ -367,6 +367,8 @@ export default function BranchesPage() {
                                                     .join(",")
                                             )
                                             .join("\n")
+                                        // Add UTF-8 BOM so Excel يقرأ العربي صح
+                                        const csv = "\uFEFF" + csvBody
                                         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
                                         const url = URL.createObjectURL(blob)
                                         const a = document.createElement("a")
