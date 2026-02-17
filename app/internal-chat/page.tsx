@@ -489,7 +489,7 @@ export default function InternalChatPage() {
 
       {/* Image preview in same page (no new tab) */}
       <Dialog open={!!imagePreviewUrl} onOpenChange={() => setImagePreviewUrl(null)}>
-        <DialogContent className="max-w-[95vw] max-h-[90vh] p-0 gap-0 border-0 bg-black/90 flex items-center justify-center shadow-2xl">
+        <DialogContent className="max-w-[98vw] max-h-[95vh] p-0 gap-0 border-0 bg-black/90 flex items-center justify-center shadow-2xl">
           <DialogHeader className="sr-only">
             <DialogTitle>{t("attachImage")}</DialogTitle>
           </DialogHeader>
@@ -497,7 +497,7 @@ export default function InternalChatPage() {
             <img
               src={imagePreviewUrl}
               alt=""
-              className="max-w-full max-h-[85vh] w-auto h-auto object-contain"
+              className="max-w-[95vw] max-h-[90vh] w-auto h-auto object-contain"
             />
           )}
         </DialogContent>
