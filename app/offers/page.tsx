@@ -465,6 +465,18 @@ export default function OffersPage() {
         }
     }
 
+    const recordOfferSend = async (offerId: string, mode: "single" | "bulk", recipientCount: number) => {
+        try {
+            await authenticatedFetch(`/api/offers/${offerId}/record-send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mode, recipientCount }),
+            })
+        } catch (error) {
+            console.error("Error recording offer send:", error)
+        }
+    }
+
     const handleSendOffer = async () => {
         // ... (Logic kept SAME as provided in original file) ...
         if (!selectedOffer) return
@@ -475,7 +487,7 @@ export default function OffersPage() {
             }
             const success = await sendOfferToContact(selectedContactId, selectedOffer)
             if (success) {
-                // Record send logic...
+                await recordOfferSend(selectedOffer.id, "single", 1)
                 fetchOffers()
                 toast({ title: t("success"), description: t("offerSentToContact") })
                 setIsSendDialogOpen(false)
@@ -490,6 +502,9 @@ export default function OffersPage() {
             let successCount = 0
             for (const contactId of selectedContactIds) {
                 if (await sendOfferToContact(contactId, selectedOffer)) successCount++
+            }
+            if (successCount > 0) {
+                await recordOfferSend(selectedOffer.id, "bulk", successCount)
             }
             fetchOffers()
             toast({ title: t("bulkSendComplete"), description: `Sent to ${successCount} contacts.` })
