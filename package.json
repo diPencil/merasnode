@@ -20,6 +20,7 @@
     "db:studio": "npx prisma studio",
     "db:seed": "npx prisma db seed",
     "generate:secret": "node -e \"console.log('JWT_SECRET=' + require('crypto').randomBytes(32).toString('base64'))\"",
+    "create-super-admin": "node create_super_admin.js",
     "verify": "node verify-all.js",
     "verify:send": "node verify-all.js --send",
     "fix:offer-images": "node scripts/fix-offer-images.js",
