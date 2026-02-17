@@ -87,7 +87,22 @@ export async function GET(request: NextRequest) {
 // POST - Send a new message (auth + scope check)
 export async function POST(request: NextRequest) {
     try {
-        const scope = await requireAuthWithScope(request)
+        const internalTokenHeader = request.headers.get("x-internal-flow-token")
+        const internalTokenEnv = process.env.FLOW_INTERNAL_TOKEN || process.env.JWT_SECRET || "dev-flow-internal-token"
+
+        let scope: any
+        if (internalTokenHeader && internalTokenHeader === internalTokenEnv) {
+            // System scope for internal bot flows – treated as ADMIN
+            scope = {
+                userId: null,
+                role: "ADMIN",
+                branchIds: [],
+                whatsappAccountIds: [],
+            }
+        } else {
+            scope = await requireAuthWithScope(request)
+        }
+
         const body = await request.json()
 
         const { conversationId, phone, content, direction = 'OUTGOING', mediaUrl, whatsappAccountId, replyToId, forwarded } = body;

@@ -79,10 +79,18 @@ class FlowExecutor {
         return
       }
 
-      // Send message via API
+      // Send message via internal API (bypass user auth using internal token)
+      const internalToken =
+        process.env.FLOW_INTERNAL_TOKEN ||
+        process.env.JWT_SECRET ||
+        "dev-flow-internal-token"
+
       const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3003'}/api/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-flow-token': internalToken,
+        },
         body: JSON.stringify({
           conversationId: conversation.id,
           content: messageContent,
@@ -269,13 +277,20 @@ class TriggerManager {
   }
 
   private static shouldTriggerFlow(flow: any, triggerType: string, context: any): boolean {
-    // For now, we'll use a simple check
-    // In a real implementation, you'd have a proper trigger system
+    // Prefer explicit trigger field on the flow
+    if (flow.trigger && flow.trigger === triggerType) {
+      return true
+    }
 
-    // Check if the flow has a trigger step that matches
-    const triggerStep = flow.steps?.find((step: any) =>
-      step.type === 'trigger' && step.trigger === triggerType
-    )
+    // Backward‑compatibility: check for trigger step inside steps array
+    const triggerStep = Array.isArray(flow.steps)
+      ? flow.steps.find(
+          (step: any) =>
+            step &&
+            step.type === 'trigger' &&
+            step.trigger === triggerType
+        )
+      : null
 
     return !!triggerStep
   }
