@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
+import { logActivity } from "@/lib/logger"
 import { alsoNotifyAdmins } from "@/lib/notifications"
 
 /**
@@ -91,6 +92,19 @@ export async function POST(
                     select: { id: true, name: true, email: true },
                 },
             },
+        })
+
+        await logActivity({
+            userId: scope.userId,
+            userName: note.createdBy.name,
+            action: "CREATE",
+            entityType: "UserNote",
+            entityId: note.id,
+            newValues: {
+                targetUserId: userId,
+                content: note.content,
+            },
+            description: `Added internal note to user ${userId}`,
         })
 
         try {

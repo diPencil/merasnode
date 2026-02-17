@@ -151,6 +151,7 @@ export async function POST(request: NextRequest) {
             })
 
             await logActivity({
+                userId: scope.userId,
                 action: "BULK_CREATE",
                 entityType: "Contact",
                 entityId: "bulk",
@@ -196,6 +197,7 @@ export async function POST(request: NextRequest) {
         })
 
         await logActivity({
+            userId: scope.userId,
             action: "CREATE",
             entityType: "Contact",
             entityId: contact.id,

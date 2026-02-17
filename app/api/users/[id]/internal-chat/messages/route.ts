@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
 import { alsoNotifyAdmins } from "@/lib/notifications"
+import { logActivity } from "@/lib/logger"
 
 /**
  * GET /api/users/[id]/internal-chat/messages
@@ -120,6 +121,21 @@ export async function POST(
             include: {
                 sender: { select: { id: true, name: true } },
             },
+        })
+
+        await logActivity({
+            userId: currentUserId,
+            userName: message.sender.name,
+            action: "CREATE",
+            entityType: "InternalMessage",
+            entityId: message.id,
+            newValues: {
+                receiverId: otherId,
+                hasMedia: !!mediaUrl,
+            },
+            description: mediaUrl
+                ? `Sent internal image/message to user ${otherId}`
+                : `Sent internal message to user ${otherId}`,
         })
 
         try {

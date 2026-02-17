@@ -292,6 +292,7 @@ export async function POST(request: NextRequest) {
 
         // Log activity
         await logActivity({
+            userId: scope.userId,
             action: "CREATE",
             entityType: "Message",
             entityId: message.id,

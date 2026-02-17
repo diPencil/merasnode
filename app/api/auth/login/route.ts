@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs"
 import { generateToken } from "@/lib/jwt"
 import fs from 'fs';
 import path from 'path';
+import { logActivity } from "@/lib/logger"
 
 function logDebug(message: string) {
     try {
@@ -161,21 +162,18 @@ export async function POST(request: NextRequest) {
             logDebug('User is ADMIN, skipping admin notifications');
         }
 
-        // Create activity log for user login
-        await prisma.log.create({
-            data: {
-                userId: user.id,
-                action: 'USER_LOGIN',
-                entityType: 'User',
-                entityId: user.id,
-                ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-                userAgent: request.headers.get('user-agent') || 'unknown',
-                metadata: {
-                    userName: user.name,
-                    userEmail: user.email,
-                    userRole: user.role
-                }
-            }
+        // Create activity log for user login (centralized logger to capture device/IP)
+        await logActivity({
+            userId: user.id,
+            userName: user.name,
+            action: 'LOGIN',
+            entityType: 'User',
+            entityId: user.id,
+            newValues: {
+                userEmail: user.email,
+                userRole: user.role,
+            },
+            description: `User login: ${user.name} (${user.email})`,
         })
 
         // نجاح تسجيل الدخول - إنشاء JWT token

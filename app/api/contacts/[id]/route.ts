@@ -87,6 +87,7 @@ export async function PUT(
 
         // Log activity
         await logActivity({
+            userId: scope.userId,
             action: "UPDATE",
             entityType: "Contact",
             entityId: contact.id,

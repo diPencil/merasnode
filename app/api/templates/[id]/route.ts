@@ -54,6 +54,7 @@ export async function PUT(
         })
 
         await logActivity({
+            userId: scope.userId,
             action: "UPDATE",
             entityType: "Template",
             entityId: id,
