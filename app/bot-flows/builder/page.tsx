@@ -48,6 +48,7 @@ export default function FlowBuilderPage() {
     name: t("newFlow"),
     description: '',
     trigger: '',
+    triggerKeywords: [] as string[],
     steps: [] as any[],
     isActive: false
   })
@@ -111,20 +112,23 @@ export default function FlowBuilderPage() {
         steps?.map((step: any, index: number) => {
           const isWait = step.type === "wait"
           const isImage = step.type === "send_image"
+          const isOptions = step.type === "send_options"
           const baseX = 260 * (index + 1)
-          const baseY = isWait ? 140 : isImage ? 70 : 0
+          const baseY = isWait ? 140 : isImage ? 70 : isOptions ? 35 : 0
           const label = isWait
             ? (t("waitStepLabel") || "Wait")
             : isImage
               ? (t("image") || "Image")
-              : (t("messageStepLabel") || "Message")
+              : isOptions
+                ? (t("optionsStepLabel") || "Options")
+                : (t("messageStepLabel") || "Message")
           return {
             id: `step-${index}`,
             type: "default",
             position: { x: baseX, y: baseY },
             data: {
               label,
-              kind: isWait ? "wait" : isImage ? "image" : "message",
+              kind: isWait ? "wait" : isImage ? "image" : isOptions ? "options" : "message",
               order: index,
             },
             style: {
@@ -163,6 +167,13 @@ export default function FlowBuilderPage() {
             mediaUrl: typeof prev.mediaUrl === "string" ? prev.mediaUrl : "",
             content: typeof prev.content === "string" ? prev.content : "",
             delay: typeof prev.delay === "number" ? prev.delay : 0,
+          }
+        }
+        if (n.data?.kind === "options") {
+          return {
+            type: "send_options",
+            content: typeof prev.content === "string" ? prev.content : "",
+            options: Array.isArray(prev.options) ? prev.options : prev.options || [],
           }
         }
         return {
@@ -207,6 +218,7 @@ export default function FlowBuilderPage() {
             name: foundFlow.name,
             description: foundFlow.description || '',
             trigger: foundFlow.trigger,
+            triggerKeywords: Array.isArray(foundFlow.triggerKeywords) ? foundFlow.triggerKeywords : [],
             steps: foundFlow.steps || [],
             isActive: foundFlow.isActive
           }
@@ -244,10 +256,16 @@ export default function FlowBuilderPage() {
       // Sync steps from nodes before saving
       const latestSteps = syncStepsFromNodes(nodes, flow.steps)
 
+      const payload: any = { ...flow, steps: latestSteps }
+      if (flow.trigger === 'incoming_message' && Array.isArray(flow.triggerKeywords)) {
+        payload.triggerKeywords = flow.triggerKeywords.filter(Boolean).map((k: string) => String(k).trim())
+      } else if (flow.trigger !== 'incoming_message') {
+        payload.triggerKeywords = null
+      }
       const response = await authenticatedFetch('/api/bot-flows', {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...flow, steps: latestSteps })
+        body: JSON.stringify(payload)
       })
 
       const data = await response.json()
@@ -273,15 +291,26 @@ export default function FlowBuilderPage() {
     }
   }
 
-  const addStepNode = (kind: "message" | "wait" | "image") => {
+  const addStepNode = (kind: "message" | "wait" | "image" | "options") => {
     setFlow(prev => {
+      const len = prev.steps.length
       const nextSteps = [
         ...prev.steps,
         kind === "wait"
           ? { type: "wait", delay: 1000 }
           : kind === "image"
             ? { type: "send_image", mediaUrl: "", content: "", delay: 0 }
-            : { type: "send_message", content: "", delay: 0 }
+            :             kind === "options"
+              ? {
+                  type: "send_options",
+                  content: "كيف نقدر نساعدك؟",
+                  options: [
+                    { label: "مواعيد", value: "1", nextStepIndex: -1 },
+                    { label: "أسعار", value: "2", nextStepIndex: -1 },
+                    { label: "تكلم مع موظف", value: "3", nextStepIndex: -1 },
+                  ],
+                }
+              : { type: "send_message", content: "", delay: 0 }
       ]
       syncNodesFromSteps(nextSteps)
       return { ...prev, steps: nextSteps }
@@ -392,6 +421,7 @@ export default function FlowBuilderPage() {
                   className="w-full px-3 py-2 border rounded-md"
                 >
                   <option value="">Select trigger...</option>
+                  <option value="incoming_message">رسالة واردة (كلمات محفّزة)</option>
                   <option value="new_contact">New Contact</option>
                   <option value="new_message">New Message</option>
                   <option value="booking_scheduled">Booking Scheduled</option>
@@ -400,6 +430,26 @@ export default function FlowBuilderPage() {
                 </select>
               </div>
             </div>
+            {flow.trigger === "incoming_message" && (
+              <div className="space-y-2">
+                <Label htmlFor="flow-trigger-keywords">كلمات المحفّز (يفصل بينها بفاصلة)</Label>
+                <Input
+                  id="flow-trigger-keywords"
+                  value={Array.isArray(flow.triggerKeywords) ? flow.triggerKeywords.join(", ") : ""}
+                  onChange={(e) =>
+                    setFlow(prev => ({
+                      ...prev,
+                      triggerKeywords: e.target.value
+                        .split(",")
+                        .map((k) => k.trim())
+                        .filter(Boolean),
+                    }))
+                  }
+                  placeholder="مرحبا، هلا، مساء الخير، أهلا"
+                />
+                <p className="text-xs text-muted-foreground">عندما يرسل العميل إحدى هذه الكلمات يبدأ البوت تلقائياً.</p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="flow-desc">Description</Label>
               <Textarea
@@ -482,6 +532,15 @@ export default function FlowBuilderPage() {
                   <ImageIcon className="h-4 w-4 text-primary" />
                   {t("image") || "Image"}
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full justify-start gap-2"
+                  onClick={() => addStepNode("options")}
+                >
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                  {t("optionsStepLabel") || "خيارات (ترحيب + أزرار)"}
+                </Button>
               </CardContent>
             </Card>
 
@@ -506,8 +565,65 @@ export default function FlowBuilderPage() {
                         ? (t("waitStepLabel") || "Wait step")
                         : selectedStep.step.type === "send_image"
                           ? (t("image") || "Image step")
-                          : (t("messageStepLabel") || "Message step")}
+                          : selectedStep.step.type === "send_options"
+                            ? (t("optionsStepLabel") || "Options step")
+                            : (t("messageStepLabel") || "Message step")}
                     </p>
+                    {selectedStep.step.type === "send_options" && (
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <Label className="text-xs">{t("messageContent") || "الرسالة"}</Label>
+                          <Textarea
+                            rows={2}
+                            value={selectedStep.step.content || ""}
+                            onChange={(e) =>
+                              updateSelectedStep(prev => ({ ...prev, type: "send_options", content: e.target.value }))
+                            }
+                            placeholder="مرحبا! كيف نقدر نساعدك؟"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">الخيارات (رقم الخطوة التالية، -1 = تكلم مع موظف)</Label>
+                          {(Array.isArray(selectedStep.step.options) ? selectedStep.step.options : []).map((opt: any, i: number) => (
+                            <div key={i} className="flex gap-2 items-center">
+                              <Input
+                                className="flex-1"
+                                placeholder="نص الخيار"
+                                value={opt.label || ""}
+                                onChange={(e) => {
+                                  const opts = [...(selectedStep.step.options || [])]
+                                  opts[i] = { ...opts[i], label: e.target.value, value: String(i + 1) }
+                                  updateSelectedStep(prev => ({ ...prev, type: "send_options", options: opts }))
+                                }}
+                              />
+                              <Input
+                                type="number"
+                                className="w-16"
+                                placeholder="-1"
+                                value={opt.nextStepIndex ?? ""}
+                                onChange={(e) => {
+                                  const v = e.target.value
+                                  const num = v === "" || v === "-" ? -1 : parseInt(v, 10)
+                                  const opts = [...(selectedStep.step.options || [])]
+                                  opts[i] = { ...opts[i], nextStepIndex: isNaN(num) ? -1 : num }
+                                  updateSelectedStep(prev => ({ ...prev, type: "send_options", options: opts }))
+                                }}
+                              />
+                            </div>
+                          ))}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const opts = [...(selectedStep.step.options || []), { label: "", value: String((selectedStep.step.options || []).length + 1), nextStepIndex: -1 }]
+                              updateSelectedStep(prev => ({ ...prev, type: "send_options", options: opts }))
+                            }}
+                          >
+                            + إضافة خيار
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                     {selectedStep.step.type === "send_message" && (
                       <div className="space-y-2">
                         <Label className="text-xs">

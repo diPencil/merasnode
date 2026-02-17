@@ -235,19 +235,21 @@ model InternalMessage {
 
 // سير العمل الآلي (مرتبط بالفرع/المركز)
 model BotFlow {
-  id           String            @id @default(uuid())
-  name         String
-  description  String?           @db.Text
-  trigger      String
-  steps        Json
-  isActive     Boolean           @default(false)
-  branchId     String?
-  branch       Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  createdById  String?
-  createdBy    User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  interactions FlowInteraction[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  id               String            @id @default(uuid())
+  name             String
+  description      String?           @db.Text
+  trigger          String            // نوع المحفز: new_contact, new_message, incoming_message
+  /// كلمات محفّزة لبدء الفلو عند رسالة واردة (مثلاً: مرحبا، هلا، مساء الخير) — للـ incoming_message
+  triggerKeywords  Json?             // ["مرحبا", "هلا", "مساء الخير"]
+  steps            Json
+  isActive         Boolean           @default(false)
+  branchId         String?
+  branch           Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  createdById      String?
+  createdBy        User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  interactions     FlowInteraction[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@index([branchId])
   @@index([createdById])

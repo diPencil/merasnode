@@ -335,6 +335,27 @@ export async function POST(request: NextRequest) {
             }).catch(() => {})
         }
 
+        // When agent sends OUTGOING, dismiss any active bot flow for this conversation (so bot stops until next trigger)
+        if (direction === 'OUTGOING' && scope.userId) {
+            try {
+                const conv = await prisma.conversation.findUnique({
+                    where: { id: targetConversationId },
+                    select: { contactId: true },
+                })
+                if (conv?.contactId) {
+                    await prisma.flowInteraction.updateMany({
+                        where: {
+                            contactId: conv.contactId,
+                            action: { in: ['TRIGGERED', 'STEP'] },
+                        },
+                        data: { action: 'DISMISSED', metadata: {} },
+                    })
+                }
+            } catch (_) {
+                /* non-blocking */
+            }
+        }
+
         // Trigger bot flows for incoming messages
         if (direction === 'INCOMING') {
             try {

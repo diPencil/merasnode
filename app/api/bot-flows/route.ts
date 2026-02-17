@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
                 name: body.name,
                 description: body.description || null,
                 trigger: body.trigger,
+                triggerKeywords: Array.isArray(body.triggerKeywords) ? body.triggerKeywords : (body.triggerKeywords ? [body.triggerKeywords] : null),
                 steps: body.steps,
                 isActive: body.isActive !== undefined ? body.isActive : true,
                 branchId,
@@ -136,6 +137,7 @@ export async function PATCH(request: NextRequest) {
         if (body.name) updateData.name = body.name
         if (body.description !== undefined) updateData.description = body.description
         if (body.trigger) updateData.trigger = body.trigger
+        if (body.triggerKeywords !== undefined) updateData.triggerKeywords = Array.isArray(body.triggerKeywords) ? body.triggerKeywords : body.triggerKeywords ? [body.triggerKeywords] : null
         if (body.steps) updateData.steps = body.steps
         if (body.branchId !== undefined) {
             if (scope.role !== 'ADMIN' && body.branchId && !scope.branchIds?.includes(body.branchId)) {

@@ -882,6 +882,7 @@ const translations: Translations = {
   startBotFlow: { en: "Start Bot Flow", ar: "بداية السير" },
   text: { en: "Text", ar: "رسالة نصية" },
   waitStepLabel: { en: "Wait / Delay", ar: "انتظار / تأخير" },
+  optionsStepLabel: { en: "Options (greeting + choices)", ar: "خيارات (ترحيب + أزرار)" },
   image: { en: "Image", ar: "صورة" },
   comingSoon: { en: "coming soon", ar: "قريبًا" },
   messageStepLabel: { en: "Message Step", ar: "خطوة رسالة" },

@@ -34,6 +34,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         if (body.name) updateData.name = body.name
         if (body.description !== undefined) updateData.description = body.description
         if (body.trigger) updateData.trigger = body.trigger
+        if (body.triggerKeywords !== undefined) updateData.triggerKeywords = Array.isArray(body.triggerKeywords) ? body.triggerKeywords : body.triggerKeywords ? [body.triggerKeywords] : null
         if (body.steps) updateData.steps = body.steps
         if (body.branchId !== undefined) {
             if (scope.role !== 'ADMIN' && body.branchId && !scope.branchIds?.includes(body.branchId)) {

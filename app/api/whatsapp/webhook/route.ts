@@ -277,6 +277,28 @@ export async function POST(request: NextRequest) {
             } catch (_) {
                 /* non-blocking */
             }
+
+            // Trigger bot flow on incoming message (keyword match or continue flow)
+            try {
+                const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+                await fetch(`${baseUrl}/api/bot-flows/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        triggerType: 'incoming_message',
+                        context: {
+                            contactId: contact.id,
+                            conversationId: conversation.id,
+                            message: finalContent,
+                            whatsappAccountId: accountId || null,
+                            contactName: contact.name,
+                            contactPhone: contact.phone,
+                        },
+                    }),
+                })
+            } catch (botErr) {
+                console.error('Bot flow trigger error:', botErr)
+            }
         }
 
         return NextResponse.json({
