@@ -156,7 +156,7 @@ export default function BotFlowsPage() {
             />
           </div>
           <Button
-            onClick={() => router.push('/bot-flows/create')}
+            onClick={() => router.push('/bot-flows/builder')}
             className="rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
           >
             <Plus className="me-2 h-4 w-4" />
