@@ -126,7 +126,7 @@ export default function InternalChatPage() {
           setOther(data.data.other || null)
         }
       })
-      .catch(() => toast({ title: t("error"), description: "Failed to load chat", variant: "destructive" }))
+      .catch(() => toast({ title: t("error"), description: t("failedToLoadChat"), variant: "destructive" }))
       .finally(() => setLoadingChat(false))
   }, [selectedId])
 
@@ -159,10 +159,10 @@ export default function InternalChatPage() {
         setMessages((prev) => [...prev, data.data])
         setInput("")
       } else {
-        toast({ title: t("error"), description: data.error || "Failed to send", variant: "destructive" })
+        toast({ title: t("error"), description: data.error || t("failedToSendMessage"), variant: "destructive" })
       }
     } catch {
-      toast({ title: t("error"), description: "Failed to send", variant: "destructive" })
+      toast({ title: t("error"), description: t("failedToSendMessage"), variant: "destructive" })
     } finally {
       setSending(false)
     }
@@ -235,11 +235,11 @@ export default function InternalChatPage() {
     if (!file || !selectedId || sending) return
     const allowed = ["image/jpeg", "image/png", "image/webp"]
     if (!allowed.includes(file.type)) {
-      toast({ title: t("error"), description: "JPEG, PNG, WebP only", variant: "destructive" })
+      toast({ title: t("error"), description: t("imageTypeError"), variant: "destructive" })
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast({ title: t("error"), description: "Max 5MB", variant: "destructive" })
+      toast({ title: t("error"), description: t("imageSizeError"), variant: "destructive" })
       return
     }
     setSending(true)
@@ -319,7 +319,7 @@ export default function InternalChatPage() {
                   type="button"
                   onClick={() => handleSelect(u.id)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/60 transition-colors border-b border-border/40",
+                    "w-full flex items-center gap-3 px-3 py-2.5 text-start hover:bg-muted/60 transition-colors border-b border-border/40",
                     selectedId === u.id && "bg-primary/10 border-primary/20"
                   )}
                 >
@@ -337,7 +337,7 @@ export default function InternalChatPage() {
                     variant={u.status === "ONLINE" ? "default" : u.status === "AWAY" ? "secondary" : "outline"}
                     className="shrink-0 text-[10px]"
                   >
-                    {u.status}
+                    {u.status === "ONLINE" ? t("statusOnline") : u.status === "AWAY" ? t("statusAway") : t("statusOffline")}
                   </Badge>
                 </button>
               ))
@@ -381,7 +381,7 @@ export default function InternalChatPage() {
                     }
                     className="text-xs mt-0.5"
                   >
-                    {(other?.status ?? selectedMember?.status) ?? "OFFLINE"}
+                    {((other?.status ?? selectedMember?.status) ?? "OFFLINE") === "ONLINE" ? t("statusOnline") : ((other?.status ?? selectedMember?.status) ?? "OFFLINE") === "AWAY" ? t("statusAway") : t("statusOffline")}
                   </Badge>
                   <p className="text-[11px] text-muted-foreground truncate mt-1">
                     {getRoleLabel((other?.role ?? selectedMember?.role) ?? "")} · {getBranchLabel(other?.branches ?? selectedMember?.branches)}
@@ -420,7 +420,7 @@ export default function InternalChatPage() {
                           {m.mediaUrl && (
                             <button
                               type="button"
-                              onClick={() => setImagePreviewUrl(getImageUrl(m.mediaUrl))}
+                              onClick={() => setImagePreviewUrl(getImageUrl(m.mediaUrl ?? undefined))}
                               className="block rounded overflow-hidden my-1 bg-muted/50 text-start w-full"
                             >
                               <img
@@ -432,7 +432,7 @@ export default function InternalChatPage() {
                             </button>
                           )}
                           {m.content ? (
-                            <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                            <p className="whitespace-pre-wrap wrap-break-word">{m.content}</p>
                           ) : null}
                           <p
                             className={cn(

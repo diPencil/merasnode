@@ -633,7 +633,7 @@ const translations: Translations = {
   lastSession: { en: "Last session", ar: "آخر جلسة" },
   attachImage: { en: "Attach image", ar: "إرفاق صورة" },
   noInternalConversations: { en: "No internal conversations yet. Start from User Management by opening chat with a user.", ar: "لا توجد محادثات داخلية بعد. ابدأ من إدارة المستخدمين بفتح المحادثة مع مستخدم." },
-  typeMessage: { en: "Type a message...", ar: "اكتب رسالة..." },
+  // typeMessage: duplicate of line 66
   noInternalNotes: { en: "No internal notes yet", ar: "لا توجد ملاحظات داخلية بعد" },
   internalNotePlaceholder: { en: "Add a private note...", ar: "أضف ملاحظة خاصة..." },
   tagToAssign: { en: "Tag to assign when sending", ar: "وسم يُضاف عند الإرسال" },
@@ -744,7 +744,7 @@ const translations: Translations = {
   targetTimeGoal: { en: "Target Time Goal", ar: "الهدف الزمني" },
   currentAverage: { en: "Current Average", ar: "المتوسط الحالي" },
   today: { en: "Today", ar: "اليوم" },
-  activeNow: { en: "Active Now", ar: "نشط الآن" },
+  // activeNow: duplicate of line 632
   fromLastWeek: { en: "from last week", ar: "من الأسبوع الماضي" },
   messagesSentThisMonth: { en: "messages sent this month", ar: "رسائل أُرسلت هذا الشهر" },
   recentConversations: { en: "Recent Conversations", ar: "المحادثات الأخيرة" },
@@ -871,7 +871,7 @@ const translations: Translations = {
   debugMatchFound: { en: "DEBUG: Match Found ({name})", ar: "تصحيح: تطابق ({name})" },
 
   // Bot Flows - visual builder
-  flowBuilder: { en: "Flow Builder", ar: "منشئ السير الآلي" },
+  // flowBuilder: duplicate of line 132
   flowCanvas: { en: "Flow Canvas", ar: "مخطط السير" },
   flowCanvasHint: { en: "Click nodes to edit and add new steps from the right panel.", ar: "انقر على العقد لتعديلها وأضِف خطوات جديدة من اللوحة اليمنى." },
   availableSteps: { en: "Available Steps", ar: "الخطوات المتاحة" },
@@ -884,12 +884,12 @@ const translations: Translations = {
   waitStepLabel: { en: "Wait / Delay", ar: "انتظار / تأخير" },
   optionsStepLabel: { en: "Options (greeting + choices)", ar: "خيارات (ترحيب + أزرار)" },
   image: { en: "Image", ar: "صورة" },
-  comingSoon: { en: "coming soon", ar: "قريبًا" },
+  // comingSoon: duplicate of line 309
   messageStepLabel: { en: "Message Step", ar: "خطوة رسالة" },
-  messageContent: { en: "Message content", ar: "نص الرسالة" },
+  botFlowMessageContent: { en: "Message content", ar: "نص الرسالة" },
   waitDurationMs: { en: "Wait duration (milliseconds)", ar: "مدة الانتظار (ملّي ثانية)" },
   deleteStep: { en: "Delete step", ar: "حذف الخطوة" },
-  typeYourMessage: { en: "Write your bot message here...", ar: "اكتب رسالة البوت هنا..." },
+  botFlowTypeYourMessage: { en: "Write your bot message here...", ar: "اكتب رسالة البوت هنا..." },
 
   // WhatsApp accounts
   manageWhatsAppAccounts: { en: "Manage your WhatsApp business accounts", ar: "إدارة حسابات واتساب للأعمال" },
@@ -1153,6 +1153,56 @@ const translations: Translations = {
   noStepsDefinedYet: { en: "No steps defined yet. Add your first step to get started.", ar: "لم تُحدد خطوات بعد. أضف أول خطوة للبدء." },
   delayMilliseconds: { en: "Delay (milliseconds)", ar: "التأخير (ميلي ثانية)" },
   conditionLabel: { en: "Condition", ar: "الشرط" },
+
+  // Bot Flow Builder - hardcoded strings audit fix
+  backButton: { en: "Back", ar: "رجوع" },
+  saveFlow: { en: "Save Flow", ar: "حفظ السير" },
+  savingFlow: { en: "Saving...", ar: "جاري الحفظ..." },
+  flowConfiguration: { en: "Flow Configuration", ar: "إعدادات السير" },
+  configureBasicSettingsBotFlow: { en: "Configure the basic settings for your bot flow", ar: "ضبط الإعدادات الأساسية لسير البوت" },
+  flowNameLabel: { en: "Flow Name", ar: "اسم السير" },
+  selectTriggerPlaceholder: { en: "Select trigger...", ar: "اختر المحفز..." },
+  triggerIncomingMessage: { en: "Incoming Message (keywords)", ar: "رسالة واردة (كلمات محفّزة)" },
+  triggerNewContact: { en: "New Contact", ar: "جهة اتصال جديدة" },
+  triggerNewMessage: { en: "New Message", ar: "رسالة جديدة" },
+  triggerBookingScheduled: { en: "Booking Scheduled", ar: "حجز مجدوَل" },
+  triggerInvoiceDue: { en: "Invoice Due", ar: "فاتورة مستحقة" },
+  triggerServiceCompleted: { en: "Service Completed", ar: "خدمة مكتملة" },
+  triggerKeywordsLabel: { en: "Trigger Keywords (comma-separated)", ar: "كلمات المحفّز (يفصل بينها بفاصلة)" },
+  triggerKeywordsPlaceholder: { en: "hello, hi, good morning", ar: "مرحبا، هلا، مساء الخير، أهلا" },
+  addOption: { en: "+ Add option", ar: "+ إضافة خيار" },
+  optionLabelPlaceholder: { en: "Option text", ar: "نص الخيار" },
+  optionNextStepLabel: { en: "Options (next step index, -1 = agent)", ar: "الخيارات (رقم الخطوة التالية، -1 = تكلم مع موظف)" },
+  greetingMessagePlaceholder: { en: "Hello! How can we help you?", ar: "مرحبا! كيف نقدر نساعدك؟" },
+  startBotFlowLabel: { en: "Start Bot Flow", ar: "بداية السير" },
+
+  // Internal Chat - status labels
+  statusOnline: { en: "Online", ar: "متصل" },
+  statusOffline: { en: "Offline", ar: "غير متصل" },
+  statusAway: { en: "Away", ar: "بعيد" },
+  failedToLoadChat: { en: "Failed to load chat", ar: "فشل تحميل المحادثة" },
+  imageTypeError: { en: "JPEG, PNG, WebP images only", ar: "صور JPEG و PNG و WebP فقط" },
+  imageSizeError: { en: "Max image size is 5MB", ar: "الحد الأقصى لحجم الصورة 5 ميجا" },
+
+  // Offers - hardcoded strings
+  imageFailedToLoad: { en: "Image failed to load", ar: "فشل تحميل الصورة" },
+  removeUrl: { en: "Remove URL", ar: "حذف الرابط" },
+  noImage: { en: "No image", ar: "لا توجد صورة" },
+  uploadingLabel: { en: "Uploading...", ar: "جاري الرفع..." },
+  uploadFile: { en: "Upload File", ar: "رفع ملف" },
+  orUsingUrl: { en: "Or using URL", ar: "أو باستخدام رابط" },
+  makeOfferAvailableNow: { en: "Make this offer available immediately", ar: "اجعل هذا العرض متاحاً فوراً" },
+  imageUploadedSuccess: { en: "Image uploaded successfully", ar: "تم رفع الصورة بنجاح" },
+  allowedImageTypes: { en: "Allowed types: JPEG, PNG, WebP", ar: "الأنواع المسموحة: JPEG و PNG و WebP" },
+  fileSizeLimit: { en: "File size exceeds 5MB limit", ar: "حجم الملف يتجاوز الحد المسموح (5 ميجا)" },
+  sentToContacts: { en: "Sent to {count} contacts.", ar: "تم الإرسال إلى {count} جهة اتصال." },
+
+  // Branches - import/export messages
+  emptyInvalidCsv: { en: "Empty or invalid CSV file", ar: "ملف CSV فارغ أو غير صالح" },
+  importedBranches: { en: "Imported {total} branches (created: {created}, updated: {updated})", ar: "تم استيراد {total} فرع (تم إنشاء: {created}، تم تحديث: {updated})" },
+  failedToImportBranches: { en: "Failed to import branches", ar: "فشل استيراد الفروع" },
+  contactLabel2: { en: "Contact", ar: "التواصل" },
+  whatsappBadge: { en: "WhatsApp", ar: "واتساب" },
 }
 
 interface I18nContextType {

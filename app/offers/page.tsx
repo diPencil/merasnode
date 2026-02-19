@@ -286,8 +286,8 @@ export default function OffersPage() {
                 tagChoice === "__new__"
                     ? formData.tagToAssign
                     : tagChoice === "__none__"
-                      ? ""
-                      : tagChoice
+                        ? ""
+                        : tagChoice
             const payload = {
                 ...formData,
                 tagToAssign: effectiveTag.trim() || undefined,
@@ -459,11 +459,11 @@ export default function OffersPage() {
 
         const allowed = ["image/jpeg", "image/png", "image/webp"]
         if (!allowed.includes(file.type)) {
-            toast({ title: t("error"), description: "Allowed types: JPEG, PNG, WebP only", variant: "destructive" })
+            toast({ title: t("error"), description: t("allowedImageTypes"), variant: "destructive" })
             return
         }
         if (file.size > 5 * 1024 * 1024) {
-            toast({ title: t("error"), description: "File size exceeds 5MB limit", variant: "destructive" })
+            toast({ title: t("error"), description: t("fileSizeLimit"), variant: "destructive" })
             return
         }
 
@@ -485,14 +485,14 @@ export default function OffersPage() {
                 // معاينة فورية من الملف نفسه عشان الصورة تظهر حتى لو رابط السيرفر مش شغال هنا
                 if (imagePreviewBlobUrl) URL.revokeObjectURL(imagePreviewBlobUrl)
                 setImagePreviewBlobUrl(URL.createObjectURL(file))
-                toast({ title: t("success"), description: "Image uploaded successfully" })
+                toast({ title: t("success"), description: t("imageUploadedSuccess") })
             } else {
                 throw new Error(data.error || "Upload failed")
             }
         } catch (err) {
             toast({
                 title: t("error"),
-                description: err instanceof Error ? err.message : "Upload failed",
+                description: err instanceof Error ? err.message : t("imageUploadedSuccess"),
                 variant: "destructive",
             })
         } finally {
@@ -610,7 +610,7 @@ export default function OffersPage() {
                 await recordOfferSend(selectedOffer.id, "bulk", successCount)
             }
             fetchOffers()
-            toast({ title: t("bulkSendComplete"), description: `Sent to ${successCount} contacts.` })
+            toast({ title: t("bulkSendComplete"), description: t("sentToContacts").replace("{count}", String(successCount)) })
             setIsSendDialogOpen(false)
         }
     }
@@ -626,274 +626,274 @@ export default function OffersPage() {
                     </div>
 
                     <div className="flex gap-2">
-                    {canManageCategories && (
-                        <Button variant="outline" size="lg" className="gap-2" onClick={() => setIsCategoriesDialogOpen(true)}>
-                            <FolderTree className="h-5 w-5" />
-                            {t("manageOfferCategories")}
-                        </Button>
-                    )}
-                    {canCreate && (
-                        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-                            <DialogTrigger asChild>
-                                <Button size="lg" className="gap-2 shadow-lg hover:shadow-xl transition-all">
-                                    <Plus className="h-5 w-5" />
-                                    {t("createOffer")}
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()}>
-                                <form onSubmit={handleSubmit}>
-                                    <DialogHeader>
-                                        <DialogTitle>{editingOffer ? t("editOffer") : t("createOffer")}</DialogTitle>
-                                        <DialogDescription>{t("createPromotionalOffersDesc")}</DialogDescription>
-                                    </DialogHeader>
+                        {canManageCategories && (
+                            <Button variant="outline" size="lg" className="gap-2" onClick={() => setIsCategoriesDialogOpen(true)}>
+                                <FolderTree className="h-5 w-5" />
+                                {t("manageOfferCategories")}
+                            </Button>
+                        )}
+                        {canCreate && (
+                            <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
+                                <DialogTrigger asChild>
+                                    <Button size="lg" className="gap-2 shadow-lg hover:shadow-xl transition-all">
+                                        <Plus className="h-5 w-5" />
+                                        {t("createOffer")}
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()}>
+                                    <form onSubmit={handleSubmit}>
+                                        <DialogHeader>
+                                            <DialogTitle>{editingOffer ? t("editOffer") : t("createOffer")}</DialogTitle>
+                                            <DialogDescription>{t("createPromotionalOffersDesc")}</DialogDescription>
+                                        </DialogHeader>
 
-                                    <div className="grid gap-6 py-6">
-                                        {/* Image Upload Section */}
-                                        <div className="space-y-4">
-                                            <Label>{t("offerImage")}</Label>
-                                            <div className="flex flex-col gap-4 items-start sm:flex-row sm:items-center">
-                                                <div className="relative w-full sm:w-40 aspect-video bg-muted rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden shrink-0 group hover:border-primary/50 transition-colors min-h-[120px]">
-                                                    {formData.imageUrl && !imagePreviewError ? (
-                                                        <>
-                                                            <img
-                                                                src={imagePreviewBlobUrl || getFullImageUrl(formData.imageUrl)}
-                                                                alt="Preview"
-                                                                className="absolute inset-0 w-full h-full object-cover"
-                                                                onLoad={() => setImagePreviewError(false)}
-                                                                onError={() => setImagePreviewError(true)}
-                                                            />
-                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <div className="grid gap-6 py-6">
+                                            {/* Image Upload Section */}
+                                            <div className="space-y-4">
+                                                <Label>{t("offerImage")}</Label>
+                                                <div className="flex flex-col gap-4 items-start sm:flex-row sm:items-center">
+                                                    <div className="relative w-full sm:w-40 aspect-video bg-muted rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden shrink-0 group hover:border-primary/50 transition-colors min-h-[120px]">
+                                                        {formData.imageUrl && !imagePreviewError ? (
+                                                            <>
+                                                                <img
+                                                                    src={imagePreviewBlobUrl || getFullImageUrl(formData.imageUrl)}
+                                                                    alt="Preview"
+                                                                    className="absolute inset-0 w-full h-full object-cover"
+                                                                    onLoad={() => setImagePreviewError(false)}
+                                                                    onError={() => setImagePreviewError(true)}
+                                                                />
+                                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="destructive"
+                                                                        size="icon"
+                                                                        className="h-8 w-8"
+                                                                        onClick={() => {
+                                                                            if (imagePreviewBlobUrl) { URL.revokeObjectURL(imagePreviewBlobUrl); setImagePreviewBlobUrl(null) }
+                                                                            setFormData({ ...formData, imageUrl: "" }); setImagePreviewError(false);
+                                                                        }}
+                                                                    >
+                                                                        <X className="h-4 w-4" />
+                                                                    </Button>
+                                                                </div>
+                                                            </>
+                                                        ) : formData.imageUrl && imagePreviewError ? (
+                                                            <div className="flex flex-col items-center gap-2 text-muted-foreground p-4 text-center">
+                                                                <ImageIcon className="h-8 w-8 text-destructive/80" />
+                                                                <span className="text-xs">{t("imageFailedToLoad")}</span>
                                                                 <Button
                                                                     type="button"
-                                                                    variant="destructive"
-                                                                    size="icon"
-                                                                    className="h-8 w-8"
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="mt-1"
                                                                     onClick={() => {
                                                                         if (imagePreviewBlobUrl) { URL.revokeObjectURL(imagePreviewBlobUrl); setImagePreviewBlobUrl(null) }
                                                                         setFormData({ ...formData, imageUrl: "" }); setImagePreviewError(false);
                                                                     }}
                                                                 >
-                                                                    <X className="h-4 w-4" />
+                                                                    {t("removeUrl")}
                                                                 </Button>
                                                             </div>
-                                                        </>
-                                                    ) : formData.imageUrl && imagePreviewError ? (
-                                                        <div className="flex flex-col items-center gap-2 text-muted-foreground p-4 text-center">
-                                                            <ImageIcon className="h-8 w-8 text-destructive/80" />
-                                                            <span className="text-xs">Image failed to load</span>
+                                                        ) : (
+                                                            <div className="flex flex-col items-center gap-1 text-muted-foreground p-4 text-center">
+                                                                {imageUploading ? (
+                                                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                                                ) : (
+                                                                    <>
+                                                                        <ImageIcon className="h-8 w-8 mb-1" />
+                                                                        <span className="text-xs">{t("noImage")}</span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex-1 space-y-3 w-full">
+                                                        <div className="flex gap-2">
                                                             <Button
                                                                 type="button"
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="mt-1"
-                                                                onClick={() => {
-                                                                    if (imagePreviewBlobUrl) { URL.revokeObjectURL(imagePreviewBlobUrl); setImagePreviewBlobUrl(null) }
-                                                                    setFormData({ ...formData, imageUrl: "" }); setImagePreviewError(false);
-                                                                }}
+                                                                variant="secondary"
+                                                                className="relative overflow-hidden w-full sm:w-auto"
+                                                                disabled={imageUploading}
                                                             >
-                                                                Remove URL
+                                                                {imageUploading ? (
+                                                                    <>
+                                                                        <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                                                                        {t("uploadingLabel")}
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <UploadCloud className="me-2 h-4 w-4" />
+                                                                        {t("uploadFile")}
+                                                                    </>
+                                                                )}
+                                                                <input
+                                                                    type="file"
+                                                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                                                    accept="image/png, image/jpeg, image/webp"
+                                                                    onChange={handleImageUpload}
+                                                                    disabled={imageUploading}
+                                                                />
                                                             </Button>
                                                         </div>
-                                                    ) : (
-                                                        <div className="flex flex-col items-center gap-1 text-muted-foreground p-4 text-center">
-                                                            {imageUploading ? (
-                                                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                                            ) : (
-                                                                <>
-                                                                    <ImageIcon className="h-8 w-8 mb-1" />
-                                                                    <span className="text-xs">No image</span>
-                                                                </>
-                                                            )}
+                                                        <div className="relative">
+                                                            <div className="absolute inset-0 flex items-center">
+                                                                <span className="w-full border-t" />
+                                                            </div>
+                                                            <div className="relative flex justify-center text-xs uppercase">
+                                                                <span className="bg-background px-2 text-muted-foreground">{t("orUsingUrl")}</span>
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex-1 space-y-3 w-full">
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            type="button"
-                                                            variant="secondary"
-                                                            className="relative overflow-hidden w-full sm:w-auto"
+                                                        <Input
+                                                            placeholder="https://example.com/image.jpg"
+                                                            value={formData.imageUrl}
+                                                            onChange={(e) => {
+                                                                setFormData({ ...formData, imageUrl: e.target.value })
+                                                                setImagePreviewError(false)
+                                                            }}
                                                             disabled={imageUploading}
-                                                        >
-                                                            {imageUploading ? (
-                                                                <>
-                                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                                    Uploading...
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <UploadCloud className="mr-2 h-4 w-4" />
-                                                                    Upload File
-                                                                </>
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="title">{t("offerTitle")} *</Label>
+                                                <Input
+                                                    id="title"
+                                                    value={formData.title}
+                                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                                    required
+                                                    placeholder="e.g. Summer Sale"
+                                                />
+                                            </div>
+
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="content">{t("messageContent")} *</Label>
+                                                <Textarea
+                                                    id="content"
+                                                    value={formData.content}
+                                                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                                                    rows={4}
+                                                    required
+                                                    placeholder="Type your promotional message here..."
+                                                />
+                                            </div>
+
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="tagToAssign">{t("tagToAssign")}</Label>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {t("tagToAssignExplanation")}
+                                                </p>
+                                                <Select
+                                                    value={tagChoice}
+                                                    onValueChange={(v) => {
+                                                        setTagChoice(v)
+                                                        if (v !== "__new__") setFormData((prev) => ({ ...prev, tagToAssign: v === "__none__" ? "" : v }))
+                                                    }}
+                                                >
+                                                    <SelectTrigger id="tagToAssign">
+                                                        <SelectValue placeholder={t("tagOptionNone")} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="__none__">{t("tagOptionNone")}</SelectItem>
+                                                        {existingTags.map((tag) => (
+                                                            <SelectItem key={tag} value={tag}>
+                                                                {tag}
+                                                            </SelectItem>
+                                                        ))}
+                                                        {tagChoice &&
+                                                            tagChoice !== "__new__" &&
+                                                            tagChoice !== "__none__" &&
+                                                            !existingTags.includes(tagChoice) && (
+                                                                <SelectItem value={tagChoice}>{tagChoice}</SelectItem>
                                                             )}
-                                                            <input
-                                                                type="file"
-                                                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                                                accept="image/png, image/jpeg, image/webp"
-                                                                onChange={handleImageUpload}
-                                                                disabled={imageUploading}
-                                                            />
-                                                        </Button>
-                                                    </div>
-                                                    <div className="relative">
-                                                        <div className="absolute inset-0 flex items-center">
-                                                            <span className="w-full border-t" />
-                                                        </div>
-                                                        <div className="relative flex justify-center text-xs uppercase">
-                                                            <span className="bg-background px-2 text-muted-foreground">Or using URL</span>
-                                                        </div>
-                                                    </div>
+                                                        <SelectItem value="__new__">{t("tagOptionTypeNew")}</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                {tagChoice === "__new__" && (
                                                     <Input
-                                                        placeholder="https://example.com/image.jpg"
-                                                        value={formData.imageUrl}
-                                                        onChange={(e) => {
-                                                            setFormData({ ...formData, imageUrl: e.target.value })
-                                                            setImagePreviewError(false)
-                                                        }}
-                                                        disabled={imageUploading}
+                                                        placeholder={t("tagToAssignPlaceholder")}
+                                                        value={formData.tagToAssign}
+                                                        onChange={(e) =>
+                                                            setFormData((prev) => ({ ...prev, tagToAssign: e.target.value }))
+                                                        }
+                                                    />
+                                                )}
+                                            </div>
+
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="offerCategory">{t("offerCategory")}</Label>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {t("offerCategoryExplanation")}
+                                                </p>
+                                                <Select
+                                                    value={formData.categoryId || "__none__"}
+                                                    onValueChange={(v) => setFormData((prev) => ({ ...prev, categoryId: v === "__none__" ? "" : v }))}
+                                                >
+                                                    <SelectTrigger id="offerCategory">
+                                                        <SelectValue placeholder={t("offerCategoryNone")} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="__none__">{t("offerCategoryNone")}</SelectItem>
+                                                        {offerCategories.map((cat) => (
+                                                            <SelectItem key={cat.id} value={cat.id}>
+                                                                {cat.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="validFrom">{t("validFrom")} *</Label>
+                                                    <Input
+                                                        id="validFrom"
+                                                        type="date"
+                                                        value={formData.validFrom}
+                                                        onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="validTo">{t("validTo")} *</Label>
+                                                    <Input
+                                                        id="validTo"
+                                                        type="date"
+                                                        value={formData.validTo}
+                                                        onChange={(e) => setFormData({ ...formData, validTo: e.target.value })}
+                                                        required
                                                     />
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="title">{t("offerTitle")} *</Label>
-                                            <Input
-                                                id="title"
-                                                value={formData.title}
-                                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                                required
-                                                placeholder="e.g. Summer Sale"
-                                            />
-                                        </div>
-
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="content">{t("messageContent")} *</Label>
-                                            <Textarea
-                                                id="content"
-                                                value={formData.content}
-                                                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                                                rows={4}
-                                                required
-                                                placeholder="Type your promotional message here..."
-                                            />
-                                        </div>
-
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="tagToAssign">{t("tagToAssign")}</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                {t("tagToAssignExplanation")}
-                                            </p>
-                                            <Select
-                                                value={tagChoice}
-                                                onValueChange={(v) => {
-                                                    setTagChoice(v)
-                                                    if (v !== "__new__") setFormData((prev) => ({ ...prev, tagToAssign: v === "__none__" ? "" : v }))
-                                                }}
-                                            >
-                                                <SelectTrigger id="tagToAssign">
-                                                    <SelectValue placeholder={t("tagOptionNone")} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="__none__">{t("tagOptionNone")}</SelectItem>
-                                                    {existingTags.map((tag) => (
-                                                        <SelectItem key={tag} value={tag}>
-                                                            {tag}
-                                                        </SelectItem>
-                                                    ))}
-                                                    {tagChoice &&
-                                                        tagChoice !== "__new__" &&
-                                                        tagChoice !== "__none__" &&
-                                                        !existingTags.includes(tagChoice) && (
-                                                            <SelectItem value={tagChoice}>{tagChoice}</SelectItem>
-                                                        )}
-                                                    <SelectItem value="__new__">{t("tagOptionTypeNew")}</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            {tagChoice === "__new__" && (
-                                                <Input
-                                                    placeholder={t("tagToAssignPlaceholder")}
-                                                    value={formData.tagToAssign}
-                                                    onChange={(e) =>
-                                                        setFormData((prev) => ({ ...prev, tagToAssign: e.target.value }))
-                                                    }
-                                                />
-                                            )}
-                                        </div>
-
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="offerCategory">{t("offerCategory")}</Label>
-                                            <p className="text-sm text-muted-foreground">
-                                                {t("offerCategoryExplanation")}
-                                            </p>
-                                            <Select
-                                                value={formData.categoryId || "__none__"}
-                                                onValueChange={(v) => setFormData((prev) => ({ ...prev, categoryId: v === "__none__" ? "" : v }))}
-                                            >
-                                                <SelectTrigger id="offerCategory">
-                                                    <SelectValue placeholder={t("offerCategoryNone")} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="__none__">{t("offerCategoryNone")}</SelectItem>
-                                                    {offerCategories.map((cat) => (
-                                                        <SelectItem key={cat.id} value={cat.id}>
-                                                            {cat.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="validFrom">{t("validFrom")} *</Label>
-                                                <Input
-                                                    id="validFrom"
-                                                    type="date"
-                                                    value={formData.validFrom}
-                                                    onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <Label htmlFor="validTo">{t("validTo")} *</Label>
-                                                <Input
-                                                    id="validTo"
-                                                    type="date"
-                                                    value={formData.validTo}
-                                                    onChange={(e) => setFormData({ ...formData, validTo: e.target.value })}
-                                                    required
+                                            <div className="flex items-center justify-between rounded-lg border p-4">
+                                                <div className="space-y-0.5">
+                                                    <Label htmlFor="isActive">{t("active")}</Label>
+                                                    <p className="text-sm text-muted-foreground">{t("makeOfferAvailableNow")}</p>
+                                                </div>
+                                                <Switch
+                                                    id="isActive"
+                                                    checked={formData.isActive}
+                                                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                                                 />
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center justify-between rounded-lg border p-4">
-                                            <div className="space-y-0.5">
-                                                <Label htmlFor="isActive">{t("active")}</Label>
-                                                <p className="text-sm text-muted-foreground">Make this offer available immediately</p>
-                                            </div>
-                                            <Switch
-                                                id="isActive"
-                                                checked={formData.isActive}
-                                                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <DialogFooter>
-                                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
-                                            {t("cancel")}
-                                        </Button>
-                                        <Button type="submit" disabled={imageUploading || isSubmitting}>
-                                            {(imageUploading || isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />}
-                                            {t("save")}
-                                        </Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-                    )}
+                                        <DialogFooter>
+                                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
+                                                {t("cancel")}
+                                            </Button>
+                                            <Button type="submit" disabled={imageUploading || isSubmitting}>
+                                                {(imageUploading || isSubmitting) && <Loader2 className="me-2 h-4 w-4 animate-spin shrink-0" />}
+                                                {t("save")}
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+                        )}
                     </div>
                 </div>
 
@@ -983,7 +983,7 @@ export default function OffersPage() {
                             </p>
                             {canCreate && (
                                 <Button size="lg" onClick={() => { resetForm(); setIsDialogOpen(true); }} className="shadow-sm">
-                                    <Plus className="mr-2 h-5 w-5" />
+                                    <Plus className="me-2 h-5 w-5" />
                                     {t("createOffer")}
                                 </Button>
                             )}
@@ -996,7 +996,7 @@ export default function OffersPage() {
                                 {/* Image Area — أصغر ارتفاع */}
                                 <div className="relative w-full aspect-5/3 max-h-32 bg-muted overflow-hidden shrink-0">
                                     {offer.isActive && (
-                                        <div className="absolute top-1.5 left-1.5 z-10">
+                                        <div className="absolute top-1.5 start-1.5 z-10">
                                             <span className="inline-flex items-center rounded-full bg-green-500/90 px-2 py-0.5 text-[10px] font-medium text-white shadow-sm">
                                                 {t("active")}
                                             </span>
@@ -1133,7 +1133,7 @@ export default function OffersPage() {
                             <DialogTitle>{t("sendOfferDialogTitle")}</DialogTitle>
                             <DialogDescription>{t("sendOfferDialogDesc")}</DialogDescription>
                         </DialogHeader>
-                <div className="space-y-4 py-4">
+                        <div className="space-y-4 py-4">
                             {/* Simple render logic for Send Dialog content from previous version */}
                             <div className="grid gap-2">
                                 <Label>Send Mode</Label>

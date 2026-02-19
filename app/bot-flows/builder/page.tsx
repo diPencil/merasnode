@@ -300,16 +300,16 @@ export default function FlowBuilderPage() {
           ? { type: "wait", delay: 1000 }
           : kind === "image"
             ? { type: "send_image", mediaUrl: "", content: "", delay: 0 }
-            :             kind === "options"
+            : kind === "options"
               ? {
-                  type: "send_options",
-                  content: "كيف نقدر نساعدك؟",
-                  options: [
-                    { label: "مواعيد", value: "1", nextStepIndex: -1 },
-                    { label: "أسعار", value: "2", nextStepIndex: -1 },
-                    { label: "تكلم مع موظف", value: "3", nextStepIndex: -1 },
-                  ],
-                }
+                type: "send_options",
+                content: "كيف نقدر نساعدك؟",
+                options: [
+                  { label: "مواعيد", value: "1", nextStepIndex: -1 },
+                  { label: "أسعار", value: "2", nextStepIndex: -1 },
+                  { label: "تكلم مع موظف", value: "3", nextStepIndex: -1 },
+                ],
+              }
               : { type: "send_message", content: "", delay: 0 }
       ]
       syncNodesFromSteps(nextSteps)
@@ -382,13 +382,13 @@ export default function FlowBuilderPage() {
             <Button onClick={saveFlow} disabled={isSaving}>
               {isSaving ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                  Saving...
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin me-2" />
+                  {t("savingFlow")}
                 </>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Flow
+                  <Save className="h-4 w-4 me-2" />
+                  {t("saveFlow")}
                 </>
               )}
             </Button>
@@ -398,13 +398,13 @@ export default function FlowBuilderPage() {
         {/* Flow Configuration */}
         <Card>
           <CardHeader>
-            <CardTitle>Flow Configuration</CardTitle>
-            <CardDescription>Configure the basic settings for your bot flow</CardDescription>
+            <CardTitle>{t("flowConfiguration")}</CardTitle>
+            <CardDescription>{t("configureBasicSettingsBotFlow")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="flow-name">Flow Name</Label>
+                <Label htmlFor="flow-name">{t("flowNameLabel")}</Label>
                 <Input
                   id="flow-name"
                   value={flow.name}
@@ -413,26 +413,26 @@ export default function FlowBuilderPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="flow-trigger">Trigger</Label>
+                <Label htmlFor="flow-trigger">{t("triggerLabel")}</Label>
                 <select
                   id="flow-trigger"
                   value={flow.trigger}
                   onChange={(e) => setFlow(prev => ({ ...prev, trigger: e.target.value }))}
                   className="w-full px-3 py-2 border rounded-md"
                 >
-                  <option value="">Select trigger...</option>
-                  <option value="incoming_message">رسالة واردة (كلمات محفّزة)</option>
-                  <option value="new_contact">New Contact</option>
-                  <option value="new_message">New Message</option>
-                  <option value="booking_scheduled">Booking Scheduled</option>
-                  <option value="invoice_due">Invoice Due</option>
-                  <option value="service_completed">Service Completed</option>
+                  <option value="">{t("selectTriggerPlaceholder")}</option>
+                  <option value="incoming_message">{t("triggerIncomingMessage")}</option>
+                  <option value="new_contact">{t("triggerNewContact")}</option>
+                  <option value="new_message">{t("triggerNewMessage")}</option>
+                  <option value="booking_scheduled">{t("triggerBookingScheduled")}</option>
+                  <option value="invoice_due">{t("triggerInvoiceDue")}</option>
+                  <option value="service_completed">{t("triggerServiceCompleted")}</option>
                 </select>
               </div>
             </div>
             {flow.trigger === "incoming_message" && (
               <div className="space-y-2">
-                <Label htmlFor="flow-trigger-keywords">كلمات المحفّز (يفصل بينها بفاصلة)</Label>
+                <Label htmlFor="flow-trigger-keywords">{t("triggerKeywordsLabel")}</Label>
                 <Input
                   id="flow-trigger-keywords"
                   value={Array.isArray(flow.triggerKeywords) ? flow.triggerKeywords.join(", ") : ""}
@@ -445,13 +445,13 @@ export default function FlowBuilderPage() {
                         .filter(Boolean),
                     }))
                   }
-                  placeholder="مرحبا، هلا، مساء الخير، أهلا"
+                  placeholder={t("triggerKeywordsPlaceholder")}
                 />
-                <p className="text-xs text-muted-foreground">عندما يرسل العميل إحدى هذه الكلمات يبدأ البوت تلقائياً.</p>
+                <p className="text-xs text-muted-foreground">{t("triggerKeywordsHint")}</p>
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="flow-desc">Description</Label>
+              <Label htmlFor="flow-desc">{t("descriptionLabel")}</Label>
               <Textarea
                 id="flow-desc"
                 value={flow.description}
@@ -572,23 +572,23 @@ export default function FlowBuilderPage() {
                     {selectedStep.step.type === "send_options" && (
                       <div className="space-y-3">
                         <div className="space-y-2">
-                          <Label className="text-xs">{t("messageContent") || "الرسالة"}</Label>
+                          <Label className="text-xs">{t("botFlowMessageContent") || "الرسالة"}</Label>
                           <Textarea
                             rows={2}
                             value={selectedStep.step.content || ""}
                             onChange={(e) =>
                               updateSelectedStep(prev => ({ ...prev, type: "send_options", content: e.target.value }))
                             }
-                            placeholder="مرحبا! كيف نقدر نساعدك؟"
+                            placeholder={t("optionsStepWelcomeMessagePlaceholder")}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs">الخيارات (رقم الخطوة التالية، -1 = تكلم مع موظف)</Label>
+                          <Label className="text-xs">{t("optionNextStepLabel")}</Label>
                           {(Array.isArray(selectedStep.step.options) ? selectedStep.step.options : []).map((opt: any, i: number) => (
                             <div key={i} className="flex gap-2 items-center">
                               <Input
                                 className="flex-1"
-                                placeholder="نص الخيار"
+                                placeholder={t("optionLabelPlaceholder")}
                                 value={opt.label || ""}
                                 onChange={(e) => {
                                   const opts = [...(selectedStep.step.options || [])]
@@ -619,7 +619,7 @@ export default function FlowBuilderPage() {
                               updateSelectedStep(prev => ({ ...prev, type: "send_options", options: opts }))
                             }}
                           >
-                            + إضافة خيار
+                            {t("addOption")}
                           </Button>
                         </div>
                       </div>
@@ -627,7 +627,7 @@ export default function FlowBuilderPage() {
                     {selectedStep.step.type === "send_message" && (
                       <div className="space-y-2">
                         <Label className="text-xs">
-                          {t("messageContent") || "Message content"}
+                          {t("botFlowMessageContent") || "Message content"}
                         </Label>
                         <Textarea
                           rows={4}
@@ -639,7 +639,7 @@ export default function FlowBuilderPage() {
                               content: e.target.value,
                             }))
                           }
-                          placeholder={t("typeYourMessage") || "اكتب رسالة البوت هنا..."}
+                          placeholder={t("botFlowTypeYourMessage") || "اكتب رسالة البوت هنا..."}
                         />
                       </div>
                     )}
@@ -679,7 +679,7 @@ export default function FlowBuilderPage() {
                             className="flex-1"
                             onClick={() => imageUploadRef.current?.click()}
                           >
-                            <ImageIcon className="h-3 w-3 mr-1" />
+                            <ImageIcon className="h-3 w-3 me-1" />
                             {selectedStep.step.mediaUrl ? (t("changeImage") || "Change image") : (t("uploadImage") || "Upload image")}
                           </Button>
                         </div>
@@ -707,7 +707,7 @@ export default function FlowBuilderPage() {
                           onChange={(e) =>
                             updateSelectedStep(prev => ({ ...prev, type: "send_image", content: e.target.value }))
                           }
-                          placeholder={t("typeYourMessage") || "Caption for the image..."}
+                          placeholder={t("botFlowTypeYourMessage") || "Caption for the image..."}
                         />
                       </div>
                     )}
@@ -736,7 +736,7 @@ export default function FlowBuilderPage() {
                       className="mt-2 text-destructive border-destructive/40 hover:bg-destructive/10"
                       onClick={deleteSelectedNode}
                     >
-                      <Trash2 className="h-3 w-3 mr-1" />
+                      <Trash2 className="h-3 w-3 me-1" />
                       {t("deleteStep") || "Delete step"}
                     </Button>
                   </>

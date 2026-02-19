@@ -269,7 +269,7 @@ export default function BranchesPage() {
                                             const text = await file.text()
                                             const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0)
                                             if (lines.length <= 1) {
-                                                toast({ title: t("error"), description: "Empty or invalid CSV file", variant: "destructive" })
+                                                toast({ title: t("error"), description: t("emptyInvalidCsv"), variant: "destructive" })
                                                 return
                                             }
                                             const header = lines[0].split(",").map((h) => h.trim().toLowerCase())
@@ -302,17 +302,17 @@ export default function BranchesPage() {
                                             })
                                             const data = await res.json()
                                             if (!data.success) {
-                                                throw new Error(data.error || "Failed to import branches")
+                                                throw new Error(data.error || t("failedToImportBranches"))
                                             }
                                             toast({
                                                 title: t("success"),
-                                                description: `Imported ${data.total} branches (created: ${data.created}, updated: ${data.updated})`,
+                                                description: t("importedBranches").replace("{total}", String(data.total)).replace("{created}", String(data.created)).replace("{updated}", String(data.updated)),
                                             })
                                             fetchBranches()
                                         } catch (error) {
                                             toast({
                                                 title: t("error"),
-                                                description: error instanceof Error ? error.message : "Failed to import branches",
+                                                description: error instanceof Error ? error.message : t("failedToImportBranches"),
                                                 variant: "destructive",
                                             })
                                         } finally {
