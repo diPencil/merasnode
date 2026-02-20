@@ -336,7 +336,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                                 <Phone className="h-4 w-4" />
                             </div>
                             <div className="overflow-hidden">
-                                <p className="text-xs text-muted-foreground">{isGroup ? "Group ID" : t("phone")}</p>
+                                <p className="text-xs text-muted-foreground">{isGroup ? t("groupIdLabel") : t("phone")}</p>
                                 <p className="text-sm font-medium truncate">
                                     {isGroup ? conversation.contact.phone.replace('@g.us', '') : (conversation.contact.phone || "-")}
                                 </p>
@@ -485,17 +485,17 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                     <div className="mt-6 pt-6 border-t">
                         <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-4 flex items-center gap-2">
                             <User className="h-3 w-3" />
-                            {t("groupParticipants") || "Group Members"}
-                            <Badge variant="secondary" className="ml-auto h-5 px-1.5 text-[10px] font-bold bg-slate-100 text-slate-500">
+                            {t("groupParticipants")}
+                            <Badge variant="secondary" className="ms-auto h-5 px-1.5 text-[10px] font-bold bg-slate-100 text-slate-500">
                                 {participants.length}
                             </Badge>
                         </h4>
 
-                        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto pe-2">
                             {loadingParticipants ? (
                                 <p className="text-xs text-muted-foreground text-center py-2">{t("loading")}</p>
                             ) : participants.length === 0 ? (
-                                <p className="text-xs text-muted-foreground text-center py-2 bg-slate-50 rounded">{t("noParticipantsFound") || "No members found"}</p>
+                                <p className="text-xs text-muted-foreground text-center py-2 bg-slate-50 rounded">{t("noParticipantsFound")}</p>
                             ) : (
                                 participants.map((p: any) => (
                                     <div key={p.id} className="flex items-center justify-between group">
@@ -514,7 +514,7 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                                         <div className="flex items-center gap-1">
                                             {p.isAdmin && (
                                                 <Badge variant="outline" className="h-4 px-1 text-[8px] font-bold text-green-600 border-green-200 bg-green-50 shrink-0">
-                                                    {t("groupAdmin") || "Admin"}
+                                                    {t("groupAdmin")}
                                                 </Badge>
                                             )}
                                             <Button

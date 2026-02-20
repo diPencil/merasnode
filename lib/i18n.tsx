@@ -1203,6 +1203,9 @@ const translations: Translations = {
   failedToImportBranches: { en: "Failed to import branches", ar: "فشل استيراد الفروع" },
   contactLabel2: { en: "Contact", ar: "التواصل" },
   whatsappBadge: { en: "WhatsApp", ar: "واتساب" },
+
+  // Sidebar - group participants
+  groupIdLabel: { en: "Group ID", ar: "معرّف المجموعة" },
 }
 
 interface I18nContextType {
