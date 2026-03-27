@@ -16,12 +16,7 @@ export const metadata: Metadata = {
   description: "Omnichannel System by Meras Holding Company - Customer engagement and support",
   generator: "v0.app",
   icons: {
-    icon: [
-      {
-        url: "/favicon.png",
-        type: "image/png",
-      },
-    ],
+    icon: "/favicon.png",
     shortcut: "/favicon.png",
     apple: "/favicon.png",
   },
@@ -49,7 +44,7 @@ export default function RootLayout({
             <Toaster />
           </I18nProvider>
         </ThemeProvider>
-        <Analytics />
+        {process.env.NEXT_PUBLIC_VERCEL === "1" && <Analytics />}
       </body>
     </html>
   )

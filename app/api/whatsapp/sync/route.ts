@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
-const WHATSAPP_SERVICE_URL = 'http://localhost:3001'
+const WHATSAPP_SERVICE_URL = process.env.WHATSAPP_SERVICE_URL || 'http://localhost:3001'
 
 /**
  * POST /api/whatsapp/sync
@@ -21,18 +21,18 @@ export async function POST(request: NextRequest) {
 
         // Check if account exists
         const account = await prisma.whatsAppAccount.findUnique({
-        where: { id: accountId },
-        select: {
-            id: true,
-            branchId: true,
-            users: {
-                select: {
-                    id: true,
-                    role: true,
-                    isActive: true,
+            where: { id: accountId },
+            select: {
+                id: true,
+                branchId: true,
+                users: {
+                    select: {
+                        id: true,
+                        role: true,
+                        isActive: true,
+                    },
                 },
             },
-        },
         })
 
         if (!account) {
@@ -52,13 +52,33 @@ export async function POST(request: NextRequest) {
         const assignedAgentId = activeAgent ? activeAgent.id : null
 
         // Get chats from WhatsApp service
-        const chatsResponse = await fetch(`${WHATSAPP_SERVICE_URL}/chats/${accountId}`)
-        
-        if (!chatsResponse.ok) {
-            throw new Error('Failed to fetch chats from WhatsApp service')
+        let chatsResponse: Response
+        try {
+            chatsResponse = await fetch(`${WHATSAPP_SERVICE_URL}/chats/${accountId}`, {
+                headers: { 'Accept': 'application/json' },
+                signal: AbortSignal.timeout(30000), // 30s timeout
+            })
+        } catch (fetchError: any) {
+            const msg = fetchError?.name === 'AbortError'
+                ? 'WhatsApp service did not respond in time (timeout).'
+                : fetchError?.message || 'Could not reach WhatsApp service.'
+            console.error('Sync fetch error:', fetchError)
+            throw new Error(`Failed to fetch chats: ${msg} Is the service running at ${WHATSAPP_SERVICE_URL}?`)
         }
 
-        const chatsData = await chatsResponse.json()
+        const responseText = await chatsResponse.text()
+        let chatsData: { chats?: any[] }
+        try {
+            chatsData = responseText ? JSON.parse(responseText) : {}
+        } catch {
+            throw new Error(`Invalid response from WhatsApp service (status ${chatsResponse.status}). Check that the service exposes GET /chats/:accountId.`)
+        }
+
+        if (!chatsResponse.ok) {
+            const errMsg = (chatsData as any)?.error || (chatsData as any)?.message || responseText?.slice(0, 200) || `HTTP ${chatsResponse.status}`
+            throw new Error(`WhatsApp service error: ${errMsg}`)
+        }
+
         const chats = chatsData.chats || []
 
         console.log(`📱 Found ${chats.length} chats`)
@@ -69,34 +89,62 @@ export async function POST(request: NextRequest) {
         // Process each chat
         for (const chat of chats) {
             try {
-                // Extract phone number from chat ID
-                const phoneMatch = chat.id.match(/^(\d+)@/)
-                const phoneNumber = phoneMatch ? phoneMatch[1] : null
+                // Extract phone number or group ID
+                let contactPhone = ""
+                let isGroup = chat.isGroup || chat.id.includes('@g.us');
 
-                // Skip groups for now (they don't have direct phone numbers)
-                if (chat.isGroup || !phoneNumber) {
-                    console.log(`⏭️ Skipping group or invalid chat: ${chat.name}`)
-                    continue
+                if (isGroup) {
+                    contactPhone = chat.id; // Use full serialized JID for groups
+                } else {
+                    const phoneMatch = chat.id.match(/^(\d+)@/);
+                    contactPhone = phoneMatch ? phoneMatch[1] : "";
                 }
 
-                // Create or update contact and attach to branch (if account has branch)
+                if (!contactPhone) {
+                    console.log(`⏭️ Skipping invalid chat: ${chat.name || chat.id}`);
+                    continue;
+                }
+
+                // Create or update contact and attach to branch
                 let contact = await prisma.contact.findUnique({
-                    where: { phone: phoneNumber }
-                })
+                    where: { phone: contactPhone }
+                });
+
+                // للمجموعات: إن وُجدت جهة اتصال بنفس الرقم بدون @g.us نحدّثها للصيغة الكاملة لتجنب التكرار
+                if (!contact && isGroup && contactPhone.endsWith('@g.us')) {
+                    const withoutSuffix = contactPhone.replace('@g.us', '')
+                    contact = await prisma.contact.findFirst({
+                        where: { phone: withoutSuffix }
+                    })
+                    if (contact) {
+                        contact = await prisma.contact.update({
+                            where: { id: contact.id },
+                            data: { phone: contactPhone, name: chat.name || contact.name || contactPhone }
+                        })
+                    }
+                }
 
                 if (!contact) {
                     contact = await prisma.contact.create({
                         data: {
-                            phone: phoneNumber,
-                            name: chat.name || phoneNumber,
+                            phone: contactPhone,
+                            name: chat.name || contactPhone,
+                            tags: isGroup ? ['group'] : ['whatsapp-contact'],
                             ...(branchId && { branchId }),
                         }
-                    })
+                    });
                 } else {
-                    const contactUpdateData: any = {
-                        name: chat.name || contact.name || phoneNumber,
-                        updatedAt: new Date()
+                    const currentTags = contact.tags ? (Array.isArray(contact.tags) ? [...contact.tags] : String(contact.tags).split(',')) : [];
+                    const tagToAdd = isGroup ? 'group' : 'whatsapp-contact';
+                    if (!currentTags.includes(tagToAdd)) {
+                        currentTags.push(tagToAdd);
                     }
+
+                    const contactUpdateData: any = {
+                        name: chat.name || contact.name || contactPhone,
+                        updatedAt: new Date(),
+                        tags: currentTags
+                    };
 
                     // If contact has no branch yet, inherit from WhatsApp account
                     if (!contact.branchId && branchId) {
@@ -123,7 +171,7 @@ export async function POST(request: NextRequest) {
                             status: 'ACTIVE',
                             lastMessageAt: new Date(chat.timestamp * 1000),
                             isRead: chat.unreadCount === 0,
-                            // Auto-assign to agent linked with this WhatsApp account, if available
+                            whatsappAccountId: accountId,
                             ...(assignedAgentId && { assignedToId: assignedAgentId })
                         }
                     })
@@ -136,9 +184,11 @@ export async function POST(request: NextRequest) {
                         updatedAt: new Date()
                     }
 
-                    // If conversation is unassigned, auto-assign to agent linked with this account
                     if (!existingConversation.assignedToId && assignedAgentId) {
                         conversationUpdateData.assignedToId = assignedAgentId
+                    }
+                    if (!existingConversation.whatsappAccountId) {
+                        conversationUpdateData.whatsappAccountId = accountId
                     }
 
                     await prisma.conversation.update({
@@ -148,7 +198,7 @@ export async function POST(request: NextRequest) {
                     syncedConversations++
                 }
 
-                console.log(`✅ Synced: ${chat.name} (${phoneNumber})`)
+                console.log(`✅ Synced: ${chat.name} (${contactPhone})`)
             } catch (error) {
                 console.error(`❌ Error syncing chat ${chat.name}:`, error)
             }

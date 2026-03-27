@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Phone, User, Building2, Tag } from "lucide-react"
+import { Phone, User, Building2, Tag, MessageSquare } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -25,6 +26,7 @@ interface SidebarContentProps {
 }
 
 export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) {
+    const router = useRouter()
     const { t, language } = useI18n()
     const dateLocale = language === "ar" ? ar : undefined
     const [agents, setAgents] = useState<any[]>([])
@@ -38,6 +40,10 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
     const [isEditingTags, setIsEditingTags] = useState(false)
     const [tagInput, setTagInput] = useState("")
 
+    // Group Members State
+    const [participants, setParticipants] = useState<any[]>([])
+    const [loadingParticipants, setLoadingParticipants] = useState(false)
+
     useEffect(() => {
         fetchAgents()
         fetchBranches()
@@ -47,7 +53,14 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
         if (conversation?.contactId) {
             fetchNotes()
         }
-    }, [conversation?.contactId])
+
+        // Fetch group participants if it's a group
+        if (conversation?.contact?.phone?.includes('@g.us')) {
+            fetchGroupParticipants()
+        } else {
+            setParticipants([])
+        }
+    }, [conversation?.contactId, conversation?.contact?.phone])
 
     const fetchAgents = async () => {
         try {
@@ -81,6 +94,69 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
             console.error('Failed to fetch notes', error)
         } finally {
             setLoadingNotes(false)
+        }
+    }
+
+    const fetchGroupParticipants = async () => {
+        if (!conversation?.contact?.phone?.includes('@g.us') && (conversation?.contact?.phone?.length || 0) <= 15) return
+
+        setLoadingParticipants(true)
+        try {
+            const groupId = conversation.contact.phone
+            // accountId: من المحادثة أو من آخر رسالة (غالباً غير معيّن للمحادثات المجلوبة من السينك)
+            const accountId = (conversation as any).whatsappAccountId
+                || (conversation as any).messages?.[0]?.whatsappAccountId
+                || null
+
+            let resolvedAccountId = accountId
+            if (!resolvedAccountId) {
+                const accRes = await authenticatedFetch('/api/whatsapp/accounts')
+                const accData = await accRes.json()
+                if (accData.success && accData.accounts?.length > 0) {
+                    const connected = accData.accounts.find((a: any) => a.status === 'CONNECTED')
+                    if (connected) resolvedAccountId = connected.id
+                }
+            }
+
+            if (!resolvedAccountId) {
+                setParticipants([])
+                return
+            }
+
+            const res = await authenticatedFetch(
+                `/api/whatsapp/group?accountId=${encodeURIComponent(resolvedAccountId)}&groupId=${encodeURIComponent(groupId)}`
+            )
+            const data = await res.json()
+            if (data.success && data.group?.participants) {
+                setParticipants(data.group.participants)
+            } else {
+                setParticipants([])
+            }
+        } catch (error) {
+            console.error('Failed to fetch group participants', error)
+            setParticipants([])
+        } finally {
+            setLoadingParticipants(false)
+        }
+    }
+
+    const handleCreatePrivateChat = async (phone: string) => {
+        try {
+            const res = await authenticatedFetch('/api/conversations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone })
+            })
+            const data = await res.json()
+            if (data.success) {
+                // If it's a new conversation, we might need to refresh the list or navigate
+                // But in Inbox page, we usually just want to select it.
+                // Navigating to /inbox?id=... will trigger selection logic in page.tsx
+                router.push(`/inbox?id=${data.data.id}`)
+                onUpdate()
+            }
+        } catch (error) {
+            console.error('Failed to create private chat', error)
         }
     }
 
@@ -172,6 +248,8 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
         ? (agents.find(a => a.id === conversation.assignedToId)?.name ?? (conversation as any).assignedTo?.name ?? t("unassigned"))
         : t("unassigned")
 
+    const isGroup = conversation.contact.phone.includes("@g.us") || conversation.contact.phone.length > 15 || (conversation.contact as any).tags?.includes("group")
+
     return (
         <div className="flex flex-col h-full bg-card">
             {/* Profile */}
@@ -183,9 +261,11 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                 </Avatar>
                 <h2 className="font-bold text-lg">{conversation.contact.name}</h2>
                 <p className="text-sm text-muted-foreground">
-                    {(conversation.contact.id.includes("@g.us") || (conversation.contact as any).tags?.includes("whatsapp-group"))
-                        ? t("groupChat")
-                        : t("leadCustomer")}
+                    {isGroup
+                        ? t("whatsappGroup")
+                        : conversation.contact.tags?.includes("whatsapp-contact")
+                            ? t("whatsapp-contact") || "WhatsApp Contact"
+                            : t("leadCustomer")}
                 </p>
 
                 <div className="flex flex-col gap-2 w-full mt-6">
@@ -256,9 +336,9 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                                 <Phone className="h-4 w-4" />
                             </div>
                             <div className="overflow-hidden">
-                                <p className="text-xs text-muted-foreground">{t("phone")}</p>
+                                <p className="text-xs text-muted-foreground">{isGroup ? t("groupIdLabel") : t("phone")}</p>
                                 <p className="text-sm font-medium truncate">
-                                    {conversation.contact.phone || "-"}
+                                    {isGroup ? conversation.contact.phone.replace('@g.us', '') : (conversation.contact.phone || "-")}
                                 </p>
                             </div>
                         </div>
@@ -399,6 +479,60 @@ export function SidebarContent({ conversation, onUpdate }: SidebarContentProps) 
                         )}
                     </div>
                 </div>
+
+                {/* Group Participants Section */}
+                {conversation?.contact?.phone?.includes('@g.us') && (
+                    <div className="mt-6 pt-6 border-t">
+                        <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-4 flex items-center gap-2">
+                            <User className="h-3 w-3" />
+                            {t("groupParticipants")}
+                            <Badge variant="secondary" className="ms-auto h-5 px-1.5 text-[10px] font-bold bg-slate-100 text-slate-500">
+                                {participants.length}
+                            </Badge>
+                        </h4>
+
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto pe-2">
+                            {loadingParticipants ? (
+                                <p className="text-xs text-muted-foreground text-center py-2">{t("loading")}</p>
+                            ) : participants.length === 0 ? (
+                                <p className="text-xs text-muted-foreground text-center py-2 bg-slate-50 rounded">{t("noParticipantsFound")}</p>
+                            ) : (
+                                participants.map((p: any) => (
+                                    <div key={p.id} className="flex items-center justify-between group">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <Avatar className="h-7 w-7 border">
+                                                <AvatarFallback className="text-[10px] bg-slate-50">
+                                                    {p.phone.slice(-2)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="truncate">
+                                                <p className="text-xs font-medium truncate">
+                                                    +{p.phone}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            {p.isAdmin && (
+                                                <Badge variant="outline" className="h-4 px-1 text-[8px] font-bold text-green-600 border-green-200 bg-green-50 shrink-0">
+                                                    {t("groupAdmin")}
+                                                </Badge>
+                                            )}
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-primary hover:bg-primary/10 rounded-full"
+                                                onClick={() => handleCreatePrivateChat(p.phone)}
+                                                title={t("sendMessageLabel")}
+                                            >
+                                                <MessageSquare className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

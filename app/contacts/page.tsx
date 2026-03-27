@@ -1,4 +1,5 @@
 "use client"
+import { cn } from "@/lib/utils"
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
@@ -10,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -26,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useI18n } from "@/lib/i18n"
-import { Search, Plus, MoreVertical, Mail, Phone, Tag, Download, Upload, ShieldOff, Users } from "lucide-react"
+import { Search, Plus, MoreVertical, Mail, Phone, Tag, Download, Upload, ShieldOff, Users, Trash2, Loader2, MessageSquare } from "lucide-react"
 import { authenticatedFetch, getUserRole } from "@/lib/auth"
 import { hasPermission } from "@/lib/permissions"
 import type { UserRole } from "@/lib/permissions"
@@ -35,6 +37,7 @@ interface Contact {
   id: string
   name: string
   phone: string
+  externalId?: string | null
   email?: string | null
   avatar?: string | null
   tags: string | null
@@ -48,11 +51,15 @@ export default function ContactsPage() {
   const { t, language, dir } = useI18n()
   const dateLocale = language === "ar" ? ar : undefined
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  const [tagFilter, setTagFilter] = useState("")
+  const [selectedContact, setSelectedContact] = useState<any>(null)
+  const [groupInfo, setGroupInfo] = useState<any>(null)
+  const [isLoadingGroup, setIsLoadingGroup] = useState(false)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<"all" | "blocked">("all")
+  const [viewMode, setViewMode] = useState<"all" | "blocked" | "groups">("all")
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   // Add Contact Dialog
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -80,7 +87,8 @@ export default function ContactsPage() {
   const fetchContacts = async () => {
     try {
       setIsLoading(true)
-      const response = await authenticatedFetch('/api/contacts')
+      const url = '/api/contacts' + (tagFilter.trim() ? `?tag=${encodeURIComponent(tagFilter.trim())}` : '')
+      const response = await authenticatedFetch(url)
       const data = await response.json()
 
       if (data.success) {
@@ -228,19 +236,18 @@ export default function ContactsPage() {
     reader.readAsText(file)
   }
 
-  const handleSendMessage = async (contactId: string) => {
-    // ... existing logic ...
+  const handleSendMessage = async (contactId?: string, phone?: string) => {
     try {
       const response = await authenticatedFetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contactId })
+        body: JSON.stringify({ contactId, phone })
       })
 
       const data = await response.json()
 
       if (data.success) {
-        router.push(`/inbox?conversation=${data.data.id}`)
+        router.push(`/inbox?id=${data.data.id}`)
       } else {
         toast({
           title: t("error"),
@@ -249,7 +256,12 @@ export default function ContactsPage() {
         })
       }
     } catch (err) {
-      // ... err handling
+      console.error(err)
+      toast({
+        title: t("error"),
+        description: t("failedToCreateConversation"),
+        variant: "destructive"
+      })
     }
   }
 
@@ -416,11 +428,10 @@ export default function ContactsPage() {
   }
 
 
-  // جلب جهات الاتصال من API
+  // جلب جهات الاتصال من API (وإعادة الجلب عند تغيير فلتر الوسم)
   useEffect(() => {
     fetchContacts()
-  }, [])
-
+  }, [tagFilter])
 
 
   const handleAddContact = async (e: React.FormEvent) => {
@@ -478,14 +489,56 @@ export default function ContactsPage() {
     }
   }
 
+  const isGroupContact = (phone: string) => {
+    return phone.includes("@g.us") || phone.length > 18;
+  }
+
+  const fetchGroupInfo = async (groupId: string) => {
+    try {
+      setIsLoadingGroup(true)
+      // We need an accountId. For now, fetch all accounts and use the first connected one.
+      // In a real scenario, we might want to store which account this group belongs to.
+      const accountsRes = await authenticatedFetch('/api/whatsapp/accounts')
+      const accountsData = await accountsRes.json()
+      const connectedAccount = accountsData.accounts?.find((a: any) => a.status === 'CONNECTED')
+
+      if (!connectedAccount) {
+        console.warn('No connected WhatsApp account found to fetch group info')
+        return
+      }
+
+      const response = await authenticatedFetch(`/api/whatsapp/group?accountId=${connectedAccount.id}&groupId=${groupId}`)
+      const data = await response.json()
+
+      if (data.success) {
+        setGroupInfo(data.group)
+      }
+    } catch (err) {
+      console.error('Error fetching group info:', err)
+    } finally {
+      setIsLoadingGroup(false)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedContact && isGroupContact(selectedContact.phone)) {
+      fetchGroupInfo(selectedContact.phone)
+    } else {
+      setGroupInfo(null)
+    }
+  }, [selectedContact])
+
   const filteredContacts = contacts.filter((contact) => {
     const query = searchQuery.toLowerCase()
+
+    // Normalize logic: search by name, phone, email
     const matchesSearch = contact.name.toLowerCase().includes(query) ||
       contact.phone.includes(query) ||
       contact.email?.toLowerCase().includes(query)
 
     if (!matchesSearch) return false
 
+    // View Mode Filters
     if (viewMode === 'blocked') {
       const isBlocked = contact.tags
         ? (Array.isArray(contact.tags) ? contact.tags : String(contact.tags).split(',').map(t => t.trim())).includes('blocked')
@@ -493,23 +546,91 @@ export default function ContactsPage() {
       return isBlocked
     }
 
+    if (viewMode === 'groups') {
+      const hasGroupTag = contact.tags
+        ? (Array.isArray(contact.tags) ? contact.tags : String(contact.tags).split(',').map(t => t.trim())).includes('group')
+        : false
+      return hasGroupTag || isGroupContact(contact.phone);
+    }
+
     return true
   })
+
+  // Bulk Selection Logic
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(filteredContacts.map(c => c.id))
+      setSelectedIds(allIds)
+    } else {
+      setSelectedIds(new Set())
+    }
+  }
+
+  const toggleSelection = (id: string) => {
+    const newSelected = new Set(selectedIds)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelectedIds(newSelected)
+  }
+
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false)
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+
+    try {
+      setIsSubmitting(true)
+      const response = await authenticatedFetch('/api/contacts', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setContacts(contacts.filter(c => !selectedIds.has(c.id)))
+        setSelectedIds(new Set())
+        setIsBulkDeleteDialogOpen(false)
+        toast({
+          title: t("success"),
+          description: t("contactsDeletedSuccessfully") || `Deleted ${data.count} contacts`
+        })
+      } else {
+        toast({
+          title: t("error"),
+          description: data.error || t("failedToDeleteContacts"),
+          variant: "destructive"
+        })
+      }
+    } catch (err) {
+      console.error('Error deleting contacts:', err)
+      toast({
+        title: t("error"),
+        description: t("failedToConnectToServer"),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <AppLayout title={t("contacts")}>
       <div className="space-y-6">
-        {/* Header Actions */}
         {/* Header Actions */}
         <div className="flex flex-col gap-4">
           {/* Top Row: Title + Badge + Mobile Add Button */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-xl md:text-2xl font-bold tracking-tight">
-                {viewMode === 'all' ? t("yourContacts") : t("blockedContacts")}
+                {viewMode === 'all' ? t("yourContacts") : viewMode === 'groups' ? t("groups") || "Groups" : t("blockedContacts")}
               </h2>
               <Badge variant="outline" className="text-xs md:text-sm px-2 py-0.5 h-6 md:h-7">
-                {viewMode === 'all' ? t("total") : t("blocked")}: {filteredContacts.length}
+                {t("total")}: {filteredContacts.length}
               </Badge>
             </div>
             {/* Mobile: Add Contact Button (Icon Only) */}
@@ -531,11 +652,51 @@ export default function ContactsPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            {/* Filter by tag */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Tag className="h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder={t("filterByTag")}
+                className="h-10 md:h-9 w-40 bg-card"
+                value={tagFilter}
+                onChange={(e) => setTagFilter(e.target.value)}
+              />
+              {tagFilter && (
+                <Button variant="ghost" size="sm" className="h-9 px-2" onClick={() => setTagFilter("")} title={t("allTags")}>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
 
-            {/* Actions Row — Blocked / Import / Export only for Admin */}
+            {/* Actions Row — Filters / Import / Export */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
               {getUserRole() === "ADMIN" && (
                 <>
+                  {selectedIds.size > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-9 gap-2 shrink-0 bg-red-600 hover:bg-red-700 text-white animate-in fade-in slide-in-from-left-5"
+                      onClick={() => setIsBulkDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>
+                        {t("deleteSelected") || "Delete"} ({selectedIds.size})
+                      </span>
+                    </Button>
+                  )}
+
+                  <Button
+                    variant={viewMode === "groups" ? "default" : "outline"}
+                    size="sm"
+                    className={`h-9 gap-2 shrink-0 ${viewMode === "groups" ? "bg-primary text-primary-foreground" : "bg-card"}`}
+                    onClick={() => setViewMode(viewMode === "all" ? "groups" : "all")}
+                  >
+                    <Users className="h-4 w-4" />
+                    <span className="hidden lg:inline">{t("groups") || "Groups"}</span>
+                  </Button>
+
                   <Button
                     variant={viewMode === "blocked" ? "default" : "outline"}
                     size="sm"
@@ -596,7 +757,9 @@ export default function ContactsPage() {
                   ? t("noContactsMatchingSearch")
                   : viewMode === 'blocked'
                     ? t("noBlockedContactsFound")
-                    : t("noContactsYetAddFirst")}
+                    : viewMode === 'groups'
+                      ? t("noGroupsFound") || "No groups found"
+                      : t("noContactsYetAddFirst")}
               </p>
             </div>
           ) : (
@@ -607,6 +770,12 @@ export default function ContactsPage() {
                   const isBlocked = contact.tags
                     ? (Array.isArray(contact.tags) ? contact.tags : String(contact.tags).split(",").map((t) => t.trim())).includes("blocked")
                     : false
+                  const isGroup = isGroupContact(contact.phone);
+                  const displayAvatar = isGroup ? null : (contact.avatar || "/placeholder.svg");
+                  const displayName = isGroup && (contact.name === "رقم غير معروف" || !contact.name || contact.name === "Unknown Number")
+                    ? "WhatsApp Group"
+                    : contact.name;
+
                   return (
                     <div
                       key={contact.id}
@@ -615,17 +784,35 @@ export default function ContactsPage() {
                     >
                       <div className="flex items-start gap-3">
                         <Avatar className="h-12 w-12 shrink-0">
-                          <AvatarImage src={contact.avatar || "/placeholder.svg"} />
-                          <AvatarFallback>
-                            {contact.name.split(" ").map((n) => n[0]).join("")}
-                          </AvatarFallback>
+                          {isGroup ? (
+                            <div className="h-full w-full bg-primary/10 flex items-center justify-center text-primary">
+                              <Users className="h-6 w-6" />
+                            </div>
+                          ) : (
+                            <>
+                              <AvatarImage src={displayAvatar || ""} />
+                              <AvatarFallback>
+                                {displayName.split(" ").map((n) => n[0]).join("")}
+                              </AvatarFallback>
+                            </>
+                          )}
                         </Avatar>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-semibold truncate">{contact.name}</p>
+                            <p className="font-semibold truncate">{displayName}</p>
                             {isBlocked && (
                               <Badge variant="destructive" className="text-[10px] h-5">
                                 {t("blockedBadge")}
+                              </Badge>
+                            )}
+                            {isGroup && (
+                              <Badge variant="secondary" className="text-[10px] h-5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                {t("group") || "Group"}
+                              </Badge>
+                            )}
+                            {contact.tags?.includes('whatsapp-contact') && (
+                              <Badge variant="secondary" className="text-[10px] h-5 bg-purple-100 text-purple-700 border-purple-200">
+                                {t("whatsapp-contact") || "whatsapp-contact"}
                               </Badge>
                             )}
                           </div>
@@ -693,7 +880,13 @@ export default function ContactsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border/50">
-                      <TableHead className="w-[50px]">#</TableHead>
+                      <TableHead className="w-[50px]">
+                        <Checkbox
+                          checked={filteredContacts.length > 0 && selectedIds.size === filteredContacts.length}
+                          onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       <TableHead>{t("contactLabel")}</TableHead>
                       <TableHead>{t("phone")}</TableHead>
                       <TableHead>{t("email")}</TableHead>
@@ -707,6 +900,11 @@ export default function ContactsPage() {
                       const isBlocked = contact.tags
                         ? (Array.isArray(contact.tags) ? contact.tags : String(contact.tags).split(',').map(t => t.trim())).includes('blocked')
                         : false;
+                      const isGroup = isGroupContact(contact.phone);
+                      const displayAvatar = isGroup ? null : (contact.avatar || "/placeholder.svg");
+                      const displayName = isGroup && (contact.name === "رقم غير معروف" || !contact.name || contact.name === "Unknown Number")
+                        ? "WhatsApp Group"
+                        : contact.name;
 
                       return (
                         <TableRow
@@ -714,27 +912,68 @@ export default function ContactsPage() {
                           className={`cursor-pointer border-border/30 hover:bg-accent/50 ${isBlocked ? 'bg-red-50/50 hover:bg-red-100/50 dark:bg-red-950/20' : ''}`}
                           onClick={() => setSelectedContact(contact)}
                         >
-                          <TableCell className="text-muted-foreground font-medium">
-                            {index + 1}
+                          <TableCell className="w-[50px]">
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                checked={selectedIds.has(contact.id)}
+                                onCheckedChange={() => toggleSelection(contact.id)}
+                                aria-label="Select row"
+                              />
+                            </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarImage src={contact.avatar || "/placeholder.svg"} />
-                                <AvatarFallback>
-                                  {contact.name
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")}
-                                </AvatarFallback>
+                                {isGroup ? (
+                                  <div className="h-full w-full bg-primary/10 flex items-center justify-center text-primary">
+                                    <Users className="h-5 w-5" />
+                                  </div>
+                                ) : (
+                                  <>
+                                    <AvatarImage src={displayAvatar || ""} />
+                                    <AvatarFallback>
+                                      {displayName.split(" ").map((n) => n[0]).join("")}
+                                    </AvatarFallback>
+                                  </>
+                                )}
                               </Avatar>
                               <div>
-                                <span className="font-medium">{contact.name}</span>
+                                <span className="font-medium">{displayName}</span>
                                 {isBlocked && <Badge variant="destructive" className="ms-2 text-[10px] h-5">{t("blockedBadge")}</Badge>}
+                                {isGroup && <Badge variant="secondary" className="ms-2 text-[10px] h-5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{t("group") || "Group"}</Badge>}
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{contact.phone}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            <div className="flex flex-col">
+                              {/* Phone / Group ID */}
+                              <span>
+                                {isGroup
+                                  ? (contact.phone?.includes("@g.us")
+                                      ? contact.phone.replace("@g.us", "")
+                                      : contact.phone)
+                                  : (contact.phone || "-")}
+                              </span>
+                              {/* Meta ID (externalId or very long platform ID) */}
+                              {(() => {
+                                const rawPhone = contact.phone || ""
+                                const looksLikeMetaId =
+                                  !rawPhone.startsWith("+") && rawPhone.replace(/[^0-9]/g, "").length > 15
+                                const metaId =
+                                  contact.externalId && contact.externalId !== contact.phone
+                                    ? contact.externalId
+                                    : looksLikeMetaId
+                                    ? rawPhone
+                                    : null
+                                if (!metaId) return null
+                                return (
+                                  <span className="text-[11px] text-muted-foreground/70">
+                                    Meta ID: {metaId}
+                                  </span>
+                                )
+                              })()}
+                            </div>
+                          </TableCell>
                           <TableCell className="text-muted-foreground">{contact.email || "-"}</TableCell>
                           <TableCell>
                             <div className="flex gap-1 flex-wrap">
@@ -749,8 +988,15 @@ export default function ContactsPage() {
                                     return (
                                       <>
                                         {tagsArray.slice(0, 2).map((tag: string, index: number) => (
-                                          <Badge key={index} variant={tag === 'blocked' ? 'destructive' : 'secondary'} className="rounded-full">
-                                            {tag.trim()}
+                                          <Badge
+                                            key={index}
+                                            variant={tag === 'blocked' ? 'destructive' : 'secondary'}
+                                            className={cn(
+                                              "rounded-full whitespace-nowrap",
+                                              tag === 'whatsapp-contact' && "bg-purple-100 text-purple-700 border-purple-200"
+                                            )}
+                                          >
+                                            {t(tag.trim())}
                                           </Badge>
                                         ))}
                                         {tagsArray.length > 2 && (
@@ -862,7 +1108,7 @@ export default function ContactsPage() {
                     <AvatarFallback className="text-2xl">
                       {selectedContact.name
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: string) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
@@ -891,8 +1137,15 @@ export default function ContactsPage() {
                     <div className="flex flex-wrap gap-2">
                       {selectedContact.tags ? (
                         (Array.isArray(selectedContact.tags) ? selectedContact.tags : String(selectedContact.tags).split(',')).map((tag: string) => (
-                          <Badge key={tag} variant="secondary" className="rounded-full">
-                            {tag.trim()}
+                          <Badge
+                            key={tag}
+                            variant="secondary"
+                            className={cn(
+                              "rounded-full",
+                              tag.trim() === 'whatsapp-contact' && "bg-purple-100 text-purple-700 border-purple-200"
+                            )}
+                          >
+                            {t(tag.trim())}
                           </Badge>
                         ))
                       ) : (
@@ -905,6 +1158,64 @@ export default function ContactsPage() {
                     <div className="rounded-xl bg-muted/50 p-4">
                       <div className="mb-2 text-sm font-medium">{t("notes")}</div>
                       <p className="text-sm text-muted-foreground">{selectedContact.notes}</p>
+                    </div>
+                  )}
+
+                  {/* Group Participants Section */}
+                  {isGroupContact(selectedContact.phone) && (
+                    <div className="rounded-xl border border-border/50 overflow-hidden">
+                      <div className="bg-muted/50 p-4 border-b border-border/50 flex items-center justify-between">
+                        <div className="flex items-center gap-2 font-medium text-sm">
+                          <Users className="h-4 w-4" />
+                          {t("groupParticipants") || "Group Members"}
+                        </div>
+                        {groupInfo && (
+                          <Badge variant="outline" className="text-[10px]">
+                            {groupInfo.participantsCount}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="max-h-[300px] overflow-y-auto p-2 space-y-1">
+                        {isLoadingGroup ? (
+                          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground gap-2">
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                            <span className="text-xs">{t("loading") || "Loading members..."}</span>
+                          </div>
+                        ) : groupInfo?.participants ? (
+                          groupInfo.participants.map((p: any) => (
+                            <div key={p.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback className="text-[10px]">
+                                    {p.phone.substring(0, 2)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium">{p.phone}</span>
+                                  {p.isAdmin && (
+                                    <span className="text-[10px] text-green-600 font-medium">
+                                      {t("groupAdmin") || "Group admin"}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
+                                onClick={() => handleSendMessage(undefined, p.phone)}
+                                title={t("sendMessageLabel")}
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-8 text-center text-sm text-muted-foreground">
+                            {t("noParticipantsFound") || "Could not load participants"}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1087,35 +1398,35 @@ export default function ContactsPage() {
 
       {/* Delete Confirmation Dialog (hidden for Supervisor) */}
       {canDeleteContact && (
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("deleteContactTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("deleteContactConfirmDesc")}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setIsDeleteDialogOpen(false)
-                setContactToDelete(null)
-              }}
-            >
-              {t("cancel")}
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => contactToDelete && handleDeleteContact(contactToDelete)}
-            >
-              {t("delete")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t("deleteContactTitle")}</DialogTitle>
+              <DialogDescription>
+                {t("deleteContactConfirmDesc")}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsDeleteDialogOpen(false)
+                  setContactToDelete(null)
+                }}
+              >
+                {t("cancel")}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => contactToDelete && handleDeleteContact(contactToDelete)}
+              >
+                {t("delete")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Block Confirmation Dialog */}
@@ -1142,6 +1453,29 @@ export default function ContactsPage() {
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Processing...' : (contactToToggle?.tags?.includes('blocked') ? 'Unblock' : 'Block')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <AlertDialogContent className="rounded-2xl border-border bg-card shadow-soft-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl">{t("deleteSelectedContacts") || "Delete Selected Contacts"}</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              {t("bulkDeleteConfirm") || `Are you sure you want to delete ${selectedIds.size} contacts? This action cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full border-border bg-transparent hover:bg-accent">
+              {t("cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg"
+              onClick={handleBulkDelete}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? t("deleting") || "Deleting..." : t("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -4,7 +4,11 @@
 
 $ErrorActionPreference = "Stop"
 $scriptDir = $PSScriptRoot
-$projectRoot = Split-Path -Parent (Split-Path -Parent $scriptDir)
+
+# المشروع الحقيقي هو مجلد MerasNode نفسه، مش الأب بتاعه.
+# التصحيح: projectRoot = parent لـ scripts (يعني d:\Development\MerasNode)،
+# علشان ما يرفعش مجلدات تانية زي AboKhaledfiles بالغلط.
+$projectRoot = Split-Path -Parent $scriptDir
 Set-Location $projectRoot
 
 $localConfig = Join-Path $scriptDir "deploy.local.ps1"
@@ -85,7 +89,9 @@ if (Test-Path $deployScript) {
   if ($key) { $scpArgs += "-i", $key }
   $scpArgs += $deployScript, "${ec2}:${remoteDir}/scripts/deploy-on-ec2.sh"
   & scp $scpArgs
-  $remote = "cd $remoteDir; chmod +x ./scripts/deploy-on-ec2.sh; ./scripts/deploy-on-ec2.sh"
+  $branch = (git rev-parse --abbrev-ref HEAD 2>$null)
+  if (-not $branch) { $branch = "main" }
+  $remote = "cd $remoteDir; git fetch origin; git checkout $branch 2>/dev/null || true; chmod +x ./scripts/deploy-on-ec2.sh; ./scripts/deploy-on-ec2.sh"
 } else {
   $remote = "cd $remoteDir; [ -s ~/.nvm/nvm.sh ] && . ~/.nvm/nvm.sh && nvm use 20 2>/dev/null; mkdir -p logs; npm install; npm run build; if pm2 describe meras-nextjs &>/dev/null; then pm2 restart ecosystem.config.js; else pm2 start ecosystem.config.js; pm2 save; fi"
 }

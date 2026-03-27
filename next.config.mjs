@@ -3,54 +3,25 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+
   images: {
     unoptimized: true,
   },
+
+  // Next.js 16: استخدام Turbopack بدون webpack لتجنب خطأ الـ build
+  turbopack: {},
+
   // Exclude WhatsApp packages from server bundles
   serverExternalPackages: [
-    'whatsapp-web.js', 
+    'whatsapp-web.js',
     'qrcode-terminal',
     'puppeteer',
     'puppeteer-core',
     '@prisma/client',
     'bcryptjs'
   ],
-  // Turbopack configuration
   experimental: {
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-      resolveExtensions: [
-        '.mdx',
-        '.tsx',
-        '.ts',
-        '.jsx',
-        '.js',
-        '.mjs',
-        '.json',
-      ],
-    },
-    // Optimize for better performance
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-  },
-  // Webpack fallback for better compatibility
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      }
-    }
-    return config
   },
 }
 

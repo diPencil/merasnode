@@ -7,6 +7,7 @@ import {
     LayoutDashboard,
     Users,
     MessageSquare,
+    MessagesSquare,
     FileText,
     Activity,
     Settings,
@@ -29,7 +30,8 @@ import { cn } from "@/lib/utils"
 import { useI18n } from "@/lib/i18n"
 import { getUserRole, logout, getUser, authenticatedFetch } from "@/lib/auth"
 import { canAccessPage, type PageRoute } from "@/lib/permissions"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { getDefaultAvatarForGender } from "@/lib/avatar"
 
 const GROUP_LABELS: Record<string, string> = {
     main: "navigation",
@@ -42,7 +44,7 @@ const MENU_GROUPS = [
     { id: "main", items: [{ icon: LayoutDashboard, label: "dashboard", href: "/dashboard" }, { icon: MessageSquare, label: "inbox", href: "/inbox" }, { icon: Calendar, label: "bookings", href: "/bookings" }] },
     { id: "crm", items: [{ icon: Users, label: "contacts", href: "/contacts" }, { icon: Building2, label: "branches", href: "/branches" }, { icon: Tag, label: "offers", href: "/offers" }, { icon: Receipt, label: "invoices", href: "/invoices" }] },
     { id: "automation", items: [{ icon: FileText, label: "templates", href: "/templates" }, { icon: Bot, label: "botFlows", href: "/bot-flows" }] },
-    { id: "system", items: [{ icon: BarChart3, label: "analytics", href: "/analytics" }, { icon: UserPlus, label: "users", href: "/users" }, { icon: LinkIcon, label: "whatsappAccounts", href: "/accounts" }, { icon: Activity, label: "activityLogs", href: "/logs" }] },
+    { id: "system", items: [{ icon: BarChart3, label: "analytics", href: "/analytics" }, { icon: UserPlus, label: "users", href: "/users" }, { icon: MessagesSquare, label: "internalChat", href: "/internal-chat" }, { icon: LinkIcon, label: "whatsappAccounts", href: "/accounts" }, { icon: Activity, label: "activityLogs", href: "/logs" }] },
 ]
 
 export function NavigationRail() {
@@ -53,7 +55,7 @@ export function NavigationRail() {
     const [companyName, setCompanyName] = useState("")
     const [companyLogo, setCompanyLogo] = useState("")
     const [companyDisplayType, setCompanyDisplayType] = useState<"text" | "logo">("text")
-    const [currentUser, setCurrentUser] = useState<{ name?: string; role?: string } | null>(null)
+    const [currentUser, setCurrentUser] = useState<any | null>(null)
     const [quickCreateTemplateOpen, setQuickCreateTemplateOpen] = useState(false)
     const [quickCreateBotFlowOpen, setQuickCreateBotFlowOpen] = useState(false)
 
@@ -87,7 +89,7 @@ export function NavigationRail() {
             .catch(err => console.error('Error fetching settings:', err))
     }, [])
 
-    const userInitials = currentUser?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "U"
+    const userInitials = currentUser?.name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "U"
     const roleLabel = currentUser?.role ? currentUser.role.charAt(0) + currentUser.role.slice(1).toLowerCase() : ""
 
     return (
@@ -140,7 +142,7 @@ export function NavigationRail() {
                     variant="ghost"
                     size="sm"
                     className="flex flex-row justify-start gap-2 text-xs font-medium hover:bg-primary/10 hover:text-primary text-muted-foreground h-9 text-start transition-colors"
-                    onClick={() => setQuickCreateBotFlowOpen(true)}
+                    onClick={() => router.push("/bot-flows/builder")}
                 >
                     <Workflow className="h-4 w-4 shrink-0 order-first" />
                     {t("createBotFlow")}
@@ -190,7 +192,8 @@ export function NavigationRail() {
                         className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
                         onClick={() => router.push('/settings')}
                     >
-                        <Avatar className="h-8 w-8 shrink-0">
+                        <Avatar className="h-8 w-8 shrink-0 border border-border/20">
+                            <AvatarImage src={getDefaultAvatarForGender(currentUser?.gender)} alt={currentUser?.name} />
                             <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                                 {userInitials}
                             </AvatarFallback>

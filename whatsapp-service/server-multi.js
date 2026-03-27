@@ -150,12 +150,13 @@ app.post('/initialize/:accountId', async (req, res) => {
  */
 app.post('/send', async (req, res) => {
     try {
-        const { 
-            accountId,      // ← Which account to send from (REQUIRED!)
-            phoneNumber, 
-            message, 
-            chatId, 
-            mediaUrl 
+        const {
+            accountId,
+            phoneNumber,
+            message,
+            chatId,
+            mediaUrl,
+            quotedMessageId
         } = req.body;
 
         // Validate
@@ -173,13 +174,13 @@ app.post('/send', async (req, res) => {
             });
         }
 
-        // Send message
         const result = await manager.sendMessage(
             accountId,
             phoneNumber,
             message,
             mediaUrl,
-            chatId
+            chatId,
+            quotedMessageId
         );
 
         res.json({
@@ -249,13 +250,35 @@ app.get('/chats/:accountId', async (req, res) => {
 });
 
 /**
+ * GET /group/:accountId/:groupId
+ * Get details for a specific group
+ */
+app.get('/group/:accountId/:groupId', async (req, res) => {
+    try {
+        const { accountId, groupId } = req.params;
+        const groupInfo = await manager.getGroupInfo(accountId, groupId);
+
+        res.json({
+            success: true,
+            group: groupInfo
+        });
+    } catch (error) {
+        console.error('Error getting group info:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
  * GET /health
  * Health check endpoint
  */
 app.get('/health', (req, res) => {
     const statuses = manager.getAllClientsStatus();
     const readyCount = statuses.filter(s => s.isReady).length;
-    
+
     res.json({
         success: true,
         service: 'whatsapp-multi-service',

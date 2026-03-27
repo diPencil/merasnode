@@ -7,12 +7,14 @@ import {
     forbiddenResponse,
 } from "@/lib/api-auth"
 
-// GET - Fetch contacts (scoped by branch)
+// GET - Fetch contacts (center-scoped; optional tag filter)
 export async function GET(request: NextRequest) {
     try {
         const scope = await requireAuthWithScope(request)
+        const { searchParams } = new URL(request.url)
+        const tagFilter = searchParams.get('tag')?.trim() || undefined
+        const categoryId = searchParams.get('categoryId')?.trim() || undefined
 
-        // Build where clause based on role (aligned with dashboard stats logic)
         let where: any = {}
 
         if (scope.role === 'ADMIN') {
@@ -22,7 +24,6 @@ export async function GET(request: NextRequest) {
             const hasWaScope = scope.whatsappAccountIds && scope.whatsappAccountIds.length > 0
 
             const orClauses: any[] = []
-
             if (hasBranchScope) {
                 orClauses.push({ branchId: { in: scope.branchIds } })
             }
@@ -39,20 +40,68 @@ export async function GET(request: NextRequest) {
             }
 
             if (orClauses.length === 0) {
-                return NextResponse.json({
-                    success: true,
-                    data: [],
-                    count: 0
-                })
+                return NextResponse.json({ success: true, data: [], count: 0 })
             }
-
             where = orClauses.length === 1 ? orClauses[0] : { OR: orClauses }
         } else {
-            // AGENT: contacts that have at least one conversation assigned to this agent
-            // This matches the dashboard's contact visibility
-            where = {
-                conversations: { some: { assignedToId: scope.userId } }
+            // AGENT: center-specific — contacts belonging to their branch(s) or WA account(s) or assigned to them
+            const hasBranchScope = scope.branchIds && scope.branchIds.length > 0
+            const hasWaScope = scope.whatsappAccountIds && scope.whatsappAccountIds.length > 0
+            const orClauses: any[] = [
+                { conversations: { some: { assignedToId: scope.userId } } },
+            ]
+            if (hasBranchScope) {
+                orClauses.push({ branchId: { in: scope.branchIds } })
             }
+            if (hasWaScope) {
+                orClauses.push({
+                    conversations: {
+                        some: {
+                            messages: {
+                                some: { whatsappAccountId: { in: scope.whatsappAccountIds } },
+                            },
+                        },
+                    },
+                })
+            }
+            where = { OR: orClauses }
+        }
+
+        // Filter by offer category: only contacts whose branch is in this category's branches
+        if (categoryId) {
+            const category = await prisma.offerCategory.findUnique({
+                where: { id: categoryId },
+                include: { branches: { select: { branchId: true } } },
+            })
+            const branchIds = category?.branches?.map((b) => b.branchId) ?? []
+            if (branchIds.length === 0) {
+                return NextResponse.json({ success: true, data: [], count: 0 })
+            }
+            where = { AND: [where, { branchId: { in: branchIds } }] }
+        }
+
+        if (tagFilter) {
+            where.AND = where.AND || []
+            where.AND.push({
+                OR: [
+                    { tags: { path: '$', equals: tagFilter } },
+                    { tags: { string_contains: tagFilter } },
+                ],
+            })
+            // MySQL JSON: simpler approach — filter in memory or use JsonFilter
+            delete where.AND
+            const baseWhere = { ...where }
+            const contactsAll = await prisma.contact.findMany({
+                where: baseWhere,
+                orderBy: { createdAt: 'desc' },
+            })
+            const contacts = contactsAll.filter((c) => {
+                const tags = c.tags
+                if (!tags) return false
+                const arr = Array.isArray(tags) ? (tags as string[]) : [String(tags)]
+                return arr.some((t) => String(t).trim().toLowerCase() === tagFilter.toLowerCase())
+            })
+            return NextResponse.json({ success: true, data: contacts, count: contacts.length })
         }
 
         const contacts = await prisma.contact.findMany({
@@ -116,6 +165,7 @@ export async function POST(request: NextRequest) {
             })
 
             await logActivity({
+                userId: scope.userId,
                 action: "BULK_CREATE",
                 entityType: "Contact",
                 entityId: "bulk",
@@ -161,6 +211,7 @@ export async function POST(request: NextRequest) {
         })
 
         await logActivity({
+            userId: scope.userId,
             action: "CREATE",
             entityType: "Contact",
             entityId: contact.id,
@@ -211,6 +262,54 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(
             { success: false, error: "Failed to create contact" },
+            { status: 500 }
+        )
+    }
+}
+
+// DELETE - Bulk delete contacts
+export async function DELETE(request: NextRequest) {
+    try {
+        const scope = await requireAuthWithScope(request)
+        const body = await request.json()
+
+        if (!Array.isArray(body.ids) || body.ids.length === 0) {
+            return NextResponse.json(
+                { success: false, error: "No contact IDs provided" },
+                { status: 400 }
+            )
+        }
+
+        if (scope.role !== 'ADMIN') {
+            return forbiddenResponse("Only Admins can perform bulk deletion")
+        }
+
+        const result = await prisma.contact.deleteMany({
+            where: {
+                id: { in: body.ids }
+            }
+        })
+
+        await logActivity({
+            action: "BULK_DELETE",
+            entityType: "Contact",
+            entityId: "bulk",
+            description: `Deleted ${result.count} contacts`
+        })
+
+        return NextResponse.json({
+            success: true,
+            count: result.count,
+            message: `Successfully deleted ${result.count} contacts`
+        })
+
+    } catch (error) {
+        if (error instanceof Error) {
+            if (error.message === 'Unauthorized') return unauthorizedResponse()
+        }
+        console.error('Error deleting contacts:', error)
+        return NextResponse.json(
+            { success: false, error: "Failed to delete contacts" },
             { status: 500 }
         )
     }

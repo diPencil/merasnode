@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { updateUserSchema, validateBody } from "@/lib/validations"
@@ -62,8 +63,10 @@ export async function GET(
                 name: true,
                 username: true,
                 email: true,
+                gender: true,
                 role: true,
                 status: true,
+                hiddenFromUserList: true,
                 createdAt: true,
                 updatedAt: true,
                 branches: {
@@ -94,8 +97,15 @@ export async function GET(
                 { status: 404 }
             )
         }
-
-        return NextResponse.json({ success: true, data: user })
+        // Hidden user: only self can view (don't expose to other admins)
+        if ((user as any).hiddenFromUserList === true && id !== scope.userId) {
+            return NextResponse.json(
+                { success: false, error: "User not found" },
+                { status: 404 }
+            )
+        }
+        const { hiddenFromUserList: _, ...data } = user as any
+        return NextResponse.json({ success: true, data })
     } catch (error) {
         if (error instanceof Error) {
             if (error.message === 'Unauthorized') return unauthorizedResponse()
@@ -142,12 +152,19 @@ export async function PUT(
         }
         const data = validation.data
 
-        const existingUser = await prisma.user.findUnique({ where: { id } })
+        const existingUser = await prisma.user.findUnique({
+            where: { id },
+            select: { role: true, hiddenFromUserList: true },
+        })
         if (!existingUser) {
             return NextResponse.json(
                 { success: false, error: "User not found" },
                 { status: 404 }
             )
+        }
+        // Hidden super-admin: only that user can edit themselves
+        if ((existingUser as any).hiddenFromUserList === true && id !== scope.userId) {
+            return forbiddenResponse('Cannot modify this user')
         }
         // Supervisors must not modify Admin users (backend enforcement)
         if (scope.role === 'SUPERVISOR' && existingUser.role === 'ADMIN') {
@@ -177,6 +194,7 @@ export async function PUT(
                     username: data.username === '' || data.username === null ? null : data.username.trim().toLowerCase()
                 }),
                 ...(data.role != null && { role: data.role }),
+                ...(data.gender != null && { gender: data.gender }),
                 ...(data.status != null && { status: data.status }),
                 ...(data.branchIds && {
                     branches: { set: data.branchIds.map((bid: string) => ({ id: bid })) }
@@ -190,6 +208,7 @@ export async function PUT(
                 name: true,
                 username: true,
                 email: true,
+                gender: true,
                 role: true,
                 status: true,
                 createdAt: true,
@@ -239,12 +258,18 @@ export async function DELETE(
     try {
         const params = await props.params
         const { id } = params
-        const existingUser = await prisma.user.findUnique({ where: { id } })
+        const existingUser = await prisma.user.findUnique({
+            where: { id },
+            select: { name: true, email: true, role: true, hiddenFromUserList: true },
+        })
         if (!existingUser) {
             return NextResponse.json(
                 { success: false, error: "User not found" },
                 { status: 404 }
             )
+        }
+        if ((existingUser as any).hiddenFromUserList === true) {
+            return forbiddenResponse('Cannot delete this user')
         }
         const prevState = { name: existingUser.name, email: existingUser.email, role: existingUser.role }
         const allowed = await requireDeleteAllowed(request, "User", id, prevState)

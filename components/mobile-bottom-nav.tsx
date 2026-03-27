@@ -27,6 +27,7 @@ import {
   Activity,
   Settings,
   LogOut,
+  MessagesSquare,
 } from "lucide-react"
 import { getUserRole, logout } from "@/lib/auth"
 import { canAccessPage, type PageRoute } from "@/lib/permissions"
@@ -46,6 +47,7 @@ const EXTRA_NAV = [
   { icon: Bot, label: "botFlows", href: "/bot-flows" },
   { icon: BarChart3, label: "analytics", href: "/analytics" },
   { icon: UserPlus, label: "users", href: "/users" },
+  { icon: MessagesSquare, label: "internalChat", href: "/internal-chat" },
   { icon: LinkIcon, label: "whatsappAccounts", href: "/accounts" },
   { icon: Activity, label: "activityLogs", href: "/logs" },
 ]
@@ -109,6 +111,7 @@ export function MobileBottomNav() {
               pathname === "/bot-flows" ||
               pathname === "/analytics" ||
               pathname === "/users" ||
+              pathname === "/internal-chat" ||
               pathname === "/accounts" ||
               pathname === "/logs"
               ? "text-primary"

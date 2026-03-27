@@ -1,0 +1,36 @@
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+/* RTL Float - Maintains the horizontal flip while floating */
+@keyframes float-rtl {
+    0% {
+        transform: scaleX(-1) translateY(0px);
+    }
+
+    50% {
+        transform: scaleX(-1) translateY(-20px);
+    }
+
+    100% {
+        transform: scaleX(-1) translateY(0px);
+    }
+}
+
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+
+[dir="rtl"] .animate-float {
+    animation: float-rtl 6s ease-in-out infinite;
+}

@@ -17,7 +17,8 @@ module.exports = {
         NODE_ENV: 'production',
         PUPPETEER_EXECUTABLE_PATH: '/home/ec2-user/.cache/puppeteer/chrome/linux-145.0.7632.46/chrome-linux64/chrome',
         PORT: '3001',
-        NEXT_APP_URL: 'http://localhost:3000'
+        // على السيرفر يُفضّل وضع NEXT_APP_URL في .env؛ الافتراضي للإنتاج
+        NEXT_APP_URL: process.env.NEXT_APP_URL || 'https://meraschat.com'
       }
     }
   ]

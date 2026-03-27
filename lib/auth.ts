@@ -6,6 +6,7 @@ export interface AuthUser {
     name: string
     email: string
     role: string
+    gender?: 'MALE' | 'FEMALE'
 }
 
 export interface AuthSession {
@@ -45,14 +46,20 @@ export async function login(email: string, password: string): Promise<{ success:
 // Logout function
 export async function logout() {
     try {
-        // Get current user before clearing session
         const user = getUser()
+        const authHeader = getAuthHeader()
+
+        // Tell server to set status OFFLINE (must send token before clearing session)
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeader }
+        })
 
         if (user) {
-            // Update status to OFFLINE and record logout time
+            // Optional: update profile (with auth so it succeeds)
             await fetch(`/api/users/${user.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...authHeader },
                 body: JSON.stringify({
                     name: user.name,
                     email: user.email,
@@ -174,13 +181,18 @@ export function getAuthHeader(): { Authorization?: string } {
 
 // API request helper with authentication
 export async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
-    const headers = {
-        'Content-Type': 'application/json',
+    // لا نضع Content-Type عند إرسال FormData (مثل رفع الملفات) حتى يضبط المتصفح multipart/form-data تلقائياً
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
+    const headers: HeadersInit = {
         ...getAuthHeader(),
         ...options.headers
     }
+    if (!isFormData && !(options.headers && 'Content-Type' in (options.headers as Record<string, string>))) {
+        (headers as Record<string, string>)['Content-Type'] = 'application/json'
+    }
 
     return fetch(url, {
+        cache: 'no-store',
         ...options,
         headers
     })

@@ -1,24 +1,35 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { logActivity } from "@/lib/logger"
+import { requireAuthWithScope, unauthorizedResponse, forbiddenResponse } from "@/lib/api-auth"
+import { notifyOnEntityCreate } from "@/lib/notifications"
 
-// GET - جلب القوالب (optional: whatsappAccountId for quick-reply scope; trigger to match triggerKeywords)
+// GET - جلب القوالب (center-scoped: non-Admin only see templates for their WhatsApp accounts)
 export async function GET(request: NextRequest) {
     try {
+        const scope = await requireAuthWithScope(request)
         const { searchParams } = new URL(request.url)
         const category = searchParams.get('category')
         const status = searchParams.get('status')
-        const whatsappAccountId = searchParams.get('whatsappAccountId') || undefined
+        const whatsappAccountIdParam = searchParams.get('whatsappAccountId') || undefined
         const trigger = searchParams.get('trigger') || undefined
 
         const where: any = {}
         if (category) where.category = category
         if (status) where.status = status
-        if (whatsappAccountId) where.whatsappAccountId = whatsappAccountId
+        if (whatsappAccountIdParam) where.whatsappAccountId = whatsappAccountIdParam
+
+        if (scope.role !== 'ADMIN') {
+            if (!scope.whatsappAccountIds || scope.whatsappAccountIds.length === 0) {
+                return NextResponse.json({ success: true, data: [], count: 0 })
+            }
+            where.whatsappAccountId = { in: scope.whatsappAccountIds }
+        }
 
         let templates = await prisma.template.findMany({
             where,
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            include: { createdBy: { select: { id: true, name: true } } },
         })
 
         // If trigger provided, filter templates whose triggerKeywords contain this trigger (case-insensitive)
@@ -47,31 +58,41 @@ export async function GET(request: NextRequest) {
             data: templatesWithVariables,
             count: templates.length
         })
-    } catch (error) {
-        console.error('Error fetching templates:', error)
+    } catch (e) {
+        if (e instanceof Error && e.message === "Unauthorized") return unauthorizedResponse()
+        if (e instanceof Error && e.message === "Forbidden") return forbiddenResponse()
+        console.error('Error fetching templates:', e)
         return NextResponse.json(
-            {
-                success: false,
-                error: "Failed to fetch templates"
-            },
+            { success: false, error: "Failed to fetch templates" },
             { status: 500 }
         )
     }
 }
 
-// POST - إنشاء قالب جديد
+// POST - إنشاء قالب جديد (center-scoped: non-Admin must use an assigned WhatsApp account)
 export async function POST(request: NextRequest) {
     try {
+        const scope = await requireAuthWithScope(request)
         const body = await request.json()
 
         if (!body.name || !body.content || !body.category || !body.language) {
             return NextResponse.json(
-                {
-                    success: false,
-                    error: "Name, content, category, and language are required"
-                },
+                { success: false, error: "Name, content, category, and language are required" },
                 { status: 400 }
             )
+        }
+
+        let whatsappAccountId: string | null = body.whatsappAccountId || null
+        if (scope.role !== 'ADMIN') {
+            if (!scope.whatsappAccountIds?.length) {
+                return forbiddenResponse("You do not have any assigned WhatsApp accounts for templates.")
+            }
+            if (whatsappAccountId && !scope.whatsappAccountIds.includes(whatsappAccountId)) {
+                return forbiddenResponse("You cannot create templates for this WhatsApp account.")
+            }
+            if (!whatsappAccountId && scope.whatsappAccountIds.length === 1) {
+                whatsappAccountId = scope.whatsappAccountIds[0]
+            }
         }
 
         const template = await prisma.template.create({
@@ -81,13 +102,15 @@ export async function POST(request: NextRequest) {
                 category: body.category || null,
                 language: body.language || 'en',
                 status: body.status || 'PENDING',
-                whatsappAccountId: body.whatsappAccountId || null,
+                whatsappAccountId,
+                createdById: scope.userId,
                 triggerKeywords: body.triggerKeywords != null ? body.triggerKeywords : null
             }
         })
 
         // Log activity
         await logActivity({
+            userId: scope.userId,
             action: "CREATE",
             entityType: "Template",
             entityId: template.id,
@@ -97,17 +120,27 @@ export async function POST(request: NextRequest) {
             },
             description: `Created new template: ${template.name}`
         })
+
+        if (scope.role === "AGENT" || scope.role === "SUPERVISOR") {
+            notifyOnEntityCreate({
+                creatorId: scope.userId,
+                creatorBranchIds: scope.branchIds ?? [],
+                entityType: "template",
+                entityName: template.name,
+                entityId: template.id,
+            }).catch(() => {})
+        }
+
         return NextResponse.json({
             success: true,
             data: template
         }, { status: 201 })
-    } catch (error) {
-        console.error('Error creating template:', error)
+    } catch (e) {
+        if (e instanceof Error && e.message === "Unauthorized") return unauthorizedResponse()
+        if (e instanceof Error && e.message === "Forbidden") return forbiddenResponse()
+        console.error('Error creating template:', e)
         return NextResponse.json(
-            {
-                success: false,
-                error: "Failed to create template"
-            },
+            { success: false, error: "Failed to create template" },
             { status: 500 }
         )
     }

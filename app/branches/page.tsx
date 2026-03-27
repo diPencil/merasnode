@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -66,6 +66,9 @@ interface Branch {
     isActive: boolean
     createdAt: string
     updatedAt: string
+    _count?: {
+        whatsappAccounts: number
+    }
 }
 
 export default function BranchesPage() {
@@ -85,8 +88,10 @@ export default function BranchesPage() {
     })
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [branchToDelete, setBranchToDelete] = useState<string | null>(null)
-    const canDeleteBranch = hasPermission((getUserRole() || "AGENT") as UserRole, "delete_branch")
+    const userRole = (getUserRole() || "AGENT") as UserRole
+    const canDeleteBranch = hasPermission(userRole, "delete_branch")
     const [searchQuery, setSearchQuery] = useState("")
+    const importInputRef = useRef<HTMLInputElement | null>(null)
 
     useEffect(() => {
         fetchBranches()
@@ -250,6 +255,135 @@ export default function BranchesPage() {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
+                        {userRole === "ADMIN" && (
+                            <>
+                                <input
+                                    ref={importInputRef}
+                                    type="file"
+                                    accept=".csv,text/csv"
+                                    className="hidden"
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0]
+                                        if (!file) return
+                                        try {
+                                            const text = await file.text()
+                                            const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0)
+                                            if (lines.length <= 1) {
+                                                toast({ title: t("error"), description: t("emptyInvalidCsv"), variant: "destructive" })
+                                                return
+                                            }
+                                            const header = lines[0].split(",").map((h) => h.trim().toLowerCase())
+                                            const idx = (name: string) => header.indexOf(name.toLowerCase())
+                                            const idIdx = idx("id")
+                                            const nameIdx = idx("name")
+                                            const addressIdx = idx("address")
+                                            const phoneIdx = idx("phone")
+                                            const emailIdx = idx("email")
+                                            const isActiveIdx = idx("isactive")
+                                            const branchesPayload = lines.slice(1).map((line) => {
+                                                const cols = line.split(",")
+                                                const get = (i: number) => (i >= 0 && i < cols.length ? cols[i].trim() : "")
+                                                const name = get(nameIdx)
+                                                if (!name) return null
+                                                return {
+                                                    id: idIdx >= 0 ? get(idIdx) : undefined,
+                                                    name,
+                                                    address: addressIdx >= 0 ? get(addressIdx) : undefined,
+                                                    phone: phoneIdx >= 0 ? get(phoneIdx) : undefined,
+                                                    email: emailIdx >= 0 ? get(emailIdx) : undefined,
+                                                    isActive: isActiveIdx >= 0 ? get(isActiveIdx) : undefined,
+                                                }
+                                            }).filter(Boolean)
+
+                                            const res = await authenticatedFetch("/api/branches/import", {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ branches: branchesPayload }),
+                                            })
+                                            const data = await res.json()
+                                            if (!data.success) {
+                                                throw new Error(data.error || t("failedToImportBranches"))
+                                            }
+                                            toast({
+                                                title: t("success"),
+                                                description: t("importedBranches").replace("{total}", String(data.total)).replace("{created}", String(data.created)).replace("{updated}", String(data.updated)),
+                                            })
+                                            fetchBranches()
+                                        } catch (error) {
+                                            toast({
+                                                title: t("error"),
+                                                description: error instanceof Error ? error.message : t("failedToImportBranches"),
+                                                variant: "destructive",
+                                            })
+                                        } finally {
+                                            if (e.target) e.target.value = ""
+                                        }
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        if (importInputRef.current) importInputRef.current.click()
+                                    }}
+                                >
+                                    {t("importContacts")}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        if (!branches.length) {
+                                            toast({
+                                                title: t("error"),
+                                                description: t("noBranchesAvailable") || "No branches to export",
+                                                variant: "destructive",
+                                            })
+                                            return
+                                        }
+                                        const header = ["id", "name", "address", "phone", "email", "isActive", "createdAt", "updatedAt"]
+                                        const rows = branches.map((b) => [
+                                            b.id,
+                                            b.name,
+                                            b.address ?? "",
+                                            b.phone ?? "",
+                                            b.email ?? "",
+                                            b.isActive ? "true" : "false",
+                                            b.createdAt,
+                                            b.updatedAt,
+                                        ])
+                                        const csvBody = [header, ...rows]
+                                            .map((cols) =>
+                                                cols
+                                                    .map((v) => {
+                                                        const s = String(v ?? "")
+                                                        if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+                                                            return `"${s.replace(/"/g, '""')}"`
+                                                        }
+                                                        return s
+                                                    })
+                                                    .join(",")
+                                            )
+                                            .join("\n")
+                                        // Add UTF-8 BOM so Excel يقرأ العربي صح
+                                        const csv = "\uFEFF" + csvBody
+                                        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+                                        const url = URL.createObjectURL(blob)
+                                        const a = document.createElement("a")
+                                        a.href = url
+                                        a.download = `branches-export-${new Date().toISOString().slice(0, 10)}.csv`
+                                        document.body.appendChild(a)
+                                        a.click()
+                                        document.body.removeChild(a)
+                                        URL.revokeObjectURL(url)
+                                    }}
+                                >
+                                    {t("exportContacts")}
+                                </Button>
+                            </>
+                        )}
                         <Dialog open={isDialogOpen} onOpenChange={(open) => {
                             setIsDialogOpen(open)
                             if (!open) resetForm()
@@ -411,7 +545,15 @@ export default function BranchesPage() {
                                                         <Building2 className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <div className="font-semibold">{branch.name}</div>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="font-semibold">{branch.name}</div>
+                                                            {branch._count && branch._count.whatsappAccounts > 0 && (
+                                                                <Badge className="bg-green-500 hover:bg-green-600 text-white text-[10px] h-4 px-1 rounded flex items-center gap-1 border-none">
+                                                                    <div className="h-1.5 w-1.5 bg-white rounded-full animate-pulse" />
+                                                                    WhatsApp
+                                                                </Badge>
+                                                            )}
+                                                        </div>
                                                         <div className="text-xs text-muted-foreground">ID: {branch.id.slice(0, 8)}</div>
                                                     </div>
                                                 </div>
@@ -473,16 +615,16 @@ export default function BranchesPage() {
                                                             {t("edit")}
                                                         </DropdownMenuItem>
                                                         {canDeleteBranch && (
-                                                        <>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleDelete(branch.id)}
-                                                            className="text-destructive focus:text-destructive"
-                                                        >
-                                                            <Trash2 className="me-2 h-4 w-4" />
-                                                            {t("delete")}
-                                                        </DropdownMenuItem>
-                                                        </>
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem
+                                                                    onClick={() => handleDelete(branch.id)}
+                                                                    className="text-destructive focus:text-destructive"
+                                                                >
+                                                                    <Trash2 className="me-2 h-4 w-4" />
+                                                                    {t("delete")}
+                                                                </DropdownMenuItem>
+                                                            </>
                                                         )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -497,22 +639,22 @@ export default function BranchesPage() {
             </div>
 
             {canDeleteBranch && (
-            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {t("deleteBranchConfirmDesc")}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            {t("delete")}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {t("deleteBranchConfirmDesc")}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                {t("delete")}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             )}
         </AppLayout>
     )

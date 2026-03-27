@@ -32,18 +32,28 @@ export function parseUserAgent(userAgent: string) {
     return { device, browser, os }
 }
 
-// Get client IP address
+// Get client IP address (tries common proxy headers first)
 export async function getClientIP(): Promise<string> {
     const headersList = await headers()
-    const forwarded = headersList.get("x-forwarded-for")
-    const realIP = headersList.get("x-real-ip")
 
+    const cf = headersList.get("cf-connecting-ip")
+    if (cf) return cf
+
+    const forwarded = headersList.get("x-forwarded-for")
     if (forwarded) {
-        return forwarded.split(',')[0].trim()
+        // In case of multiple IPs, the first is the original client
+        return forwarded.split(",")[0].trim()
     }
-    if (realIP) {
-        return realIP
-    }
+
+    const realIP = headersList.get("x-real-ip")
+    if (realIP) return realIP
+
+    const clientIP = headersList.get("x-client-ip")
+    if (clientIP) return clientIP
+
+    const remoteAddr = headersList.get("remote-addr")
+    if (remoteAddr) return remoteAddr
+
     return "Unknown"
 }
 

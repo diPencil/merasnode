@@ -27,6 +27,7 @@ interface BotFlow {
   status?: string
   createdAt: Date
   updatedAt: Date
+  createdBy?: { id: string; name: string } | null
 }
 
 export default function BotFlowsPage() {
@@ -155,7 +156,7 @@ export default function BotFlowsPage() {
             />
           </div>
           <Button
-            onClick={() => router.push('/bot-flows/create')}
+            onClick={() => router.push('/bot-flows/builder')}
             className="rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
           >
             <Plus className="me-2 h-4 w-4" />
@@ -184,6 +185,9 @@ export default function BotFlowsPage() {
                         <CardTitle className="text-lg">{flow.name}</CardTitle>
                       </div>
                       <CardDescription className="mt-2">{flow.description}</CardDescription>
+                      {flow.createdBy?.name && (
+                        <p className="text-xs text-muted-foreground mt-1">{t("createdBy")}: {flow.createdBy.name}</p>
+                      )}
                     </div>
                     <Switch
                       checked={flow.isActive}

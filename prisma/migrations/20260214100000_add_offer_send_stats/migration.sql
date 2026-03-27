@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE `Offer` ADD COLUMN `recipientsCount` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `singleSendCount` INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN `bulkSendCount` INTEGER NOT NULL DEFAULT 0;

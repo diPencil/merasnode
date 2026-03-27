@@ -8,6 +8,8 @@ import {
     forbiddenResponse,
 } from "@/lib/api-auth"
 
+const WHATSAPP_SERVICE_URL = process.env.WHATSAPP_SERVICE_URL || 'http://localhost:3001'
+
 // GET - Fetch messages for a conversation (auth + scope check)
 export async function GET(request: NextRequest) {
     try {
@@ -47,6 +49,18 @@ export async function GET(request: NextRequest) {
                         email: true,
                         username: true
                     }
+                },
+                quotedMessage: {
+                    select: {
+                        id: true,
+                        content: true,
+                        type: true,
+                        mediaUrl: true,
+                        senderId: true,
+                        createdAt: true,
+                        direction: true,
+                        sender: { select: { name: true, username: true } }
+                    }
                 }
             },
             orderBy: { createdAt: 'asc' }
@@ -73,10 +87,25 @@ export async function GET(request: NextRequest) {
 // POST - Send a new message (auth + scope check)
 export async function POST(request: NextRequest) {
     try {
-        const scope = await requireAuthWithScope(request)
+        const internalTokenHeader = request.headers.get("x-internal-flow-token")
+        const internalTokenEnv = process.env.FLOW_INTERNAL_TOKEN || process.env.JWT_SECRET || "dev-flow-internal-token"
+
+        let scope: any
+        if (internalTokenHeader && internalTokenHeader === internalTokenEnv) {
+            // System scope for internal bot flows – treated as ADMIN
+            scope = {
+                userId: null,
+                role: "ADMIN",
+                branchIds: [],
+                whatsappAccountIds: [],
+            }
+        } else {
+            scope = await requireAuthWithScope(request)
+        }
+
         const body = await request.json()
 
-        const { conversationId, phone, content, direction = 'OUTGOING', mediaUrl, whatsappAccountId } = body;
+        const { conversationId, phone, content, direction = 'OUTGOING', mediaUrl, whatsappAccountId, replyToId, forwarded } = body;
 
         // Require either text content OR media – allow pure media messages
         if (!content && !mediaUrl) {
@@ -143,23 +172,30 @@ export async function POST(request: NextRequest) {
         if (accountId && scope.role === 'AGENT' && !scope.whatsappAccountIds.includes(accountId)) {
             return forbiddenResponse('You do not have access to this WhatsApp account')
         }
-
         // 2. Send via WhatsApp Service (if OUTGOING)
         if (direction === 'OUTGOING') {
             if (process.env.NODE_ENV === 'development' || process.env.SKIP_WHATSAPP === 'true') {
                 console.log('Development mode: Skipping WhatsApp send');
             } else {
                 try {
-                    // Extract clean phone for WA
-                    const waPhone = phoneNumber.replace(/[^0-9]/g, '');
+                    // Extract clean phone/JID for WA
+                    let waPhone = phoneNumber;
+                    let isGroup = phoneNumber.includes('@g.us') || (phoneNumber.length > 15 && !phoneNumber.includes('@'));
 
-                    // Double check if it looks like a Facebook ID (very long string of digits)
-                    if (waPhone.length > 15) {
-                        throw new Error('This looks like a Facebook ID, not a WhatsApp phone number.');
+                    if (isGroup) {
+                        // Ensure group ID ends with @g.us for the WhatsApp service
+                        waPhone = phoneNumber.includes('@g.us') ? phoneNumber : `${phoneNumber}@g.us`;
+                    } else {
+                        waPhone = phoneNumber.replace(/[^0-9]/g, '');
+                        // Double check if it looks like a Facebook ID (very long string of digits)
+                        // Note: Only complain if we're sure it's not a WhatsApp group (length > 15 checked above)
+                        if (waPhone.length > 20) {
+                            throw new Error('This looks like a platform ID that doesn\'t support outgoing WhatsApp messages.');
+                        }
                     }
 
                     if (!accountId) {
-                        // For non-admin users, prefer their assigned connected accounts
+                        // For non-admin users, prefer their assigned connected accounts (direct user–account link)
                         if (scope.role !== 'ADMIN' && scope.whatsappAccountIds.length > 0) {
                             const connectedAccount = await prisma.whatsAppAccount.findFirst({
                                 where: {
@@ -171,7 +207,19 @@ export async function POST(request: NextRequest) {
                             if (connectedAccount) accountId = connectedAccount.id;
                         }
 
-                        // Fallback: any connected account (admin, or if agent has none assigned)
+                        // For SUPERVISOR (and others) with no direct account: prefer account in their branches
+                        if (!accountId && scope.role === 'SUPERVISOR' && scope.branchIds.length > 0) {
+                            const accountInBranch = await prisma.whatsAppAccount.findFirst({
+                                where: {
+                                    status: 'CONNECTED',
+                                    branchId: { in: scope.branchIds },
+                                },
+                                orderBy: { createdAt: 'desc' },
+                            });
+                            if (accountInBranch) accountId = accountInBranch.id;
+                        }
+
+                        // Fallback: any connected account (admin, or when no scoped account found)
                         if (!accountId) {
                             const connectedAccount = await prisma.whatsAppAccount.findFirst({
                                 where: { status: 'CONNECTED' },
@@ -182,14 +230,30 @@ export async function POST(request: NextRequest) {
                         }
                     }
 
-                    const whatsappRes = await fetch('http://localhost:3001/send', {
+                    let quotedMessageId: string | null = null
+                    if (replyToId) {
+                        const quoted = await prisma.message.findUnique({
+                            where: { id: replyToId },
+                            select: { metadata: true }
+                        })
+                        const meta = quoted?.metadata as { waMessageId?: string } | null
+                        if (meta?.waMessageId) {
+                            quotedMessageId = meta.waMessageId
+                        } else {
+                            console.warn(`[messages] Reply to ${replyToId}: no waMessageId (old message), will send as normal on WhatsApp`)
+                        }
+                    }
+
+                    const whatsappRes = await fetch(`${WHATSAPP_SERVICE_URL}/send`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             accountId,
                             phoneNumber: waPhone,
                             message: content,
-                            mediaUrl
+                            mediaUrl,
+                            isGroup: isGroup,
+                            quotedMessageId: quotedMessageId || undefined
                         })
                     });
 
@@ -197,44 +261,53 @@ export async function POST(request: NextRequest) {
                     if (!whatsappData.success) {
                         throw new Error(whatsappData.error || 'WhatsApp Service delivery failed');
                     }
-                } catch (error: any) {
+                } catch (error: unknown) {
+                    const errMsg = error instanceof Error ? error.message : 'Unknown WhatsApp Error';
                     console.error('WhatsApp Send Error:', error);
-                    return NextResponse.json({ success: false, error: error.message || 'Unknown WhatsApp Error' }, { status: 502 });
+                    return NextResponse.json({ success: false, error: errMsg }, { status: 502 });
                 }
             }
         }
 
         // 3. Save to Database (Create Message)
-        // Determine message type based on mediaUrl
-        let messageType = 'TEXT'
+        // Type: explicit body.type (AUDIO voice, LOCATION) or infer from mediaUrl
+        let messageType = (body.type as string) || 'TEXT'
         if (body.mediaUrl) {
             const url = body.mediaUrl.toLowerCase()
-            if (url.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
-                messageType = 'IMAGE'
-            } else if (url.match(/\.(mp4|mov|avi|webm)$/)) {
-                messageType = 'VIDEO'
-            } else if (url.match(/\.(mp3|wav|ogg|m4a)$/)) {
+            if (messageType === 'LOCATION') {
+                messageType = 'LOCATION'
+            } else if (messageType === 'AUDIO' || url.match(/\.(mp3|wav|ogg|m4a|webm)$/)) {
                 messageType = 'AUDIO'
+            } else if (url.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+                messageType = 'IMAGE'
+            } else if (url.match(/\.(mp4|mov|avi)$/)) {
+                messageType = 'VIDEO'
             } else {
                 messageType = 'DOCUMENT'
             }
         }
 
+        const metadata: Record<string, unknown> = {}
+        if (forwarded === true) metadata.forwarded = true
+
         const message = await prisma.message.create({
             data: {
                 conversationId: targetConversationId,
-                senderId: scope.userId,  // Track who sent the message
-                content: body.content,
+                senderId: scope.userId,
+                content: body.content ?? '',
                 type: messageType as any,
                 direction: direction,
                 status: 'SENT',
                 mediaUrl: body.mediaUrl || null,
-                whatsappAccountId: accountId || null
+                whatsappAccountId: accountId || null,
+                quotedMessageId: replyToId || null,
+                metadata: Object.keys(metadata).length > 0 ? metadata : undefined
             }
         })
 
         // Log activity
         await logActivity({
+            userId: scope.userId,
             action: "CREATE",
             entityType: "Message",
             entityId: message.id,
@@ -253,6 +326,35 @@ export async function POST(request: NextRequest) {
                 isRead: direction === 'OUTGOING'
             }
         })
+
+        // 5. Update sender last activity (for Online/Away status: 5 min without sending = Away)
+        if (direction === 'OUTGOING' && scope.userId) {
+            await prisma.user.update({
+                where: { id: scope.userId },
+                data: { lastActivityAt: new Date() }
+            }).catch(() => {})
+        }
+
+        // When agent sends OUTGOING, dismiss any active bot flow for this conversation (so bot stops until next trigger)
+        if (direction === 'OUTGOING' && scope.userId) {
+            try {
+                const conv = await prisma.conversation.findUnique({
+                    where: { id: targetConversationId },
+                    select: { contactId: true },
+                })
+                if (conv?.contactId) {
+                    await prisma.flowInteraction.updateMany({
+                        where: {
+                            contactId: conv.contactId,
+                            action: { in: ['TRIGGERED', 'STEP'] },
+                        },
+                        data: { action: 'DISMISSED', metadata: {} },
+                    })
+                }
+            } catch (_) {
+                /* non-blocking */
+            }
+        }
 
         // Trigger bot flows for incoming messages
         if (direction === 'INCOMING') {
@@ -287,22 +389,24 @@ export async function POST(request: NextRequest) {
             success: true,
             data: message
         }, { status: 201 })
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error instanceof Error) {
             if (error.message === 'Unauthorized') return unauthorizedResponse()
             if (error.message === 'Forbidden') return forbiddenResponse()
         }
         console.error('Error creating message:', error)
 
-        if (error.code === 'P2003') {
+        const err = error as { code?: string }
+        if (err.code === 'P2003') {
             return NextResponse.json(
                 { success: false, error: "Conversation not found" },
                 { status: 404 }
             )
         }
 
+        const message = error instanceof Error ? error.message : "Failed to create message"
         return NextResponse.json(
-            { success: false, error: "Failed to create message" },
+            { success: false, error: message },
             { status: 500 }
         )
     }

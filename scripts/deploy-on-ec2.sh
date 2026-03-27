@@ -6,6 +6,14 @@ set -e
 cd "$(dirname "$0")/.."
 PROJECT_DIR="$PWD"
 
+# تحميل .env أولاً (للبناء: NEXT_PUBLIC_APP_URL، ولـ pm2: NEXT_APP_URL)
+if [ -f .env ]; then
+  set -a
+  source .env
+  set +a
+  echo "==> تم تحميل .env"
+fi
+
 # استخدام Node 20 إن وُجد nvm (مطلوب لـ Next.js)
 if [ -s "$HOME/.nvm/nvm.sh" ]; then
   echo "==> تحميل nvm واستخدام Node 20..."
@@ -15,6 +23,7 @@ fi
 
 echo "==> Project: $PROJECT_DIR (Node: $(node -v))"
 mkdir -p logs
+mkdir -p public/uploads/whatsapp
 if [ -d ".git" ]; then
   echo "==> Pulling from Git..."
   git pull
@@ -26,6 +35,8 @@ echo "==> Installing dependencies..."
 npm install
 
 echo "==> بناء المشروع..."
+# زيادة ذاكرة Node أثناء البناء لتجنب exit code 1 على السيرفر (تحذيرات React key قد تظهر لكن البناء يكمل)
+export NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=4096"
 npm run build
 
 echo "==> إعادة تشغيل التطبيق (pm2)..."
@@ -40,3 +51,5 @@ else
 fi
 
 echo "==> انتهى التحديث."
+echo ""
+echo "ملاحظة: لو غيّرت مفاتيح (.env) على جهازك، انسخ .env للسيرفر بـ scp ثم أعد تشغيل pm2 (أو عدّل .env هنا بـ nano)."

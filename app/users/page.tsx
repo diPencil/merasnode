@@ -23,12 +23,14 @@ import { format } from "date-fns"
 import { authenticatedFetch, getUserRole } from "@/lib/auth"
 import { hasPermission } from "@/lib/permissions"
 import type { UserRole } from "@/lib/permissions"
+import { getDefaultAvatarForGender } from "@/lib/avatar"
 
 interface User {
   id: string
   name: string
   username?: string | null
   email: string
+  gender?: 'MALE' | 'FEMALE'
   role: 'ADMIN' | 'SUPERVISOR' | 'AGENT'
   status: 'ONLINE' | 'OFFLINE' | 'AWAY'
   isActive?: boolean
@@ -60,6 +62,10 @@ export default function UsersPage() {
   const canAddUser = currentRole === "ADMIN"
   const canDeactivateUser = currentRole === "ADMIN"
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
+  const [internalNotes, setInternalNotes] = useState<{ id: string; content: string; createdAt: string; createdBy?: { name: string } }[]>([])
+  const [internalNoteInput, setInternalNoteInput] = useState("")
+  const [loadingNotes, setLoadingNotes] = useState(false)
+  const [addingNote, setAddingNote] = useState(false)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -70,6 +76,7 @@ export default function UsersPage() {
     username: "",
     email: "",
     password: "",
+    gender: "MALE",
     role: "AGENT",
     status: "OFFLINE",
     branchIds: [] as string[],
@@ -196,6 +203,7 @@ export default function UsersPage() {
           name: formData.name,
           username: formData.username || null,
           email: formData.email,
+          gender: formData.gender,
           role: formData.role,
           status: formData.status,
           branchIds: formData.branchIds,
@@ -301,11 +309,56 @@ export default function UsersPage() {
       username: "",
       email: "",
       password: "",
+      gender: "MALE",
       role: "AGENT",
       status: "OFFLINE",
       branchIds: [],
       whatsappAccountIds: []
     })
+  }
+
+  const canSeeInternalNotes = currentRole === "ADMIN" || currentRole === "SUPERVISOR"
+
+  useEffect(() => {
+    if (!isDetailsDialogOpen || !selectedUser?.id || !canSeeInternalNotes) {
+      setInternalNotes([])
+      return
+    }
+    let cancelled = false
+    setLoadingNotes(true)
+    authenticatedFetch(`/api/users/${selectedUser.id}/notes`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data.success && Array.isArray(data.data)) {
+          setInternalNotes(data.data)
+        }
+      })
+      .catch(() => { if (!cancelled) setInternalNotes([]) })
+      .finally(() => { if (!cancelled) setLoadingNotes(false) })
+    return () => { cancelled = true }
+  }, [isDetailsDialogOpen, selectedUser?.id, canSeeInternalNotes])
+
+  const handleAddInternalNote = async () => {
+    if (!selectedUser?.id || !internalNoteInput.trim()) return
+    setAddingNote(true)
+    try {
+      const res = await authenticatedFetch(`/api/users/${selectedUser.id}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: internalNoteInput.trim() }),
+      })
+      const data = await res.json()
+      if (data.success && data.data) {
+        setInternalNotes((prev) => [data.data, ...prev])
+        setInternalNoteInput("")
+      } else {
+        throw new Error(data.error)
+      }
+    } catch (e: any) {
+      toast({ title: t("error"), description: e.message || "Failed to add note", variant: "destructive" })
+    } finally {
+      setAddingNote(false)
+    }
   }
 
   const openEditDialog = (user: User) => {
@@ -315,6 +368,7 @@ export default function UsersPage() {
       username: user.username ?? "",
       email: user.email,
       password: "",
+      gender: user.gender || "MALE",
       role: user.role,
       status: user.status,
       branchIds: user.branches?.map(b => b.id) || [],
@@ -364,10 +418,10 @@ export default function UsersPage() {
               />
             </div>
             {canAddUser && (
-            <Button size="sm" className="h-9" onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
-              <Plus className="me-2 h-4 w-4" />
-              {t("addUser")}
-            </Button>
+              <Button size="sm" className="h-9" onClick={() => { resetForm(); setIsAddDialogOpen(true); }}>
+                <Plus className="me-2 h-4 w-4" />
+                {t("addUser")}
+              </Button>
             )}
           </div>
         </div>
@@ -393,8 +447,8 @@ export default function UsersPage() {
                     className="rounded-xl border bg-card p-4 space-y-4"
                   >
                     <div className="flex items-start gap-3">
-                      <Avatar className="h-12 w-12 shrink-0">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} />
+                      <Avatar className="h-12 w-12 shrink-0 border">
+                        <AvatarImage src={getDefaultAvatarForGender(user.gender)} alt={user.name} />
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
@@ -410,14 +464,14 @@ export default function UsersPage() {
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t">
                       {canDeactivateUser && (
-                      <Switch
-                        checked={user.isActive !== false}
-                        onCheckedChange={() => {
-                          setSelectedUser(user)
-                          setIsDeactivateDialogOpen(true)
-                        }}
-                        className="data-[state=checked]:bg-green-600"
-                      />
+                        <Switch
+                          checked={user.isActive !== false}
+                          onCheckedChange={() => {
+                            setSelectedUser(user)
+                            setIsDeactivateDialogOpen(true)
+                          }}
+                          className="data-[state=checked]:bg-green-600"
+                        />
                       )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -430,14 +484,14 @@ export default function UsersPage() {
                             {t("userDetails")}
                           </DropdownMenuItem>
                           {canEditUser && (
-                          <DropdownMenuItem onClick={() => openEditDialog(user)}>
-                            {t("editUser")}
-                          </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                              {t("editUser")}
+                            </DropdownMenuItem>
                           )}
                           {canDeleteUser && (
-                          <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
-                            {t("delete")} {t("userLabel")}
-                          </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
+                              {t("delete")} {t("userLabel")}
+                            </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -469,8 +523,8 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                              <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} />
+                            <Avatar className="h-9 w-9 border">
+                              <AvatarImage src={getDefaultAvatarForGender(user.gender)} alt={user.name} />
                               <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="flex flex-col">
@@ -503,16 +557,16 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell>
                           {canDeactivateUser ? (
-                          <Switch
-                            checked={user.isActive !== false}
-                            onCheckedChange={() => {
-                              setSelectedUser(user)
-                              setIsDeactivateDialogOpen(true)
-                            }}
-                            className="data-[state=checked]:bg-green-600"
-                          />
+                            <Switch
+                              checked={user.isActive !== false}
+                              onCheckedChange={() => {
+                                setSelectedUser(user)
+                                setIsDeactivateDialogOpen(true)
+                              }}
+                              className="data-[state=checked]:bg-green-600"
+                            />
                           ) : (
-                          <span className="text-muted-foreground text-sm">—</span>
+                            <span className="text-muted-foreground text-sm">—</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -527,14 +581,14 @@ export default function UsersPage() {
                                 {t("userDetails")}
                               </DropdownMenuItem>
                               {canEditUser && (
-                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
-                                {t("editUser")}
-                              </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                  {t("editUser")}
+                                </DropdownMenuItem>
                               )}
                               {canDeleteUser && (
-                              <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
-                                {t("delete")} {t("userLabel")}
-                              </DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive" onClick={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
+                                  {t("delete")} {t("userLabel")}
+                                </DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -594,16 +648,26 @@ export default function UsersPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("status")}</Label>
-                  <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                  <Label>{t("gender") || "Gender"}</Label>
+                  <Select value={formData.gender || "MALE"} onValueChange={(val) => setFormData({ ...formData, gender: val as any })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ONLINE">{t("online")}</SelectItem>
-                      <SelectItem value="AWAY">{t("away")}</SelectItem>
-                      <SelectItem value="OFFLINE">{t("offline")}</SelectItem>
+                      <SelectItem value="MALE">{t("male") || "Male"}</SelectItem>
+                      <SelectItem value="FEMALE">{t("female") || "Female"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("status")}</Label>
+                <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ONLINE">{t("online")}</SelectItem>
+                    <SelectItem value="AWAY">{t("away")}</SelectItem>
+                    <SelectItem value="OFFLINE">{t("offline")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Branch Selection */}
@@ -737,16 +801,26 @@ export default function UsersPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("status")}</Label>
-                  <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                  <Label>{t("gender") || "Gender"}</Label>
+                  <Select value={formData.gender || "MALE"} onValueChange={(val) => setFormData({ ...formData, gender: val as any })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ONLINE">{t("online")}</SelectItem>
-                      <SelectItem value="AWAY">{t("away")}</SelectItem>
-                      <SelectItem value="OFFLINE">{t("offline")}</SelectItem>
+                      <SelectItem value="MALE">{t("male") || "Male"}</SelectItem>
+                      <SelectItem value="FEMALE">{t("female") || "Female"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("status")}</Label>
+                <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ONLINE">{t("online")}</SelectItem>
+                    <SelectItem value="AWAY">{t("away")}</SelectItem>
+                    <SelectItem value="OFFLINE">{t("offline")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Branch Selection */}
@@ -840,28 +914,28 @@ export default function UsersPage() {
         </Dialog>
 
         {canDeleteUser && (
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="sm:max-w-[400px]" fullScreenMobile>
-            <DialogHeader>
-              <DialogTitle className="text-red-600 flex items-center gap-2">
-                <AlertCircle className="h-5 w-5" />
-                {t("deleteUserConfirm")}
-              </DialogTitle>
-              <DialogDescription>
-                {selectedUser?.name != null
-                  ? t("deleteUserConfirmQuestion").replace("{name}", selectedUser.name) + " "
-                  : ""}
-                {t("deleteUserConfirmDesc")}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>{t("cancel")}</Button>
-              <Button variant="destructive" onClick={handleDeleteUser} disabled={isSubmitting}>
-                {isSubmitting ? t("deleting") : t("yesDeleteUser")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogContent className="sm:max-w-[400px]" fullScreenMobile>
+              <DialogHeader>
+                <DialogTitle className="text-red-600 flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  {t("deleteUserConfirm")}
+                </DialogTitle>
+                <DialogDescription>
+                  {selectedUser?.name != null
+                    ? t("deleteUserConfirmQuestion").replace("{name}", selectedUser.name) + " "
+                    : ""}
+                  {t("deleteUserConfirmDesc")}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>{t("cancel")}</Button>
+                <Button variant="destructive" onClick={handleDeleteUser} disabled={isSubmitting}>
+                  {isSubmitting ? t("deleting") : t("yesDeleteUser")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
 
         {/* Deactivate/Activate Confirmation Dialog */}
@@ -896,7 +970,7 @@ export default function UsersPage() {
               <DialogTitle>{t("userDetails")}</DialogTitle>
               <DialogDescription>{t("userDetailsDescription")}</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-3 items-center gap-4">
                 <Label className="text-end font-semibold">{t("nameLabel")}</Label>
                 <p className="col-span-2">{selectedUser?.name}</p>
@@ -982,8 +1056,55 @@ export default function UsersPage() {
                   </p>
                 </div>
               </div>
+
+              {canSeeInternalNotes && (
+                <div className="border-t pt-4 space-y-2">
+                  <Label className="font-semibold">{t("internalNotes")}</Label>
+                  <p className="text-xs text-muted-foreground">{t("internalNotesDescription")}</p>
+                  {loadingNotes ? (
+                    <p className="text-sm text-muted-foreground">{t("loading")}</p>
+                  ) : (
+                    <div className="space-y-2 min-h-0 max-h-44 overflow-y-auto rounded-md border bg-muted/30 p-2">
+                      {internalNotes.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">{t("noInternalNotes")}</p>
+                      ) : (
+                        internalNotes.map((note) => (
+                          <div key={note.id} className="text-sm p-2 rounded bg-muted/50 border">
+                            <p className="whitespace-pre-wrap">{note.content}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {note.createdBy?.name} · {format(new Date(note.createdAt), "PPp")}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder={t("internalNotePlaceholder")}
+                      value={internalNoteInput}
+                      onChange={(e) => setInternalNoteInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddInternalNote()}
+                    />
+                    <Button type="button" size="sm" onClick={handleAddInternalNote} disabled={!internalNoteInput.trim() || addingNote}>
+                      {addingNote ? t("adding") : t("add")}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
+              {selectedUser?.id && (
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    setIsDetailsDialogOpen(false)
+                    router.push(`/users/${selectedUser.id}/internal-chat`)
+                  }}
+                >
+                  {t("openInternalChat")}
+                </Button>
+              )}
               <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>{t("close")}</Button>
             </DialogFooter>
           </DialogContent>

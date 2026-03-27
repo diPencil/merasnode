@@ -132,15 +132,16 @@ export function ChatPanel({ conversation, onBack, onToggleDetails }: ChatPanelPr
                   </div>
                 )}
 
-                {/* Message Bubble */}
-                <div className={cn("flex", message.direction === "outbound" ? "justify-end" : "justify-start")}>
+                {/* Message Bubble: fit-content, responsive max-width, no clipping */}
+                <div className={cn("flex w-full", message.direction === "outbound" ? "justify-end" : "justify-start")}>
                   <div
                     className={cn(
-                      "max-w-[70%] rounded-2xl px-4 py-2 shadow-soft",
+                      "w-fit max-w-[85%] md:max-w-[70%] min-w-0 rounded-2xl px-4 py-2 shadow-soft",
+                      "wrap-break-word overflow-visible whitespace-pre-wrap",
                       message.direction === "outbound" ? "bg-primary text-primary-foreground" : "bg-card",
                     )}
                   >
-                    <p className="text-sm leading-relaxed">{message.content}</p>
+                    <p className="text-sm leading-relaxed wrap-break-word whitespace-pre-wrap">{message.content}</p>
 
                     {/* Status Icons (outbound only) */}
                     {message.direction === "outbound" && (

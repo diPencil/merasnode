@@ -1,5 +1,6 @@
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const EventEmitter = require('events');
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 /**
  * Multi-Client Manager for WhatsApp (WhatChimp Style)
@@ -155,100 +156,142 @@ class MultiClientManager extends EventEmitter {
             await this.updateDatabaseStatus(accountId, 'DISCONNECTED', null);
         });
 
-        // Message event
+        // Message event (Incoming)
         client.on('message', async (message) => {
-            try {
-                const chat = await message.getChat();
-                const contact = await message.getContact();
-
-                let senderName = contact.pushname || contact.name || contact.number;
-                if (chat.isGroup) {
-                    senderName = chat.name;
-                }
-
-                console.log(`📨 [${accountId}] Message from ${senderName}: ${message.body.substring(0, 50)}...`);
-
-                // Handle Media
-                let mediaData = null;
-                if (message.hasMedia) {
-                    try {
-                        const media = await message.downloadMedia();
-                        if (media) {
-                            mediaData = {
-                                mimetype: media.mimetype,
-                                data: media.data, // Base64
-                                filename: media.filename
-                            };
-                            console.log(`📎 [${accountId}] Media downloaded: ${media.mimetype}`);
-                        }
-                    } catch (err) {
-                        console.error(`❌ Error downloading media for message ${message.id.id}:`, err);
-                    }
-                }
-
-                // Handle Location
-                let locationData = null;
-                if (message.type === 'location') {
-                    locationData = {
-                        latitude: message.location.latitude,
-                        longitude: message.location.longitude,
-                        description: message.location.description
-                    };
-                    console.log(`📍 [${accountId}] Location received: ${locationData.latitude}, ${locationData.longitude}`);
-                }
-
-                // Forward to webhook with accountId
-                const payload = {
-                    accountId,
-                    from: message.from,
-                    body: message.body,
-                    timestamp: message.timestamp,
-                    isGroup: chat.isGroup,
-                    senderName: senderName,
-                    senderId: message.author || message.from,
-                    hasMedia: message.hasMedia,
-                    media: mediaData,
-                    location: locationData, // Include location data
-                    type: message.type
-                };
-
-                await fetch(`${this.nextAppUrl}/api/whatsapp/webhook`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                this.emit('message', { accountId, message: payload });
-            } catch (error) {
-                console.error(`❌ Error handling message for ${accountId}:`, error);
-            }
+            await this.processMessage(accountId, message);
         });
 
-        // Message create event (for sent messages)
+        // Message create event (Outgoing - Sync from phone)
         client.on('message_create', async (message) => {
             if (message.fromMe) {
-                console.log(`📤 [${accountId}] Outgoing message: ${message.body.substring(0, 50)}...`);
+                console.log(`📤 [${accountId}] Outgoing message detected (Sync): ${message.body.substring(0, 50)}...`);
+                await this.processMessage(accountId, message);
             }
         });
     }
 
     /**
+     * Process message and send to webhook
+     */
+    async processMessage(accountId, message) {
+        try {
+            const chat = await message.getChat();
+            const contact = await message.getContact();
+
+            const senderName = contact.pushname || contact.name || contact.number;
+            const authorName = senderName; // Capture the real person's name
+            const displaySenderName = chat.isGroup ? chat.name : senderName;
+
+            // Handle Media
+            let mediaData = null;
+            if (message.hasMedia) {
+                try {
+                    const media = await message.downloadMedia();
+                    if (media) {
+                        mediaData = {
+                            mimetype: media.mimetype,
+                            data: media.data, // Base64
+                            filename: media.filename
+                        };
+                        console.log(`📎 [${accountId}] Media downloaded: ${media.mimetype}`);
+                    }
+                } catch (err) {
+                    console.error(`❌ Error downloading media for message ${message.id.id}:`, err);
+                }
+            }
+
+            // Handle Location
+            let locationData = null;
+            if (message.type === 'location') {
+                locationData = {
+                    latitude: message.location.latitude,
+                    longitude: message.location.longitude,
+                    description: message.location.description
+                };
+                console.log(`📍 [${accountId}] Location received: ${locationData.latitude}, ${locationData.longitude}`);
+            }
+
+            // Resolve mentions (id + name) for correct display in chat
+            let mentionsWithNames = []
+            try {
+                const mentionContacts = await message.getMentions().catch(() => [])
+                if (mentionContacts && mentionContacts.length > 0) {
+                    mentionsWithNames = mentionContacts.map((c) => {
+                        const id = (c.id && (c.id.user || c.id._serialized)) ? (c.id.user || (typeof c.id._serialized === 'string' ? c.id._serialized.replace(/@c\.us|@g\.us/g, '') : '')) : ''
+                        const name = (c.pushname || c.name || c.number || '').trim() || id
+                        return { id, name }
+                    }).filter((m) => m.id)
+                } else {
+                    const raw = message.mentionedIds
+                    if (Array.isArray(raw)) {
+                        mentionsWithNames = raw.map((id) => ({
+                            id: typeof id === 'string' ? id.replace(/@c\.us|@g\.us/g, '') : String(id || ''),
+                            name: ''
+                        })).filter((m) => m.id)
+                    }
+                }
+            } catch (e) {
+                const raw = message.mentionedIds
+                if (Array.isArray(raw)) {
+                    mentionsWithNames = raw.map((id) => ({
+                        id: typeof id === 'string' ? id.replace(/@c\.us|@g\.us/g, '') : String(id || ''),
+                        name: ''
+                    })).filter((m) => m.id)
+                }
+            }
+
+            // Forward to webhook with accountId — full body + caption (no truncation)
+            const bodyText = message.body != null ? String(message.body) : ''
+            const captionText = message.caption != null ? String(message.caption) : ''
+            const waMessageId = (message.id && message.id._serialized) ? message.id._serialized : (message.id && message.id.id ? String(message.id.id) : null);
+            const payload = {
+                accountId,
+                from: message.from,
+                to: message.to,
+                body: bodyText || captionText || '',
+                caption: captionText || bodyText || undefined,
+                timestamp: message.timestamp,
+                isGroup: chat.isGroup,
+                senderName: displaySenderName,
+                authorName: (authorName || '').trim(),
+                authorId: message.author || message.from,
+                senderId: message.author || message.from,
+                fromMe: message.fromMe,
+                hasMedia: message.hasMedia,
+                media: mediaData,
+                location: locationData,
+                type: message.type,
+                mentions: mentionsWithNames,
+                waMessageId
+            };
+
+            await fetch(`${this.nextAppUrl}/api/whatsapp/webhook`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            this.emit('message', { accountId, message: payload });
+        } catch (error) {
+            console.error(`❌ Error handling message for ${accountId}: `, error);
+        }
+    }
+
+    /**
      * Send message from specific account
      */
-    async sendMessage(accountId, phoneNumber, message, mediaUrl = null, chatId = null) {
+    async sendMessage(accountId, phoneNumber, message, mediaUrl = null, chatId = null, quotedMessageId = null) {
         const clientData = this.clients.get(accountId);
 
         if (!clientData) {
             throw new Error(`Account ${accountId} not found`);
         }
-
         if (!clientData.isReady) {
             throw new Error(`Account ${accountId} is not ready. Status: ${clientData.status}`);
         }
 
         const { client } = clientData;
 
-        // Determine chat ID
         let targetChatId;
         if (chatId) {
             targetChatId = chatId;
@@ -259,18 +302,43 @@ class MultiClientManager extends EventEmitter {
             targetChatId = `${formattedNumber}@c.us`;
         }
 
-        console.log(`📤 [${accountId}] Sending to ${targetChatId}`);
+        const quotedOpt = quotedMessageId ? { quotedMessageId } : {};
 
-        // Send message
-        if (mediaUrl) {
-            const media = await MessageMedia.fromUrl(mediaUrl);
-            if (message) {
-                await client.sendMessage(targetChatId, media, { caption: message });
-            } else {
-                await client.sendMessage(targetChatId, media);
+        if (quotedMessageId) {
+            try {
+                const chat = await client.getChatById(targetChatId);
+                await chat.fetchMessages({ limit: 100 });
+            } catch (e) {
+                console.warn(`⚠️ Could not pre-load chat messages for reply: ${e.message || e}`);
             }
-        } else {
-            await client.sendMessage(targetChatId, message);
+        }
+
+        console.log(`📤 [${accountId}] Sending to ${targetChatId}` + (quotedMessageId ? ` (reply: ${String(quotedMessageId).slice(0, 30)}...)` : ''));
+
+        try {
+            if (mediaUrl) {
+                const media = await MessageMedia.fromUrl(mediaUrl);
+                if (message) {
+                    await client.sendMessage(targetChatId, media, { caption: message, ...quotedOpt });
+                } else {
+                    await client.sendMessage(targetChatId, media, quotedOpt);
+                }
+            } else {
+                await client.sendMessage(targetChatId, message, quotedOpt);
+            }
+        } catch (err) {
+            if (quotedMessageId) {
+                console.warn(`⚠️ Reply failed (e.g. old/invalid quoted id), sending as normal message: ${err.message || err}`);
+                if (mediaUrl) {
+                    const media = await MessageMedia.fromUrl(mediaUrl);
+                    if (message) await client.sendMessage(targetChatId, media, { caption: message });
+                    else await client.sendMessage(targetChatId, media);
+                } else {
+                    await client.sendMessage(targetChatId, message);
+                }
+            } else {
+                throw err;
+            }
         }
 
         return { success: true, chatId: targetChatId };
@@ -394,6 +462,35 @@ class MultiClientManager extends EventEmitter {
     }
 
     /**
+     * Get group details including participants
+     */
+    async getGroupInfo(accountId, groupId) {
+        const clientData = this.clients.get(accountId);
+        if (!clientData || !clientData.isReady) {
+            throw new Error(`Account ${accountId} is not ready`);
+        }
+
+        const chat = await clientData.client.getChatById(groupId);
+        if (!chat.isGroup) {
+            throw new Error('This chat is not a group');
+        }
+
+        const participants = chat.participants.map(p => ({
+            id: p.id._serialized,
+            phone: p.id.user,
+            isAdmin: p.isAdmin,
+            isSuperAdmin: p.isSuperAdmin
+        }));
+
+        return {
+            id: chat.id._serialized,
+            name: chat.name,
+            participantsCount: participants.length,
+            participants: participants
+        };
+    }
+
+    /**
      * Shutdown all clients
      */
     async shutdownAll() {
@@ -401,9 +498,9 @@ class MultiClientManager extends EventEmitter {
         for (const [accountId, clientData] of this.clients.entries()) {
             try {
                 await clientData.client.destroy();
-                console.log(`✅ Closed ${accountId}`);
+                console.log(`✅ Closed ${accountId} `);
             } catch (error) {
-                console.error(`Error closing ${accountId}:`, error);
+                console.error(`Error closing ${accountId}: `, error);
             }
         }
         this.clients.clear();

@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { AppLayout } from "@/components/app-layout"
 import { useI18n } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
@@ -68,6 +69,7 @@ export default function AccountsPage() {
   const [linkingAccountId, setLinkingAccountId] = useState<string | null>(null)
   const [linkingQrCode, setLinkingQrCode] = useState<string | null>(null)
   const [linkingStatus, setLinkingStatus] = useState<string>("INITIALIZING")
+  const router = useRouter()
   const { toast } = useToast()
   const { t, language } = useI18n()
 
@@ -597,7 +599,7 @@ export default function AccountsPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => window.location.href = '/whatsapp'}
+                              onClick={() => router.push('/inbox?phone=' + encodeURIComponent(account.phone.replace(/\s/g, '')))}
                             >
                               Manage
                             </Button>

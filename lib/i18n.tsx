@@ -148,6 +148,7 @@ const translations: Translations = {
   steps: { en: "Steps", ar: "الخطوات" },
   active: { en: "Active", ar: "نشط" },
   inactive: { en: "Inactive", ar: "غير نشط" },
+  searchByNameOrPhone: { en: "Search by name or phone", ar: "ابحث بالاسم أو رقم الجوال" },
 
   // Accounts
   connectAccount: { en: "Connect Account", ar: "ربط حساب" },
@@ -191,6 +192,9 @@ const translations: Translations = {
   validFrom: { en: "Valid From", ar: "صالح من" },
   validTo: { en: "Valid To", ar: "صالح حتى" },
   sendOffer: { en: "Send Offer", ar: "إرسال العرض" },
+  offerImage: { en: "Offer Image", ar: "صورة العرض" },
+  offerImageOptional: { en: "Optional — shown when sending the offer", ar: "اختياري — تظهر عند إرسال العرض" },
+  uploadImage: { en: "Upload image", ar: "رفع صورة" },
   targetAudience: { en: "Target Audience", ar: "الجمهور المستهدف" },
 
   // Analytics
@@ -240,6 +244,7 @@ const translations: Translations = {
   getStarted: { en: "Get started", ar: "ابدأ الآن" },
   loginSuccess: { en: "Login successful", ar: "تم تسجيل الدخول بنجاح" },
   loginFailed: { en: "Login failed", ar: "فشل تسجيل الدخول" },
+  sessionExpired: { en: "Session expired. Please sign in again.", ar: "انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى." },
   invalidCredentials: { en: "Invalid email, username or password", ar: "البريد أو اسم المستخدم أو كلمة المرور غير صحيحة" },
   logout: { en: "Log out", ar: "تسجيل الخروج" },
   merasCrm: { en: "Meras CRM", ar: "مراس CRM" },
@@ -257,10 +262,22 @@ const translations: Translations = {
   error: { en: "Error", ar: "خطأ" },
   unexpectedError: { en: "An unexpected error occurred", ar: "حدث خطأ غير متوقع" },
   welcomeBack: { en: "Welcome back", ar: "مرحباً بعودتك" },
+  brandDescription: {
+    en: "Welcome to your centralized command center. Manage operations for Kayan, Bura, and Mozdanh with seamlessly integrated tools designed to elevate efficiency and customer experience.",
+    ar: "مرحباً بك في مركز القيادة الموحد. أدر عمليات كيان، بورا، ومزدنة بأدوات متكاملة مصممة لرفع الكفاءة وتجربة العملاء."
+  },
+  nextGenPlatform: { en: "NEXT GEN PLATFORM", ar: "منصة الجيل القادم" },
+  meras: { en: "MERAS", ar: "مراس" },
+  universe: { en: "UNIVERSE", ar: "يونيفرس" },
   copyright: { en: "© {year} Meras Holding Company. All rights reserved.", ar: "© {year} شركة مراس القابضة. جميع الحقوق محفوظة." },
 
   // Inbox / Chat
   failedToSendMessage: { en: "Failed to send message", ar: "فشل إرسال الرسالة" },
+  imageNotLoaded: { en: "Image could not be loaded", ar: "تعذر تحميل الصورة" },
+  openLink: { en: "Open link", ar: "فتح الرابط" },
+  downloadAudio: { en: "Download Audio", ar: "تحميل الصوت" },
+  downloadVideo: { en: "Download Video", ar: "تحميل الفيديو" },
+  videoUnavailable: { en: "Video unavailable", ar: "الفيديو غير متاح" },
   geolocationNotSupported: { en: "Geolocation is not supported by your browser", ar: "المتصفح لا يدعم الموقع الجغرافي" },
   gettingLocation: { en: "Getting Location...", ar: "جاري الحصول على الموقع..." },
   pleaseAllowLocation: { en: "Please allow location access if prompted.", ar: "الرجاء السماح بالوصول للموقع إذا طُلب منك." },
@@ -279,15 +296,27 @@ const translations: Translations = {
   failedToBlockContact: { en: "Failed to block contact", ar: "فشل حظر جهة الاتصال" },
   voiceNoteSent: { en: "Voice note sent", ar: "تم إرسال المذكرة الصوتية" },
   failedToSendVoiceNote: { en: "Failed to send voice note", ar: "فشل إرسال المذكرة الصوتية" },
+  reply: { en: "Reply", ar: "رد" },
+  forward: { en: "Forward", ar: "إعادة توجيه" },
+  replyingTo: { en: "Replying to", ar: "الرد على" },
+  forwardToConversation: { en: "Choose a conversation to forward this message to.", ar: "اختر محادثة لإعادة توجيه هذه الرسالة إليها." },
+  forwarded: { en: "Forwarded", ar: "تم إعادة التوجيه" },
   microphoneDenied: { en: "Microphone access denied or not supported", ar: "الوصول للميكروفون مرفوض أو غير مدعوم" },
   fillRequiredFields: { en: "Please fill in all required fields", ar: "يرجى تعبئة جميع الحقول المطلوبة" },
   bookingConfirmed: { en: "Booking Confirmed", ar: "تم تأكيد الحجز" },
   bookingConfirmedDesc: { en: "Successfully booked with Agent.", ar: "تم الحجز بنجاح مع الموظف." },
   failedToCreateBooking: { en: "Failed to create booking. Please try again.", ar: "فشل إنشاء الحجز. يرجى المحاولة مرة أخرى." },
   comingSoon: { en: "Coming Soon", ar: "قريباً" },
-  comingSoonDesc: { en: "integration is coming soon!", ar: "التكامل قريباً!" },
-  selectBranch: { en: "Select Branch", ar: "اختر الفرع" },
+  comingSoonDesc: { en: "integration is coming soon!", ar: "التكام4ل قريباً!" },
   allBranches: { en: "All Branches", ar: "جميع الفروع" },
+  groups: { en: "Groups", ar: "المجموعات" },
+  whatsappGroup: { en: "WhatsApp Group", ar: "مجموعة واتساب" },
+  group: { en: "Group", ar: "مجموعة" },
+  "whatsapp-contact": { en: "WhatsApp Contact", ar: "عميل واتساب" },
+  noGroupsFound: { en: "No groups found", ar: "لم يتم العثور على مجموعات" },
+  groupParticipants: { en: "Group Members", ar: "أعضاء المجموعة" },
+  groupAdmin: { en: "Group Admin", ar: "مسؤول المجموعة" },
+  noParticipantsFound: { en: "Could not load participants", ar: "تعذر تحميل أعضاء المجموعة" },
   myConversations: { en: "My conversations", ar: "محادثاتي" },
   searchNameOrPhone: { en: "Search name or phone...", ar: "بحث بالاسم أو الهاتف..." },
   filters: { en: "Filters", ar: "تصفية" },
@@ -321,7 +350,6 @@ const translations: Translations = {
   failedToSendFile: { en: "Failed to send file", ar: "فشل إرسال الملف" },
   typeYourMessage: { en: "Type your message...", ar: "اكتب رسالتك..." },
   sent: { en: "Sent", ar: "تم الإرسال" },
-  group: { en: "Group", ar: "مجموعة" },
   blockConfirm: { en: "Are you sure you want to block this contact? They will be marked as blocked and the conversation will be archived.", ar: "هل أنت متأكد من حظر جهة الاتصال؟ سيتم وضع علامة محظور عليها وأرشفة المحادثة." },
 
   // Contacts page
@@ -430,6 +458,7 @@ const translations: Translations = {
   offerUpdatedSuccess: { en: "Offer updated successfully", ar: "تم تحديث العرض بنجاح" },
   offerDeletedSuccess: { en: "Offer deleted successfully", ar: "تم حذف العرض بنجاح" },
   failedToSaveOffer: { en: "Failed to save offer", ar: "فشل حفظ العرض" },
+  invalidImageUrl: { en: "Please enter a valid image URL.", ar: "يرجى إدخال رابط صورة صحيح." },
   confirmDeleteOffer: { en: "Are you sure you want to delete this offer?", ar: "هل أنت متأكد من حذف هذا العرض؟" },
   confirmDeleteIntegration: { en: "Are you sure you want to delete this integration?", ar: "هل أنت متأكد من حذف هذا التكامل؟" },
   confirmDeleteApiKey: { en: "Are you sure you want to delete this API key?", ar: "هل أنت متأكد من حذف مفتاح API هذا؟" },
@@ -444,6 +473,10 @@ const translations: Translations = {
   pleaseSelectAtLeastOneContact: { en: "Please select at least one contact", ar: "يرجى اختيار جهة اتصال واحدة على الأقل" },
   bulkSendComplete: { en: "Bulk Send Complete", ar: "اكتمل الإرسال الجماعي" },
   sentToContactsCount: { en: "Sent to {n} contact(s)", ar: "تم الإرسال إلى {n} جهة اتصال" },
+  offerStatsSentTo: { en: "Sent to {n} recipient(s)", ar: "أُرسل إلى {n} رقم" },
+  offerStatsSingle: { en: "{n} single", ar: "{n} فردي" },
+  offerStatsBulk: { en: "{n} bulk", ar: "{n} جماعي" },
+  offerStatsNeverSent: { en: "Not sent yet", ar: "لم يُرسل بعد" },
   bulkSendFailedCount: { en: "{n} failed", ar: "فشل {n}" },
   offersPageDescription: { en: "Create and manage promotional offers for customers", ar: "إنشاء وإدارة العروض الترويجية للعملاء" },
   editOffer: { en: "Edit Offer", ar: "تعديل العرض" },
@@ -555,6 +588,10 @@ const translations: Translations = {
 
   // Users page
   userManagement: { en: "User Management", ar: "إدارة المستخدمين" },
+  gender: { en: "Gender", ar: "الجنس" },
+  male: { en: "Male", ar: "ذكر" },
+  female: { en: "Female", ar: "أنثى" },
+  selectGender: { en: "Select Gender", ar: "اختار الجنس" },
   addUser: { en: "Add User", ar: "إضافة مستخدم" },
   addNewUser: { en: "Add New User", ar: "إضافة مستخدم جديد" },
   createNewUserDescription: { en: "Create a new user account with specific permissions.", ar: "إنشاء حساب مستخدم جديد بصلاحيات محددة." },
@@ -584,6 +621,52 @@ const translations: Translations = {
   deactivateUserConfirmDesc: { en: "This will prevent them from logging in without deleting their data.", ar: "سيتم منعهم من تسجيل الدخول دون حذف بياناتهم." },
   userDetails: { en: "User Details", ar: "تفاصيل المستخدم" },
   userDetailsDescription: { en: "Comprehensive information about this user account", ar: "معلومات شاملة عن هذا الحساب" },
+  internalNotes: { en: "Internal Notes (Private)", ar: "ملاحظات داخلية (خاصة)" },
+  internalNotesDescription: { en: "Visible only to Supervisor and Admin. Not visible to the user or customers.", ar: "تظهر للمشرف والمدير فقط. غير مرئية للمستخدم أو العملاء." },
+  internalChat: { en: "Internal Chat", ar: "محادثة داخلية" },
+  internalChatWith: { en: "Internal chat with", ar: "محادثة داخلية مع" },
+  internalChatConversations: { en: "Your internal conversations", ar: "محادثاتك الداخلية" },
+  openInternalChat: { en: "Open internal chat", ar: "فتح المحادثة الداخلية" },
+  lastSeen: { en: "Last seen", ar: "آخر ظهور" },
+  sessionTime: { en: "Session", ar: "وقت الجلسة" },
+  activeNow: { en: "Active now", ar: "نشط الآن" },
+  lastSession: { en: "Last session", ar: "آخر جلسة" },
+  attachImage: { en: "Attach image", ar: "إرفاق صورة" },
+  noInternalConversations: { en: "No internal conversations yet. Start from User Management by opening chat with a user.", ar: "لا توجد محادثات داخلية بعد. ابدأ من إدارة المستخدمين بفتح المحادثة مع مستخدم." },
+  // typeMessage: duplicate of line 66
+  noInternalNotes: { en: "No internal notes yet", ar: "لا توجد ملاحظات داخلية بعد" },
+  internalNotePlaceholder: { en: "Add a private note...", ar: "أضف ملاحظة خاصة..." },
+  tagToAssign: { en: "Tag to assign when sending", ar: "وسم يُضاف عند الإرسال" },
+  tagToAssignPlaceholder: { en: "e.g. Laser Campaign - Feb 2026", ar: "مثال: حملة الليزر - فبراير 2026" },
+  tagToAssignExplanation: {
+    en: "When you send this offer to contacts, this tag is automatically added to each contact. Use it to track who received which campaign (e.g. filter contacts by this tag later). You can choose an existing tag or type a new one.",
+    ar: "عند إرسال هذا العرض لأي جهة اتصال، يُضاف هذا الوسم تلقائياً لجهة الاتصال. استخدمه لتتبع من استلم أي حملة (مثلاً تصفية جهات الاتصال بهذا الوسم لاحقاً). يمكنك اختيار وسم موجود أو كتابة وسم جديد.",
+  },
+  tagOptionNone: { en: "No tag", ar: "بدون وسم" },
+  tagOptionTypeNew: { en: "Type new tag...", ar: "اكتب وسم جديد..." },
+  offerCategory: { en: "Offer category", ar: "فئة العرض" },
+  offerCategoryExplanation: {
+    en: "When set, only contacts from the category's branches will appear when sending this offer (e.g. Dermatology clients only).",
+    ar: "عند التعيين، تظهر عند الإرسال جهات اتصال فروع هذه الفئة فقط (مثلاً عملاء الجلدية فقط).",
+  },
+  offerCategoryNone: { en: "No category (all contacts)", ar: "بدون فئة (كل الجهات)" },
+  onlyContactsInCategory: { en: "Only contacts in this category are shown", ar: "يُعرض فقط جهات اتصال هذه الفئة" },
+  noContactsInCategory: { en: "No contacts in this category", ar: "لا توجد جهات اتصال في هذه الفئة" },
+  manageOfferCategories: { en: "Manage offer categories", ar: "إدارة فئات العروض" },
+  manageOfferCategoriesDesc: { en: "Categories define which branches (and their contacts) an offer targets. When you send an offer with a category, only contacts from that category's branches are shown.", ar: "الفئات تحدد أي فروع (وجهات اتصالها) يستهدفها العرض. عند إرسال عرض له فئة، تظهر فقط جهات اتصال فروع هذه الفئة." },
+  addCategory: { en: "Add category", ar: "إضافة فئة" },
+  offerCategoryNamePlaceholder: { en: "e.g. Dermatology", ar: "مثال: جلدية" },
+  linkBranches: { en: "Link branches (contacts from these branches = category clients)", ar: "ربط الفروع (جهات اتصال هذه الفروع = عملاء الفئة)" },
+  noBranches: { en: "No branches", ar: "لا توجد فروع" },
+  existingCategories: { en: "Existing categories", ar: "الفئات الحالية" },
+  noCategoriesYet: { en: "No categories yet. Add one above.", ar: "لا توجد فئات بعد. أضف فئة من الأعلى." },
+  categoryDeleted: { en: "Category deleted", ar: "تم حذف الفئة" },
+  categoryCreated: { en: "Category created", ar: "تم إنشاء الفئة" },
+  offerCategoryNameRequired: { en: "Category name is required", ar: "اسم الفئة مطلوب" },
+  filterByTag: { en: "Filter by tag", ar: "تصفية بالوسم" },
+  filterByBranch: { en: "Filter by branch", ar: "تصفية بالفرع" },
+  allTags: { en: "All tags", ar: "كل الوسوم" },
+  createdBy: { en: "Created by", ar: "أنشئ بواسطة" },
   // nameLabel: { en: "Name:", ar: "الاسم:" }, // Duplicate of line 302
   // emailLabel: { en: "Email:", ar: "البريد:" }, // Duplicate of line 201
   activeLabel: { en: "Active:", ar: "نشط:" },
@@ -661,7 +744,7 @@ const translations: Translations = {
   targetTimeGoal: { en: "Target Time Goal", ar: "الهدف الزمني" },
   currentAverage: { en: "Current Average", ar: "المتوسط الحالي" },
   today: { en: "Today", ar: "اليوم" },
-  activeNow: { en: "Active Now", ar: "نشط الآن" },
+  // activeNow: duplicate of line 632
   fromLastWeek: { en: "from last week", ar: "من الأسبوع الماضي" },
   messagesSentThisMonth: { en: "messages sent this month", ar: "رسائل أُرسلت هذا الشهر" },
   recentConversations: { en: "Recent Conversations", ar: "المحادثات الأخيرة" },
@@ -733,6 +816,7 @@ const translations: Translations = {
   // Inbox - empty & selection
   noConversationSelected: { en: "No Conversation Selected", ar: "لم يتم اختيار محادثة" },
   selectConversationToView: { en: "Select a conversation from the list to view details and start chatting.", ar: "اختر محادثة من القائمة لعرض التفاصيل وبدء الدردشة." },
+  noConversationWithNumberYet: { en: "No conversation with this number yet. When someone sends a message to this WhatsApp number, the chat will appear here.", ar: "لا توجد محادثة بهذا الرقم بعد. عند إرسال رسالة إلى هذا الرقم على واتساب ستظهر المحادثة هنا." },
 
   // Contacts - labels & placeholders
   loadingContacts: { en: "Loading contacts...", ar: "جاري تحميل جهات الاتصال..." },
@@ -786,6 +870,27 @@ const translations: Translations = {
   minutesAgo: { en: "{n} min", ar: "منذ {n} د" },
   debugMatchFound: { en: "DEBUG: Match Found ({name})", ar: "تصحيح: تطابق ({name})" },
 
+  // Bot Flows - visual builder
+  // flowBuilder: duplicate of line 132
+  flowCanvas: { en: "Flow Canvas", ar: "مخطط السير" },
+  flowCanvasHint: { en: "Click nodes to edit and add new steps from the right panel.", ar: "انقر على العقد لتعديلها وأضِف خطوات جديدة من اللوحة اليمنى." },
+  availableSteps: { en: "Available Steps", ar: "الخطوات المتاحة" },
+  dragOrClickToAddStep: { en: "Click a step to add it to the flow.", ar: "اضغط على نوع الخطوة لإضافته إلى السير." },
+  stepDetails: { en: "Step Details", ar: "تفاصيل الخطوة" },
+  clickNodeToEdit: { en: "Select a node from the canvas to edit.", ar: "اختر عقدة من المخطط لتعديلها." },
+  noStepSelected: { en: "No step selected.", ar: "لم يتم اختيار أي خطوة." },
+  startBotFlow: { en: "Start Bot Flow", ar: "بداية السير" },
+  text: { en: "Text", ar: "رسالة نصية" },
+  waitStepLabel: { en: "Wait / Delay", ar: "انتظار / تأخير" },
+  optionsStepLabel: { en: "Options (greeting + choices)", ar: "خيارات (ترحيب + أزرار)" },
+  image: { en: "Image", ar: "صورة" },
+  // comingSoon: duplicate of line 309
+  messageStepLabel: { en: "Message Step", ar: "خطوة رسالة" },
+  botFlowMessageContent: { en: "Message content", ar: "نص الرسالة" },
+  waitDurationMs: { en: "Wait duration (milliseconds)", ar: "مدة الانتظار (ملّي ثانية)" },
+  deleteStep: { en: "Delete step", ar: "حذف الخطوة" },
+  botFlowTypeYourMessage: { en: "Write your bot message here...", ar: "اكتب رسالة البوت هنا..." },
+
   // WhatsApp accounts
   manageWhatsAppAccounts: { en: "Manage your WhatsApp business accounts", ar: "إدارة حسابات واتساب للأعمال" },
   connectWhatsAppAccount: { en: "Connect WhatsApp Account", ar: "ربط حساب واتساب" },
@@ -820,6 +925,9 @@ const translations: Translations = {
   manageAccountInfo: { en: "Manage your account information", ar: "إدارة معلومات حسابك" },
   profilePicture: { en: "Profile Picture", ar: "صورة الملف الشخصي" },
   imageUrlPlaceholder: { en: "Image URL or path", ar: "رابط الصورة أو المسار" },
+  changeImage: { en: "Change image", ar: "تغيير الصورة" },
+  imageCaption: { en: "Caption (optional)", ar: "تعليق (اختياري)" },
+  imageUploaded: { en: "Image uploaded", ar: "تم رفع الصورة" },
   enterYourName: { en: "Enter your name", ar: "أدخل اسمك" },
 
   // Integrations API
@@ -884,6 +992,8 @@ const translations: Translations = {
   crmLabel: { en: "CRM", ar: "إدارة العلاقات" },
   automationLabel: { en: "Automation", ar: "الأتمتة" },
   systemLabel: { en: "System", ar: "النظام" },
+  merasTeamLabel: { en: "Meras Team", ar: "فريق المراس" },
+  noContactsToMention: { en: "No contacts to mention", ar: "لا جهات اتصال للذكر" },
   sentBy: { en: "Sent by", ar: "أرسل بواسطة" },
   whatsAppWeb: { en: "WhatsApp Web", ar: "واتساب ويب" },
   generateQrCode: { en: "Generate QR Code", ar: "إنشاء رمز QR" },
@@ -1043,6 +1153,59 @@ const translations: Translations = {
   noStepsDefinedYet: { en: "No steps defined yet. Add your first step to get started.", ar: "لم تُحدد خطوات بعد. أضف أول خطوة للبدء." },
   delayMilliseconds: { en: "Delay (milliseconds)", ar: "التأخير (ميلي ثانية)" },
   conditionLabel: { en: "Condition", ar: "الشرط" },
+
+  // Bot Flow Builder - hardcoded strings audit fix
+  backButton: { en: "Back", ar: "رجوع" },
+  saveFlow: { en: "Save Flow", ar: "حفظ السير" },
+  savingFlow: { en: "Saving...", ar: "جاري الحفظ..." },
+  flowConfiguration: { en: "Flow Configuration", ar: "إعدادات السير" },
+  configureBasicSettingsBotFlow: { en: "Configure the basic settings for your bot flow", ar: "ضبط الإعدادات الأساسية لسير البوت" },
+  flowNameLabel: { en: "Flow Name", ar: "اسم السير" },
+  selectTriggerPlaceholder: { en: "Select trigger...", ar: "اختر المحفز..." },
+  triggerIncomingMessage: { en: "Incoming Message (keywords)", ar: "رسالة واردة (كلمات محفّزة)" },
+  triggerNewContact: { en: "New Contact", ar: "جهة اتصال جديدة" },
+  triggerNewMessage: { en: "New Message", ar: "رسالة جديدة" },
+  triggerBookingScheduled: { en: "Booking Scheduled", ar: "حجز مجدوَل" },
+  triggerInvoiceDue: { en: "Invoice Due", ar: "فاتورة مستحقة" },
+  triggerServiceCompleted: { en: "Service Completed", ar: "خدمة مكتملة" },
+  triggerKeywordsLabel: { en: "Trigger Keywords (comma-separated)", ar: "كلمات المحفّز (يفصل بينها بفاصلة)" },
+  triggerKeywordsPlaceholder: { en: "hello, hi, good morning", ar: "مرحبا، هلا، مساء الخير، أهلا" },
+  addOption: { en: "+ Add option", ar: "+ إضافة خيار" },
+  optionLabelPlaceholder: { en: "Option text", ar: "نص الخيار" },
+  optionNextStepLabel: { en: "Options (next step index, -1 = agent)", ar: "الخيارات (رقم الخطوة التالية، -1 = تكلم مع موظف)" },
+  greetingMessagePlaceholder: { en: "Hello! How can we help you?", ar: "مرحبا! كيف نقدر نساعدك؟" },
+  startBotFlowLabel: { en: "Start Bot Flow", ar: "بداية السير" },
+
+  // Internal Chat - status labels
+  statusOnline: { en: "Online", ar: "متصل" },
+  statusOffline: { en: "Offline", ar: "غير متصل" },
+  statusAway: { en: "Away", ar: "بعيد" },
+  failedToLoadChat: { en: "Failed to load chat", ar: "فشل تحميل المحادثة" },
+  imageTypeError: { en: "JPEG, PNG, WebP images only", ar: "صور JPEG و PNG و WebP فقط" },
+  imageSizeError: { en: "Max image size is 5MB", ar: "الحد الأقصى لحجم الصورة 5 ميجا" },
+
+  // Offers - hardcoded strings
+  imageFailedToLoad: { en: "Image failed to load", ar: "فشل تحميل الصورة" },
+  removeUrl: { en: "Remove URL", ar: "حذف الرابط" },
+  noImage: { en: "No image", ar: "لا توجد صورة" },
+  uploadingLabel: { en: "Uploading...", ar: "جاري الرفع..." },
+  uploadFile: { en: "Upload File", ar: "رفع ملف" },
+  orUsingUrl: { en: "Or using URL", ar: "أو باستخدام رابط" },
+  makeOfferAvailableNow: { en: "Make this offer available immediately", ar: "اجعل هذا العرض متاحاً فوراً" },
+  imageUploadedSuccess: { en: "Image uploaded successfully", ar: "تم رفع الصورة بنجاح" },
+  allowedImageTypes: { en: "Allowed types: JPEG, PNG, WebP", ar: "الأنواع المسموحة: JPEG و PNG و WebP" },
+  fileSizeLimit: { en: "File size exceeds 5MB limit", ar: "حجم الملف يتجاوز الحد المسموح (5 ميجا)" },
+  sentToContacts: { en: "Sent to {count} contacts.", ar: "تم الإرسال إلى {count} جهة اتصال." },
+
+  // Branches - import/export messages
+  emptyInvalidCsv: { en: "Empty or invalid CSV file", ar: "ملف CSV فارغ أو غير صالح" },
+  importedBranches: { en: "Imported {total} branches (created: {created}, updated: {updated})", ar: "تم استيراد {total} فرع (تم إنشاء: {created}، تم تحديث: {updated})" },
+  failedToImportBranches: { en: "Failed to import branches", ar: "فشل استيراد الفروع" },
+  contactLabel2: { en: "Contact", ar: "التواصل" },
+  whatsappBadge: { en: "WhatsApp", ar: "واتساب" },
+
+  // Sidebar - group participants
+  groupIdLabel: { en: "Group ID", ar: "معرّف المجموعة" },
 }
 
 interface I18nContextType {

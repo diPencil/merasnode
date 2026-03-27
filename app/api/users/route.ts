@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import bcrypt from "bcryptjs"
@@ -10,20 +11,22 @@ export async function GET(request: NextRequest) {
     try {
         // Require ADMIN or SUPERVISOR role
         const currentUser = await requireRole(request, ['ADMIN', 'SUPERVISOR'])
-        
+
         logDebug(`User ${currentUser.userId} fetching users list`)
-        
+
         // Get pagination, sorting, and search parameters
         const pagination = getPaginationParams(request)
         const sort = getSortParams(request, 'createdAt')
         const search = getSearchParam(request)
-        
+
         const { searchParams } = new URL(request.url)
         const roleFilter = searchParams.get('role')
         const statusFilter = searchParams.get('status')
 
         // Build where clause
         const where: any = {}
+        // Never show hidden users (e.g. super admin) in the list
+        where.hiddenFromUserList = { not: true }
         // Supervisors must NOT see Admin users (strict RBAC)
         if (currentUser.role === 'SUPERVISOR') {
             where.role = { in: ['SUPERVISOR', 'AGENT'] }
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest) {
             where.role = roleFilter
         }
         if (statusFilter) where.status = statusFilter
-        
+
         // Add search filter
         if (search) {
             where.AND = buildSearchFilter(search, ['name', 'email', 'username'])
@@ -49,10 +52,12 @@ export async function GET(request: NextRequest) {
                 username: true,
                 email: true,
                 role: true,
+                gender: true,
                 status: true,
                 isActive: true,
                 lastLoginAt: true,
                 lastLogoutAt: true,
+                lastActivityAt: true,
                 createdAt: true,
                 updatedAt: true,
                 branches: {
@@ -75,7 +80,18 @@ export async function GET(request: NextRequest) {
             take: pagination.limit
         })
 
-        const paginatedResponse = createPaginatedResponse(users, total, pagination)
+        // Compute effective status: ONLINE + no activity for 5 min => AWAY
+        const AWAY_THRESHOLD_MS = 5 * 60 * 1000
+        const now = Date.now()
+        const usersWithEffectiveStatus = users.map((u: any) => {
+            const effectiveStatus =
+                u.status === 'ONLINE' && u.lastActivityAt
+                    ? (now - new Date(u.lastActivityAt).getTime() > AWAY_THRESHOLD_MS ? 'AWAY' : 'ONLINE')
+                    : u.status
+            return { ...u, status: effectiveStatus }
+        })
+
+        const paginatedResponse = createPaginatedResponse(usersWithEffectiveStatus, total, pagination)
 
         return NextResponse.json({
             success: true,
@@ -90,7 +106,7 @@ export async function GET(request: NextRequest) {
                 return forbiddenResponse('Only admins and supervisors can view users')
             }
         }
-        
+
         console.error('Error fetching users:', error)
         return NextResponse.json(
             {
@@ -113,10 +129,10 @@ export async function POST(request: NextRequest) {
     try {
         // Require ADMIN role
         const currentUser = await requireRole(request, ['ADMIN'])
-        
+
         logDebug(`Admin ${currentUser.userId} creating new user`)
         const body = await request.json()
-        
+
         // Validate input
         const validation = validateBody(createUserSchema, body)
         if (!validation.success) {
@@ -125,7 +141,7 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             )
         }
-        
+
         const validatedData = validation.data
         const usernameLower = validatedData.username.trim().toLowerCase()
 
@@ -153,7 +169,7 @@ export async function POST(request: NextRequest) {
 
         // Hash the password before saving
         const hashedPassword = await bcrypt.hash(validatedData.password, 10)
-        
+
         // Create user with relations (store username lowercase for case-insensitive lookup)
         const user = await prisma.user.create({
             data: {
@@ -162,6 +178,7 @@ export async function POST(request: NextRequest) {
                 email: validatedData.email,
                 password: hashedPassword,
                 role: validatedData.role || 'AGENT',
+                gender: validatedData.gender || 'MALE',
                 status: 'OFFLINE', // Default to offline
                 branches: validatedData.branchIds ? {
                     connect: validatedData.branchIds.map((id) => ({ id }))
@@ -176,6 +193,7 @@ export async function POST(request: NextRequest) {
                 username: true,
                 email: true,
                 role: true,
+                gender: true,
                 status: true,
                 isActive: true,
                 createdAt: true,
@@ -185,7 +203,7 @@ export async function POST(request: NextRequest) {
         })
 
         logDebug(`User created successfully: ${user.id}`)
-        
+
         return NextResponse.json({
             success: true,
             data: user,
@@ -200,7 +218,7 @@ export async function POST(request: NextRequest) {
                 return forbiddenResponse('Only admins can create users')
             }
         }
-        
+
         console.error('Error creating user:', error)
         return NextResponse.json(
             {

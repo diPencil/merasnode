@@ -18,12 +18,16 @@ model User {
   password     String
   name         String
   role         UserRole   @default(AGENT)
-  status       UserStatus @default(OFFLINE)
-  isActive     Boolean    @default(true)
-  lastLoginAt  DateTime?
-  lastLogoutAt DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  gender       Gender     @default(MALE)
+  status          UserStatus @default(OFFLINE)
+  isActive        Boolean    @default(true)
+  /// When true, user is excluded from the Users list (e.g. super admin)
+  hiddenFromUserList Boolean @default(false)
+  lastLoginAt     DateTime?
+  lastLogoutAt    DateTime?
+  lastActivityAt  DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   conversations Conversation[]
   messages      Message[]
@@ -34,6 +38,15 @@ model User {
   branches         Branch[]
   whatsappAccounts WhatsAppAccount[]
   createdNotes     Note[]
+  offers           Offer[]
+  /// Private internal notes about this user (Supervisor/Admin only)
+  internalNotes    UserNote[]
+  createdUserNotes UserNote[]  @relation("UserNoteCreator")
+  templatesCreated Template[]
+  botFlowsCreated  BotFlow[]
+  /// Internal chat: messages sent by this user
+  internalMessagesSent    InternalMessage[] @relation("InternalMessageSender")
+  internalMessagesReceived InternalMessage[] @relation("InternalMessageReceiver")
 }
 
 enum UserRole {
@@ -46,6 +59,11 @@ enum UserStatus {
   ONLINE
   OFFLINE
   AWAY
+}
+
+enum Gender {
+  MALE
+  FEMALE
 }
 
 // جهات الاتصال
@@ -113,7 +131,7 @@ enum ConversationStatus {
   PENDING
 }
 
-// الرسائل
+// الرسائل (Reply: quotedMessageId, Forward: metadata.forwarded)
 model Message {
   id                String           @id @default(uuid())
   conversationId    String
@@ -127,10 +145,15 @@ model Message {
   direction         Direction
   status            MessageStatus    @default(SENT)
   mediaUrl          String?
+  metadata          Json?
+  quotedMessageId   String?
+  quotedMessage     Message?          @relation("MessageReply", fields: [quotedMessageId], references: [id], onDelete: SetNull)
+  quotedReplies     Message[]        @relation("MessageReply")
   createdAt         DateTime         @default(now())
 
   @@index([conversationId])
   @@index([whatsappAccountId])
+  @@index([quotedMessageId])
 }
 
 enum MessageType {
@@ -139,6 +162,7 @@ enum MessageType {
   VIDEO
   AUDIO
   DOCUMENT
+  LOCATION
 }
 
 enum Direction {
@@ -155,19 +179,22 @@ enum MessageStatus {
 
 // القوالب (Quick Reply style: scoped per WhatsApp number, trigger keywords)
 model Template {
-  id                 String           @id @default(uuid())
-  name               String
-  content            String           @db.Text
-  category           String
-  language           String
-  status             TemplateStatus   @default(PENDING)
-  whatsappAccountId  String?
-  whatsappAccount    WhatsAppAccount? @relation(fields: [whatsappAccountId], references: [id], onDelete: SetNull)
-  triggerKeywords    Json?            // array of trigger phrases e.g. ["Hi", "Hello", "مرحبا"]
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  id                String           @id @default(uuid())
+  name              String
+  content           String           @db.Text
+  category          String
+  language          String
+  status            TemplateStatus   @default(PENDING)
+  whatsappAccountId String?
+  whatsappAccount   WhatsAppAccount? @relation(fields: [whatsappAccountId], references: [id], onDelete: SetNull)
+  createdById       String?
+  createdBy         User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  triggerKeywords   Json? // array of trigger phrases e.g. ["Hi", "Hello", "مرحبا"]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@index([whatsappAccountId])
+  @@index([createdById])
 }
 
 enum TemplateStatus {
@@ -176,17 +203,56 @@ enum TemplateStatus {
   REJECTED
 }
 
-// سير العمل الآلي
+// ملاحظات داخلية خاصة بالمستخدم (Supervisor + Admin فقط — لا تظهر للعميل)
+model UserNote {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content    String   @db.Text
+  createdById String
+  createdBy  User     @relation("UserNoteCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdById])
+}
+
+// شات داخلي بين مستخدمين (Admin/Supervisor مع Agent أو بين بعض)
+model InternalMessage {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("InternalMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("InternalMessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  content    String   @db.Text
+  mediaUrl   String?
+  createdAt  DateTime @default(now())
+
+  @@index([senderId, receiverId])
+  @@index([receiverId, senderId])
+}
+
+// سير العمل الآلي (مرتبط بالفرع/المركز)
 model BotFlow {
-  id           String            @id @default(uuid())
-  name         String
-  description  String?           @db.Text
-  trigger      String
-  steps        Json
-  isActive     Boolean           @default(false)
-  interactions FlowInteraction[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  id               String            @id @default(uuid())
+  name             String
+  description      String?           @db.Text
+  trigger          String            // نوع المحفز: new_contact, new_message, incoming_message
+  /// كلمات محفّزة لبدء الفلو عند رسالة واردة (مثلاً: مرحبا، هلا، مساء الخير) — للـ incoming_message
+  triggerKeywords  Json?             // ["مرحبا", "هلا", "مساء الخير"]
+  steps            Json
+  isActive         Boolean           @default(false)
+  branchId         String?
+  branch           Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  createdById      String?
+  createdBy        User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  interactions     FlowInteraction[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([branchId])
+  @@index([createdById])
 }
 
 model FlowInteraction {
@@ -205,6 +271,28 @@ model FlowInteraction {
   @@index([action])
 }
 
+// فئات العروض (مثلاً: جلدية، تجميل) — مربوطة بالفروع؛ عند الإرسال نوجّه العرض لجهات اتصال الفروع التابعة للفئة فقط
+model OfferCategory {
+  id          String    @id @default(uuid())
+  name        String
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  branches CategoryBranch[]
+  offers   Offer[]
+}
+
+// ربط الفئة بالفروع (فئة واحدة → عدة فروع)
+model CategoryBranch {
+  categoryId String
+  category   OfferCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  branchId   String
+  branch     Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@id([categoryId, branchId])
+}
+
 // الفروع
 model Branch {
   id        String   @id @default(uuid())
@@ -219,6 +307,8 @@ model Branch {
   whatsappAccounts WhatsAppAccount[]
   users            User[]
   contacts         Contact[]
+  botFlows         BotFlow[]
+  categoryBranches CategoryBranch[]
 }
 
 // حسابات WhatsApp
@@ -238,6 +328,7 @@ model WhatsAppAccount {
   users     User[]
   messages  Message[]
   templates Template[]
+  offers    Offer[]
 
   @@index([branchId])
 }
@@ -333,20 +424,37 @@ model Settings {
 
 // العروض
 model Offer {
-  id             String   @id @default(uuid())
-  title          String
-  description    String?  @db.Text
-  content        String   @db.Text
-  validFrom      DateTime
-  validTo        DateTime
-  isActive       Boolean  @default(true)
-  targetAudience Json? // JSON array of contact IDs or filters
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  title              String
+  description        String?  @db.Text
+  content            String   @db.Text
+  imageUrl           String?  // صورة العرض — تظهر عند الإرسال
+  /// العرض مرتبط بأي رقم واتساب؟ (علشان كل أجينت/سوبرفيزر يشوف أرقام حساباته بس)
+  whatsappAccountId  String?
+  whatsappAccount    WhatsAppAccount? @relation(fields: [whatsappAccountId], references: [id], onDelete: SetNull)
+  /// فئة العرض (مثلاً جلدية) — عند الإرسال تظهر جهات اتصال الفروع التابعة للفئة فقط
+  categoryId         String?
+  category           OfferCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  /// مين اللي أنشأ العرض (للتتبع فقط)
+  createdById        String?
+  createdBy          User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  validFrom          DateTime
+  validTo            DateTime
+  isActive           Boolean  @default(true)
+  /// عند إرسال هذا العرض، يُضاف هذا الوسم تلقائياً لجهات الاتصال المستلمة (مثال: Laser Campaign - Feb 2026)
+  tagToAssign        String?
+  targetAudience     Json? // JSON array of contact IDs or filters
+  recipientsCount    Int      @default(0) // إجمالي الأرقام اللي اتبعتلها
+  singleSendCount    Int      @default(0) // عدد مرات الإرسال فردي
+  bulkSendCount      Int      @default(0) // عدد مرات الإرسال جماعي
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@index([isActive])
   @@index([validFrom])
   @@index([validTo])
+  @@index([whatsappAccountId])
+  @@index([categoryId])
 }
 
 // الفواتير

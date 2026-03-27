@@ -98,8 +98,20 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        const bookingCount = await prisma.booking.count()
-        const bookingNumber = `BK-${String(bookingCount + 1).padStart(3, "0")}`
+        // Generate booking number based on the last one, to avoid collisions on deletion
+        const lastBooking = await prisma.booking.findFirst({
+            orderBy: { createdAt: 'desc' },
+            select: { bookingNumber: true }
+        })
+
+        let nextNum = 1
+        if (lastBooking && lastBooking.bookingNumber && lastBooking.bookingNumber.startsWith('BK-')) {
+            const currentNum = parseInt(lastBooking.bookingNumber.replace('BK-', ''), 10)
+            if (!isNaN(currentNum)) {
+                nextNum = currentNum + 1
+            }
+        }
+        const bookingNumber = `BK-${String(nextNum).padStart(3, "0")}`
 
         const booking = await prisma.booking.create({
             data: {
